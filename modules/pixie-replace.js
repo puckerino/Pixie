@@ -2,7 +2,7 @@
  * PixieReplace.js
  * Sustituye elementos de ForoActivo por texto, iconos, clases, atributos o estructura HTML
  * Requiere: pixiekit.js + lucide
- * Versión: 0.5.0
+ * Versión: 0.6.0
  */
 
 const PixieReplace = PixieKit("Replace", function (_) {
@@ -322,17 +322,17 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "self",
       replaceTag: "span"
     },
-    
+
     {
       selector: "label span[style]",
       target: "self",
+      removeAttrs: ["style"],
       unwrap: true
     },
 
     {
       selector: "label",
       target: "self",
-
       textReplace: {
         " : ": "",
         ":": ""
@@ -476,23 +476,21 @@ const PixieReplace = PixieKit("Replace", function (_) {
   }
 
   function replaceTextNodes(target, replacements) {
-  if (!replacements || typeof replacements !== "object") return;
+    if (!replacements || typeof replacements !== "object") return;
 
-  Array.from(target.childNodes).forEach(function (node) {
+    const walker = document.createTreeWalker(
+      target,
+      NodeFilter.SHOW_TEXT
+    );
 
-    if (node.nodeType !== 3) return;
+    let node;
 
-    Object.entries(replacements).forEach(function ([search, replace]) {
-
-      node.nodeValue =
-        node.nodeValue
-          .split(search)
-          .join(replace);
-
-    });
-
-  });
-}
+    while ((node = walker.nextNode())) {
+      Object.entries(replacements).forEach(function ([search, replace]) {
+        node.nodeValue = node.nodeValue.split(search).join(replace);
+      });
+    }
+  }
 
   function removeBlankTextNodes(target) {
     Array.from(target.childNodes).forEach(function (node) {
@@ -530,6 +528,14 @@ const PixieReplace = PixieKit("Replace", function (_) {
         return;
       }
 
+      applyTooltip(target, rule.tooltip);
+      applyAttrs(target, rule.attrs);
+      removeAttrs(target, rule.removeAttrs);
+
+      replaceClasses(target, rule.replaceClasses);
+      removeClasses(target, rule.removeClasses);
+      applyClasses(target, rule.classes);
+
       if (rule.replaceTag) {
         target = replaceTag(target, rule.replaceTag);
       }
@@ -539,23 +545,8 @@ const PixieReplace = PixieKit("Replace", function (_) {
         return;
       }
 
-      applyTooltip(target, rule.tooltip);
-      applyAttrs(target, rule.attrs);
-      removeAttrs(target, rule.removeAttrs);
-
-      replaceClasses(target, rule.replaceClasses);
-      removeClasses(target, rule.removeClasses);
-      applyClasses(target, rule.classes);
-
-      removeTextContains(
-        target,
-        rule.removeTextContains
-      );
-
-      replaceTextNodes(
-        target,
-        rule.textReplace
-      );
+      removeTextContains(target, rule.removeTextContains);
+      replaceTextNodes(target, rule.textReplace);
 
       if (rule.removeBlankTextNodes) {
         removeBlankTextNodes(target);
