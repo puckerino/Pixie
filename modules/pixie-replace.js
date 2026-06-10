@@ -341,6 +341,8 @@ const PixieReplace = PixieKit("Replace", function (_) {
     }
   ];
 
+  const processed = new WeakMap();
+
   function icon(name) {
     return `<i data-lucide="${name}"></i>`;
   }
@@ -353,19 +355,16 @@ const PixieReplace = PixieKit("Replace", function (_) {
   }
 
   function hasApplied(target, id) {
-    const applied = target.dataset.pixieReplaceRules || "";
-    return applied.split(",").includes(String(id));
+    const applied = processed.get(target);
+    return applied ? applied.has(id) : false;
   }
 
   function markApplied(target, id) {
-    const applied = target.dataset.pixieReplaceRules || "";
-    const list = applied ? applied.split(",") : [];
-
-    if (!list.includes(String(id))) {
-      list.push(String(id));
+    if (!processed.has(target)) {
+      processed.set(target, new Set());
     }
 
-    target.dataset.pixieReplaceRules = list.join(",");
+    processed.get(target).add(id);
   }
 
   function applyAttrs(target, attrs) {
@@ -559,7 +558,6 @@ const PixieReplace = PixieKit("Replace", function (_) {
       applyContent(target, rule);
       insertAfter(target, rule.afterHTML);
 
-      target.classList.add("pixie-replaced");
       markApplied(target, id);
     });
   }
