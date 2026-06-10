@@ -41,7 +41,13 @@ const PixieNavbar = PixieKit("Navbar", function (_) {
     }
 
     if (avatarBox && user.avatar) {
-      avatarBox.innerHTML = user.avatar;
+      avatarBox.innerHTML = `
+        <img
+          src="${user.avatar}"
+          alt="${user.name}"
+          loading="lazy"
+        >
+      `;
     }
 
     if (usernameBox && user.name) {
