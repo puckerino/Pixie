@@ -344,6 +344,12 @@ const PixieReplace = PixieKit("Replace", function (_) {
         " : ": "",
         ":": ""
       }
+    },
+    
+    {
+      selector: ".sceditor-group",
+      target: "self",
+      unwrap: true
     }
   ];
 
