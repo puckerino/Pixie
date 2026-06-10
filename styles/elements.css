@@ -115,45 +115,67 @@ textarea {
 /* ===============================FORMS================================*/
 
 select {
-    cursor: pointer;
+  cursor: pointer;
+  appearance: base-select;
+
+  border: 1px solid var(--input-border);
+  border-radius: var(--input-br);
+  corner-shape: var(--input-shape);
+
+  padding: var(--spacing-2xs) var(--spacing-xs);
+
+  color: var(--input-text);
+  font: var(--f-text);
+
+  transition: all .3s ease-in-out;
+
+  &::picker(select) {
     appearance: base-select;
+
     border: 1px solid var(--input-border);
     border-radius: var(--input-br);
     corner-shape: var(--input-shape);
-    padding: var(--spacing-2xs) var(--spacing-xs);
+
     color: var(--input-text);
     font: var(--f-text);
-    transition: all .3s ease-in-out;
+  }
 
-    &::picker(select) {
-        appearance: base-select;
-        border: 1px solid var(--input-border);
-        border-radius: var(--input-br);
-        corner-shape: var(--input-shape);
-        color: var(--input-text);
-        font: var(--f-text);
+  &::picker-icon {
+    content: "";
+
+    width: 1em;
+    height: 1em;
+
+    background: currentColor;
+
+    mask: var(--icon-chevron-down)
+      center / contain no-repeat;
+
+    -webkit-mask: var(--icon-chevron-down)
+      center / contain no-repeat;
+  }
+
+  option {
+    padding: var(--spacing-xs);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--accent-component2);
     }
 
-    &::picker-icon {
-        content: "\F282";
-        font-family: var(--f-icon);
-        display: flex;
-        align-items: center;
+    &::checkmark {
+      content: "";
+
+      width: 1em;
+      height: 1em;
+
+      background: currentColor;
+
+      mask: var(--icon-check)
+        center / contain no-repeat;
+
+      -webkit-mask: var(--icon-check)
+        center / contain no-repeat;
     }
-
-    option {
-        padding: var(--spacing-xs);
-        cursor: pointer;
-
-        &:hover {
-            background: var(--accent-component2);
-        }
-
-        &::checkmark {
-            content: "\F285";
-            font-family: var(--f-icon);
-        }
-
-    }
-
+  }
 }
