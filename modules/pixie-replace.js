@@ -355,8 +355,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
     {
       selector: ".sceditor-dropdown[style]",
       target: "self",
-      removeAttrs: ["style"],
-      unwrap: true
+      removeAttrs: ["style"]
     }
   ];
 
