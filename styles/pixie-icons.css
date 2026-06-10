@@ -1,0 +1,49 @@
+:root {
+  /* Acciones */
+  --icon-check: url("https://unpkg.com/lucide-static/icons/check.svg");
+  --icon-x: url("https://unpkg.com/lucide-static/icons/x.svg");
+  --icon-plus: url("https://unpkg.com/lucide-static/icons/plus.svg");
+  --icon-minus: url("https://unpkg.com/lucide-static/icons/minus.svg");
+
+  /* Navegación */
+  --icon-chevron-down: url("https://unpkg.com/lucide-static/icons/chevron-down.svg");
+  --icon-chevron-up: url("https://unpkg.com/lucide-static/icons/chevron-up.svg");
+  --icon-chevron-left: url("https://unpkg.com/lucide-static/icons/chevron-left.svg");
+  --icon-chevron-right: url("https://unpkg.com/lucide-static/icons/chevron-right.svg");
+
+  /* Usuario */
+  --icon-user: url("https://unpkg.com/lucide-static/icons/user.svg");
+  --icon-users: url("https://unpkg.com/lucide-static/icons/users.svg");
+  --icon-mail: url("https://unpkg.com/lucide-static/icons/mail.svg");
+  --icon-bell: url("https://unpkg.com/lucide-static/icons/bell.svg");
+
+  /* Contenido */
+  --icon-copy: url("https://unpkg.com/lucide-static/icons/copy.svg");
+  --icon-edit: url("https://unpkg.com/lucide-static/icons/square-pen.svg");
+  --icon-quote: url("https://unpkg.com/lucide-static/icons/quote.svg");
+  --icon-trash: url("https://unpkg.com/lucide-static/icons/trash-2.svg");
+  --icon-image: url("https://unpkg.com/lucide-static/icons/image.svg");
+
+  /* UI */
+  --icon-settings: url("https://unpkg.com/lucide-static/icons/settings.svg");
+  --icon-search: url("https://unpkg.com/lucide-static/icons/search.svg");
+  --icon-sun: url("https://unpkg.com/lucide-static/icons/sun.svg");
+  --icon-moon: url("https://unpkg.com/lucide-static/icons/moon.svg");
+  --icon-menu: url("https://unpkg.com/lucide-static/icons/menu.svg");
+  --icon-info: url("https://unpkg.com/lucide-static/icons/info.svg");
+}
+
+.pixie-icon-mask {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  background: currentColor;
+
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+}
