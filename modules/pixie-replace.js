@@ -1,8 +1,8 @@
 /*!
  * PixieReplace.js
- * Sustituye elementos de ForoActivo por texto, iconos, clases o atributos
+ * Sustituye elementos de ForoActivo por texto, iconos, clases, atributos o estructura HTML
  * Requiere: pixiekit.js + lucide
- * Versión: 0.3.0
+ * Versión: 0.4.0
  */
 
 const PixieReplace = PixieKit("Replace", function (_) {
@@ -12,6 +12,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "a",
       icon: "quote",
       text: "CITAR",
+      tooltip: "Citar mensaje",
       classes: ["button", "button-action-post"]
     },
 
@@ -20,6 +21,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "a",
       icon: "square-pen",
       text: "EDITAR",
+      tooltip: "Editar mensaje",
       classes: ["button", "button-action-post"]
     },
 
@@ -28,6 +30,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "a",
       icon: "x",
       text: "BORRAR",
+      tooltip: "Borrar mensaje",
       classes: ["button", "button-action-post"]
     },
 
@@ -36,6 +39,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "a",
       icon: "info",
       text: "IP",
+      tooltip: "Ver IP",
       classes: ["button", "button-action-post"]
     },
 
@@ -61,6 +65,26 @@ const PixieReplace = PixieKit("Replace", function (_) {
       replaceClasses: {
         button2: "button"
       }
+    },
+
+    {
+      selector: "#textarea_content",
+      target: "self",
+      removeAttrs: ["style"]
+    },
+
+    {
+      selector: ".sceditor-group",
+      target: "self",
+      unwrap: true
+    },
+
+    {
+      selector: 'div[style="text-align:center; margin-top:20px;"]',
+      target: "self",
+      replaceTag: "section",
+      removeAttrs: ["style"],
+      classes: ["group-buttons"]
     }
   ];
 
@@ -115,6 +139,30 @@ const PixieReplace = PixieKit("Replace", function (_) {
     });
   }
 
+  function unwrap(target) {
+    const parent = target.parentNode;
+    if (!parent) return;
+
+    while (target.firstChild) {
+      parent.insertBefore(target.firstChild, target);
+    }
+
+    target.remove();
+  }
+
+  function replaceTag(target, newTag) {
+    const replacement = document.createElement(newTag);
+
+    Array.from(target.attributes).forEach(function (attr) {
+      replacement.setAttribute(attr.name, attr.value);
+    });
+
+    replacement.innerHTML = target.innerHTML;
+    target.replaceWith(replacement);
+
+    return replacement;
+  }
+
   function applyContent(target, rule) {
     if (rule.html) {
       target.innerHTML = rule.html;
@@ -150,11 +198,20 @@ const PixieReplace = PixieKit("Replace", function (_) {
     const elements = _.getAll(rule.selector);
 
     elements.forEach(function (element) {
-      const target = getTarget(element, rule.target);
+      let target = getTarget(element, rule.target);
 
       if (!target) return;
 
       if (target.dataset.pixieReplaceReady === "true") return;
+
+      if (rule.replaceTag) {
+        target = replaceTag(target, rule.replaceTag);
+      }
+
+      if (rule.unwrap) {
+        unwrap(target);
+        return;
+      }
 
       applyTooltip(target, rule.tooltip);
       applyAttrs(target, rule.attrs);
