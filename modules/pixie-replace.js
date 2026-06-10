@@ -350,12 +350,6 @@ const PixieReplace = PixieKit("Replace", function (_) {
       selector: ".sceditor-group",
       target: "self",
       unwrap: true
-    },
-    
-    {
-      selector: "#textarea_content[style]",
-      target: "self",
-      removeAttrs: ["style"]
     }
   ];
 
