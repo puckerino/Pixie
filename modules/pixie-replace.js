@@ -89,6 +89,12 @@ const PixieReplace = PixieKit("Replace", function (_) {
     },
 
     {
+      selector: ".inputbox",
+      target: "self",
+      removeClasses: ["inputbox"]
+    },
+
+    {
       selector: ".form-control:has(#profile_field_16_-7)",
       target: "self",
       remove: true
