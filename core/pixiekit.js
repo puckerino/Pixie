@@ -81,6 +81,16 @@
         return value;
       },
 
+        icons() {
+    if (!window.lucide) return;
+
+    window.lucide.createIcons({
+      attrs: {
+        "stroke-width": 1.75
+      }
+    });
+  },
+
       addClass(el, className) {
         if (!el) return;
         el.classList.add(className);
