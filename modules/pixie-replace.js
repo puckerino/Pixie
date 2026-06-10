@@ -512,6 +512,24 @@ const PixieReplace = PixieKit("Replace", function (_) {
     target.insertAdjacentHTML("afterend", html);
   }
 
+  function insertBefore(target, html) {
+  if (!html) return;
+
+  target.insertAdjacentHTML("beforebegin", html);
+}
+
+function appendHTML(target, html) {
+  if (!html) return;
+
+  target.insertAdjacentHTML("beforeend", html);
+}
+
+function prependHTML(target, html) {
+  if (!html) return;
+
+  target.insertAdjacentHTML("afterbegin", html);
+}
+
   function applyRule(rule, id) {
     if (typeof rule.custom === "function") {
       rule.custom();
@@ -555,10 +573,15 @@ const PixieReplace = PixieKit("Replace", function (_) {
         removeBlankTextNodes(target);
       }
 
-      applyContent(target, rule);
-      insertAfter(target, rule.afterHTML);
+    insertBefore(target, rule.beforeHTML);
+    prependHTML(target, rule.prependHTML);
 
-      markApplied(target, id);
+    applyContent(target, rule);
+
+    appendHTML(target, rule.appendHTML);
+    insertAfter(target, rule.afterHTML);
+
+    markApplied(target, id);
     });
   }
 
