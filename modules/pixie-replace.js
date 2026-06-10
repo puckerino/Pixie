@@ -419,17 +419,20 @@ const PixieReplace = PixieKit("Replace", function (_) {
   }
 
   function replaceTag(target, newTag) {
-    const replacement = document.createElement(newTag);
+  const replacement = document.createElement(newTag);
 
-    Array.from(target.attributes).forEach(function (attr) {
-      replacement.setAttribute(attr.name, attr.value);
-    });
+  Array.from(target.attributes).forEach(function (attr) {
+    replacement.setAttribute(attr.name, attr.value);
+  });
 
-    replacement.innerHTML = target.innerHTML;
-    target.replaceWith(replacement);
-
-    return replacement;
+  while (target.firstChild) {
+    replacement.appendChild(target.firstChild);
   }
+
+  target.replaceWith(replacement);
+
+  return replacement;
+}
 
   function applyContent(target, rule) {
     if (rule.html) {
