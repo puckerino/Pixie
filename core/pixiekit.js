@@ -2,7 +2,7 @@
  * PixieKit.js
  * Mini toolkit para scripts de ForoActivo
  * Autor: Puck
- * Versión: 0.1.0
+ * Versión: 0.2.0
  */
 
 (function (window, document) {
@@ -120,6 +120,47 @@
             "",
           color: window._userdata?.groupcolor || ""
         };
+      },
+
+      async forumVars(wanted = []) {
+        const vars = {};
+        const wantedList = Array.isArray(wanted) ? wanted : [];
+
+        try {
+          const res = await fetch("/popup_help.forum?l=miscvars&i=mes_txt", {
+            credentials: "same-origin"
+          });
+
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, "text/html");
+
+          const items = Array.from(doc.querySelectorAll("li"));
+
+          items.forEach(function (li) {
+            const link = li.querySelector('a[onclick^="insert_misc_vars"]');
+            if (!link) return;
+
+            const varName = link.textContent.replace(/[{}]/g, "").trim();
+
+            if (wantedList.length && !wantedList.includes(varName)) return;
+
+            const fullText = li.textContent.trim();
+            const parts = fullText.split(":");
+
+            if (parts.length < 2) return;
+
+            let value = parts.slice(1).join(":").trim();
+
+            value = value.replace(/\(.+\)$/, "").trim();
+
+            vars[varName] = value;
+          });
+
+          return vars;
+        } catch (error) {
+          _.log("No he podido recuperar las variables del foro.", error);
+          return vars;
+        }
       },
 
       storage(key) {
