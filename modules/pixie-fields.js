@@ -2,7 +2,7 @@
  * PixieFields.js
  * Normaliza, estructura y mueve campos de perfil dentro de los posts
  * Requiere: pixiekit.js
- * Versión: 0.2.0
+ * Versión: 0.3.0
  */
 
 const PixieFields = PixieKit("Fields", function (_) {
@@ -11,6 +11,9 @@ const PixieFields = PixieKit("Fields", function (_) {
     fieldsBox: ".profile-fields",
     field: ".profile-field",
     label: ".label",
+
+    renderAttr: "data-profile-render",
+    renderValueAttr: "data-profile-render-value",
 
     removeColon: true,
     hideEmptyBox: true,
@@ -44,7 +47,7 @@ const PixieFields = PixieKit("Fields", function (_) {
     return cleanText(label.textContent).replace(/\s*:\s*$/, "");
   }
 
-  function getFieldValue(field, label) {
+  function getFieldValue(field) {
     const clone = field.cloneNode(true);
     const cloneLabel = clone.querySelector(".label");
 
@@ -62,6 +65,11 @@ const PixieFields = PixieKit("Fields", function (_) {
   }
 
   function rebuildField(field, data, opts) {
+    const clone = field.cloneNode(true);
+    const label = clone.querySelector(opts.label);
+
+    if (label) label.remove();
+
     field.innerHTML = "";
 
     const nameEl = _.create("span", {
@@ -70,9 +78,12 @@ const PixieFields = PixieKit("Fields", function (_) {
     });
 
     const valueEl = _.create("span", {
-      class: "field-value",
-      text: data.value
+      class: "field-value"
     });
+
+    while (clone.firstChild) {
+      valueEl.appendChild(clone.firstChild);
+    }
 
     field.appendChild(nameEl);
     field.appendChild(valueEl);
@@ -86,6 +97,54 @@ const PixieFields = PixieKit("Fields", function (_) {
     fieldStore.get(post)[data.slug] = data;
   }
 
+  function moveValueOnly(field, target) {
+    const value = field.querySelector(".field-value");
+    if (!value) return false;
+
+    while (value.firstChild) {
+      target.appendChild(value.firstChild);
+    }
+
+    field.remove();
+    return true;
+  }
+
+  function renderToPlaceholder(field, post, slug, opts) {
+    const fullTarget = post.querySelector(
+      `[${opts.renderAttr}="${slug}"]`
+    );
+
+    const valueTarget = post.querySelector(
+      `[${opts.renderValueAttr}="${slug}"]`
+    );
+
+    if (fullTarget) {
+      fullTarget.appendChild(field);
+      return true;
+    }
+
+    if (valueTarget) {
+      return moveValueOnly(field, valueTarget);
+    }
+
+    return false;
+  }
+
+  function moveByConfig(field, post, slug, opts) {
+    const targetSelector = getMoveTarget(slug, opts.move);
+    if (!targetSelector) return false;
+
+    const target = post.querySelector(targetSelector);
+
+    if (!target) {
+      _.log(`No encuentro ${targetSelector} para mover ${slug}`);
+      return false;
+    }
+
+    target.appendChild(field);
+    return true;
+  }
+
   function processField(field, post, opts) {
     const label = field.querySelector(opts.label);
     if (!label) return;
@@ -94,7 +153,7 @@ const PixieFields = PixieKit("Fields", function (_) {
     if (!name) return;
 
     const slug = slugify(name);
-    const value = getFieldValue(field, label);
+    const value = getFieldValue(field);
 
     const data = {
       name,
@@ -110,17 +169,9 @@ const PixieFields = PixieKit("Fields", function (_) {
     rebuildField(field, data, opts);
     saveField(post, data);
 
-    const targetSelector = getMoveTarget(slug, opts.move);
-    if (!targetSelector) return;
+    if (renderToPlaceholder(field, post, slug, opts)) return;
 
-    const target = post.querySelector(targetSelector);
-
-    if (!target) {
-      _.log(`No encuentro ${targetSelector} para mover ${slug}`);
-      return;
-    }
-
-    target.appendChild(field);
+    moveByConfig(field, post, slug, opts);
   }
 
   function processPost(post, opts) {
