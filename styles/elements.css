@@ -16,29 +16,32 @@ input[type="checkbox"] {
     transition: all .3s ease-in-out;
     outline: 2px solid transparent;
 
-    &:before {
-        content: "\F272";
-        font: var(--f-xs) var(--f-icon);
+    &::before {
+        content: "";
         position: absolute;
+        width: .75rem;
+        height: .75rem;
+        background: currentColor;
+
+        mask: var(--icon-check) center / contain no-repeat;
+        -webkit-mask: var(--icon-check) center / contain no-repeat;
+
         opacity: 0;
     }
 
     &:checked {
         background: var(--accent-solid1);
         outline: 2px solid var(--accent-border2);
-        color: contrast-color(var(--accent-solid1));
+        color: var(--mono-contrast-text2);
 
-        &:before {
+        &::before {
             opacity: 1;
-            color: var(--mono-contrast-text2);
         }
-
     }
 
     &:disabled {
         background: var(--mono-component1);
     }
-
 }
 
 /* ===============================RADIO=============================== */
