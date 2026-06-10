@@ -1,7 +1,7 @@
 /*!
  * PixieNavbar.js
  * Módulo navbar para PixieKit
- * Requiere: pixiekit.js
+ * Requiere: pixiekit.js + lucide
  * Versión: 0.1.0
  */
 
@@ -77,11 +77,20 @@ const PixieNavbar = PixieKit("Navbar", function (_) {
     if (adminNav.dataset.pixieReady === "true") return;
 
     adminNav.innerHTML = `
-      <a href="/admin">ACP</a>
-      <button popovertarget="menuamin" class="drawer left">ADMIN</button>
+      <a href="/admin">
+        <i data-lucide="shield"></i>
+        ACP
+      </a>
+
+      <button popovertarget="menuamin" class="drawer left">
+        <i data-lucide="wrench"></i>
+        ADMIN
+      </button>
     `;
 
     adminNav.dataset.pixieReady = "true";
+
+    _.icons();
   }
 
   function moveNotifications() {
@@ -102,6 +111,8 @@ const PixieNavbar = PixieKit("Navbar", function (_) {
     hydrateOriginalLinks();
     hydrateAdmin();
     moveNotifications();
+
+    _.icons();
   }
 
   _.ready(init);
