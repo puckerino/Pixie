@@ -72,13 +72,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "self",
       removeAttrs: ["style"]
     },
-
-    {
-      selector: ".sceditor-group",
-      target: "self",
-      unwrap: true
-    },
-
+    
     {
       selector: 'div[style="text-align:center; margin-top:20px;"]',
       target: "self",
