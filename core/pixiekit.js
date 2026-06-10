@@ -1,6 +1,6 @@
 /*!
  * PixieKit.js
- * Mini toolkit para scripts de ForoActivo / Forumactif
+ * Mini toolkit para scripts de ForoActivo
  * Autor/a: Puck
  * Versión: 0.1.0
  */
