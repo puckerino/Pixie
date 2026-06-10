@@ -1,1 +1,156 @@
+/* ===============================CHECKBOX=============================== */
 
+input[type="checkbox"] {
+    cursor: pointer;
+    appearance: none;
+    width: var(--f-base);
+    aspect-ratio: 1;
+    border-radius: var(--br);
+    corner-shape: squircle;
+    background-color: var(--input-surface);
+    border: 1px solid var(--input-border);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    transition: all .3s ease-in-out;
+    outline: 2px solid transparent;
+
+    &:before {
+        content: "\F272";
+        font: var(--f-xs) var(--f-icon);
+        position: absolute;
+        opacity: 0;
+    }
+
+    &:checked {
+        background: var(--accent-solid1);
+        outline: 2px solid var(--accent-border2);
+        color: contrast-color(var(--accent-solid1));
+
+        &:before {
+            opacity: 1;
+            color: var(--mono-contrast-text2);
+        }
+
+    }
+
+    &:disabled {
+        background: var(--mono-component1);
+    }
+
+}
+
+/* ===============================RADIO=============================== */
+
+input[type="radio"] {
+    cursor: pointer;
+    appearance: none;
+    width: var(--f-base);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background-color: var(--input-surface);
+    border: 1px solid var(--input-border);
+    transition: all .3s ease-in-out;
+
+    &:checked {
+        background: var(--accent-solid1);
+    }
+
+}
+
+/* ===============================INPUTS CON TEXTO=============================== */
+
+input[type="email"],
+input[type="number"],
+input[type="password"],
+input[type="search"],
+input[type="text"],
+input[type="url"],
+input[type="time"],
+input[list] {
+
+    border: 1px solid var(--input-border);
+    border-radius: var(--input-br);
+    corner-shape: var(--input-shape);
+    padding: var(--spacing-2xs);
+    color: var(--input-text);
+    font: var(--f-text);
+    outline: 2px solid transparent;
+    transition: all .3s ease-in-out;
+
+    &:focus {
+        transition: all .3s ease-in-out;
+        outline: 2px solid var(--mono-border2);
+    }
+
+}
+
+/* ===============================TEXTAREA=============================== */
+
+textarea {
+
+    border: 1px solid var(--input-border);
+    border-radius: var(--input-br);
+    corner-shape: var(--input-shape);
+    padding: var(--spacing-s);
+    color: var(--input-text);
+    font: var(--f-text);
+    width: 100%;
+    min-height: 40vh;
+    outline: 2px solid transparent;
+    transition: all .3s ease-in-out;
+
+    &:focus {
+        transition: all .3s ease-in-out;
+        outline: 2px solid var(--mono-border2);
+        border: 1px solid var(--input-border);
+    }
+
+}
+
+/* ===============================FORMS================================*/
+
+select {
+    cursor: pointer;
+    appearance: base-select;
+    border: 1px solid var(--input-border);
+    border-radius: var(--input-br);
+    corner-shape: var(--input-shape);
+    padding: var(--spacing-2xs) var(--spacing-xs);
+    color: var(--input-text);
+    font: var(--f-text);
+    transition: all .3s ease-in-out;
+
+    &::picker(select) {
+        appearance: base-select;
+        border: 1px solid var(--input-border);
+        border-radius: var(--input-br);
+        corner-shape: var(--input-shape);
+        color: var(--input-text);
+        font: var(--f-text);
+    }
+
+    &::picker-icon {
+        content: "\F282";
+        font-family: var(--f-icon);
+        display: flex;
+        align-items: center;
+    }
+
+    option {
+        padding: var(--spacing-xs);
+        cursor: pointer;
+
+        &:hover {
+            background: var(--accent-component2);
+        }
+
+        &::checkmark {
+            content: "\F285";
+            font-family: var(--f-icon);
+        }
+
+    }
+
+}
