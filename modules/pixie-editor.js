@@ -60,7 +60,10 @@ const PixieEditor = PixieKit("Editor", function (_) {
       "embed",
       "farand",
       "faupdown",
-      "twemojifa"
+      "twemojifa",
+      "subscript",
+      "superscript",
+      "fascroll"
     ]
   };
 
