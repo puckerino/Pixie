@@ -58,6 +58,8 @@ const PixieEditor = PixieKit("Editor", function (_) {
       "removeformat",
       "more",
       "embed",
+      "farand",
+      "faupdown",
       "twemojifa"
     ]
   };
