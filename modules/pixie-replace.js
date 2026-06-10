@@ -18,15 +18,17 @@ const PixieReplace = PixieKit("Replace", function (_) {
     {
       selector: "img.i_icon_edit",
       target: "a",
+      icon: "square-pen",
       text: "EDITAR",
-      classes: ["button"]
+      classes: ["button, "button-action-post"]
     },
 
     {
       selector: "img.i_icon_delete",
       target: "a",
+      icon: "x",
       text: "BORRAR",
-      classes: ["button", "button-danger"]
+      classes: ["button", "button-action-post"]
     },
 
     {
@@ -34,7 +36,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "a",
       icon: "mail",
       tooltip: "Enviar Mensaje Privado",
-      classes: ["button-icon"]
+      classes: ["button", "button-icon"]
     },
 
     {
