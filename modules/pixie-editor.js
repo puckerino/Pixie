@@ -1,16 +1,19 @@
 /*!
  * PixieEditor.js
- * Personaliza los botones del editor SCEditor de ForoActivo
+ * Personaliza el editor SCEditor de ForoActivo
  * Requiere: pixiekit.js + lucide
- * Versión: 0.1.0
+ * Versión: 0.2.0
  */
 
 const PixieEditor = PixieKit("Editor", function (_) {
 
   const config = {
     editor: "#textarea_content, #text_editor_textarea",
+    container: ".sceditor-container",
     toolbar: ".sceditor-toolbar",
     buttons: ".sceditor-button",
+
+    defaultTheme: 'link[href*="fa.default.min.css"]',
 
     icons: {
       bold: "bold",
@@ -63,13 +66,27 @@ const PixieEditor = PixieKit("Editor", function (_) {
     return `<i data-lucide="${name}"></i>`;
   }
 
-  function removeButtons(command, btn) {
-    if (config.remove.includes(command)) {
-      btn.remove();
-      return true;
-    }
+  function removeDefaultTheme() {
+    _.getAll(config.defaultTheme).forEach(function (link) {
+      link.remove();
+    });
+  }
 
-    return false;
+  function markEditor() {
+    const container = _.get(config.container, {
+      required: false
+    });
+
+    if (!container) return;
+
+    container.classList.add("pixie-editor");
+  }
+
+  function removeButton(command, btn) {
+    if (!config.remove.includes(command)) return false;
+
+    btn.remove();
+    return true;
   }
 
   function replaceIcon(command, btn) {
@@ -89,7 +106,7 @@ const PixieEditor = PixieKit("Editor", function (_) {
 
       if (!command) return;
 
-      if (removeButtons(command, btn)) return;
+      if (removeButton(command, btn)) return;
 
       replaceIcon(command, btn);
     });
@@ -97,16 +114,28 @@ const PixieEditor = PixieKit("Editor", function (_) {
     _.icons();
   }
 
+  function initEditor() {
+    markEditor();
+    customizeButtons();
+  }
+
   function init() {
-    const editor = _.get(config.editor, { required: false });
+    removeDefaultTheme();
+
+    const editor = _.get(config.editor, {
+      required: false
+    });
+
     if (!editor) return;
 
     _.waitFor(config.toolbar, {
       timeout: 10000
     })
+
       .then(function () {
-        customizeButtons();
+        initEditor();
       })
+
       .catch(function () {
         _.log("No he encontrado la toolbar del editor.");
       });
@@ -116,6 +145,8 @@ const PixieEditor = PixieKit("Editor", function (_) {
 
   return {
     init,
+    removeDefaultTheme,
+    markEditor,
     customizeButtons
   };
 
