@@ -1,11 +1,11 @@
 /*!
  * PixieNavbar.js
- * Módulo navbar para PixieKit
  * Requiere: pixiekit.js + lucide
- * Versión: 0.1.0
+ * Versión: 0.2.0
  */
 
 const PixieNavbar = PixieKit("Navbar", function (_) {
+
   const config = {
     originalNavbar: ".original-navbar",
 
@@ -13,7 +13,9 @@ const PixieNavbar = PixieKit("Navbar", function (_) {
     avatarBox: ".avatar-nav",
     usernameBox: ".username",
 
+    userNav: ".user-nav",
     adminNav: ".admin-nav",
+    guestNav: ".guest-nav",
 
     inboxLink: '.user-nav a[href*="/privmsg"]',
     logoutLink: '.user-nav a[href*="logout"]',
@@ -23,24 +25,72 @@ const PixieNavbar = PixieKit("Navbar", function (_) {
   };
 
   function getOriginalLink(hrefPart) {
-    const original = _.get(config.originalNavbar, { required: false });
+    const original = _.get(config.originalNavbar, {
+      required: false
+    });
+
     if (!original) return null;
 
-    return _.get(`a[href*="${hrefPart}"]`, original, { required: false });
+    return _.get(
+      `a[href*="${hrefPart}"]`,
+      original,
+      { required: false }
+    );
+  }
+
+  function hydrateVisibility() {
+    const userNav = _.get(config.userNav, {
+      required: false
+    });
+
+    const adminNav = _.get(config.adminNav, {
+      required: false
+    });
+
+    const guestNav = _.get(config.guestNav, {
+      required: false
+    });
+
+    if (_.isLogged()) {
+
+      if (userNav) userNav.hidden = false;
+      if (guestNav) guestNav.hidden = true;
+
+    } else {
+
+      if (userNav) userNav.hidden = true;
+      if (adminNav) adminNav.hidden = true;
+      if (guestNav) guestNav.hidden = false;
+
+    }
   }
 
   function hydrateUser() {
+
     const user = _.user();
 
-    const profileLink = _.get(config.profileLink, { required: false });
-    const avatarBox = _.get(config.avatarBox, { required: false });
-    const usernameBox = _.get(config.usernameBox, { required: false });
+    const profileLink = _.get(config.profileLink, {
+      required: false
+    });
+
+    const avatarBox = _.get(config.avatarBox, {
+      required: false
+    });
+
+    const usernameBox = _.get(config.usernameBox, {
+      required: false
+    });
 
     if (profileLink && user.id) {
       profileLink.href = `/u${user.id}`;
     }
 
+    if (usernameBox && user.name) {
+      usernameBox.textContent = user.name;
+    }
+
     if (avatarBox && user.avatar) {
+
       avatarBox.innerHTML = `
         <img
           src="${user.avatar}"
@@ -49,18 +99,20 @@ const PixieNavbar = PixieKit("Navbar", function (_) {
         >
       `;
     }
-
-    if (usernameBox && user.name) {
-      usernameBox.textContent = user.name;
-    }
   }
 
   function hydrateOriginalLinks() {
+
     const inboxOriginal = getOriginalLink("/privmsg");
     const logoutOriginal = getOriginalLink("logout");
 
-    const inboxLink = _.get(config.inboxLink, { required: false });
-    const logoutLink = _.get(config.logoutLink, { required: false });
+    const inboxLink = _.get(config.inboxLink, {
+      required: false
+    });
+
+    const logoutLink = _.get(config.logoutLink, {
+      required: false
+    });
 
     if (inboxOriginal && inboxLink) {
       inboxLink.href = inboxOriginal.href;
@@ -72,7 +124,11 @@ const PixieNavbar = PixieKit("Navbar", function (_) {
   }
 
   function hydrateAdmin() {
-    const adminNav = _.get(config.adminNav, { required: false });
+
+    const adminNav = _.get(config.adminNav, {
+      required: false
+    });
+
     if (!adminNav) return;
 
     if (window._userdata?.user_level !== 1) {
@@ -88,9 +144,13 @@ const PixieNavbar = PixieKit("Navbar", function (_) {
         ACP
       </a>
 
-      <button popovertarget="menuamin" class="drawer left">
+      <button
+        popovertarget="menuamin"
+        class="drawer left">
+
         <i data-lucide="wrench"></i>
         ADMIN
+
       </button>
     `;
 
@@ -100,23 +160,46 @@ const PixieNavbar = PixieKit("Navbar", function (_) {
   }
 
   function moveNotifications() {
-    _.waitFor(config.notifList, { timeout: 10000 })
-      .then(function (notifList) {
-        const target = _.get(config.notifTarget, { required: false });
-        if (!target) return;
 
-        target.appendChild(notifList);
-      })
-      .catch(function () {
-        _.log("No he encontrado la lista de notificaciones.");
-      });
+    _.waitFor(config.notifList, {
+      timeout: 10000
+    })
+
+    .then(function (notifList) {
+
+      const target = _.get(
+        config.notifTarget,
+        { required: false }
+      );
+
+      if (!target) return;
+
+      target.appendChild(notifList);
+
+    })
+
+    .catch(function () {
+
+      _.log(
+        "No he encontrado la lista de notificaciones."
+      );
+
+    });
+
   }
 
   function init() {
-    hydrateUser();
-    hydrateOriginalLinks();
-    hydrateAdmin();
-    moveNotifications();
+
+    hydrateVisibility();
+
+    if (_.isLogged()) {
+
+      hydrateUser();
+      hydrateOriginalLinks();
+      hydrateAdmin();
+      moveNotifications();
+
+    }
 
     _.icons();
   }
@@ -125,9 +208,11 @@ const PixieNavbar = PixieKit("Navbar", function (_) {
 
   return {
     init,
+    hydrateVisibility,
     hydrateUser,
     hydrateOriginalLinks,
     hydrateAdmin,
     moveNotifications
   };
+
 });
