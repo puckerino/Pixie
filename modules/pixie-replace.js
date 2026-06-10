@@ -20,7 +20,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "a",
       icon: "square-pen",
       text: "EDITAR",
-      classes: ["button, "button-action-post"]
+      classes: ["button", "button-action-post"]
     },
 
     {
