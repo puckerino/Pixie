@@ -1,8 +1,8 @@
 /*!
  * PixieFooter.js
- * Inserta estadísticas y usuarios conectados en el footer
+ * Inserta estadísticas, usuarios conectados y grupos en el footer
  * Requiere: pixiekit.js
- * Versión: 0.3.0
+ * Versión: 0.4.0
  */
 
 const PixieFooter = PixieKit("Footer", function (_) {
@@ -10,6 +10,7 @@ const PixieFooter = PixieKit("Footer", function (_) {
   const config = {
     target: "[data-pixie-footer]",
     source: "#footer-online",
+    groups: ".group-legend",
 
     vars: [
       "FORUMCOUNTUSER",
@@ -76,6 +77,52 @@ const PixieFooter = PixieKit("Footer", function (_) {
       onlineUsers: cloneInner(`${config.source} #online_users`),
       lastConnected: cloneInner(`${config.source} #last_connected`)
     };
+  }
+
+  function getGroups() {
+    const legend = _.get(config.groups, { required: false });
+    if (!legend) return [];
+
+    return _.getAll('a[href^="/g"]', legend).map(function (link) {
+      const title = link.getAttribute("title") || "";
+      const match = title.match(/Miembros del Grupo\s*:\s*(\d+)/i);
+
+      const name = (link.textContent || "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      return {
+        name,
+        href: link.href,
+        color: link.style.color || "",
+        count: match ? Number(match[1]) : null
+      };
+    });
+  }
+
+  function renderGroups(groups) {
+    if (!groups.length) return "";
+
+    return `
+      <section class="pixie-footer-groups">
+        <h4>GRUPOS</h4>
+
+        <div class="pixie-footer-group-list">
+          ${groups.map(function (group) {
+            return `
+              <a
+                href="${group.href}"
+                class="pixie-footer-group"
+                style="${group.color ? `--group-color:${group.color};` : ""}"
+              >
+                <span>${group.name}</span>
+                ${group.count !== null ? `<strong>${group.count}</strong>` : ""}
+              </a>
+            `;
+          }).join("")}
+        </div>
+      </section>
+    `;
   }
 
   function renderStats(vars) {
@@ -156,10 +203,12 @@ const PixieFooter = PixieKit("Footer", function (_) {
 
     const vars = await _.forumVars(config.vars);
     const onlineData = getOnlineData();
+    const groups = getGroups();
 
     target.innerHTML = `
       ${renderStats(vars)}
       ${renderOnline(onlineData)}
+      ${renderGroups(groups)}
     `;
   }
 
@@ -168,8 +217,10 @@ const PixieFooter = PixieKit("Footer", function (_) {
   return {
     init,
     getOnlineData,
+    getGroups,
     renderStats,
     renderOnline,
+    renderGroups,
     cleanUserList
   };
 
