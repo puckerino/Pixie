@@ -295,6 +295,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       selector: 'form[action="/search?search_id=watchsearch"] table#memberlist.table1',
       target: "self",
       replaceTag: "section",
+      removeAttrs: ["cellspacing"],
       classes: ["supervised-topics", "stack"]
     },
 
@@ -321,14 +322,6 @@ const PixieReplace = PixieKit("Replace", function (_) {
       selector: ".supervised-topics.stack td",
       target: "self",
       replaceTag: "span"
-    },
-    
-    {
-      selector: 'form[action="/search?search_id=watchsearch"] table#memberlist.table1',
-      target: "self",
-      replaceTag: "section",
-      removeAttrs: ["cellspacing"],
-      classes: ["supervised-topics", "stack"]
     },
 
     {
