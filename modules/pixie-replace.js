@@ -321,6 +321,22 @@ const PixieReplace = PixieKit("Replace", function (_) {
       selector: ".supervised-topics.stack td",
       target: "self",
       replaceTag: "span"
+    },
+    
+    {
+      selector: "label span[style]",
+      target: "self",
+      unwrap: true
+    },
+
+    {
+      selector: "label",
+      target: "self",
+
+      textReplace: {
+        " : ": "",
+        ":": ""
+      }
     }
   ];
 
@@ -459,6 +475,25 @@ const PixieReplace = PixieKit("Replace", function (_) {
     });
   }
 
+  function replaceTextNodes(target, replacements) {
+  if (!replacements || typeof replacements !== "object") return;
+
+  Array.from(target.childNodes).forEach(function (node) {
+
+    if (node.nodeType !== 3) return;
+
+    Object.entries(replacements).forEach(function ([search, replace]) {
+
+      node.nodeValue =
+        node.nodeValue
+          .split(search)
+          .join(replace);
+
+    });
+
+  });
+}
+
   function removeBlankTextNodes(target) {
     Array.from(target.childNodes).forEach(function (node) {
       if (
@@ -512,7 +547,15 @@ const PixieReplace = PixieKit("Replace", function (_) {
       removeClasses(target, rule.removeClasses);
       applyClasses(target, rule.classes);
 
-      removeTextContains(target, rule.removeTextContains);
+      removeTextContains(
+        target,
+        rule.removeTextContains
+      );
+
+      replaceTextNodes(
+        target,
+        rule.textReplace
+      );
 
       if (rule.removeBlankTextNodes) {
         removeBlankTextNodes(target);
