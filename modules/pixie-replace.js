@@ -32,6 +32,14 @@ const PixieReplace = PixieKit("Replace", function (_) {
     },
 
     {
+      selector: "img.i_icon_ip",
+      target: "a",
+      icon: "info",
+      text: "IP",
+      classes: ["button", "button-action-post"]
+    },
+
+    {
       selector: "img.i_icon_pm",
       target: "a",
       icon: "mail",
