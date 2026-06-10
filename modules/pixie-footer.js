@@ -2,7 +2,7 @@
  * PixieFooter.js
  * Inserta estadísticas y usuarios conectados en el footer
  * Requiere: pixiekit.js
- * Versión: 0.2.0
+ * Versión: 0.3.0
  */
 
 const PixieFooter = PixieKit("Footer", function (_) {
@@ -30,7 +30,6 @@ const PixieFooter = PixieKit("Footer", function (_) {
     if (!total) return null;
 
     const text = total.textContent || "";
-
     const numbers = text.match(/\d+/g) || [];
 
     return {
@@ -40,6 +39,35 @@ const PixieFooter = PixieKit("Footer", function (_) {
       invisible: Number(numbers[2] || 0),
       guests: Number(numbers[3] || 0)
     };
+  }
+
+  function cleanUserList(html, title) {
+    if (!html) return "";
+
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = html;
+
+    wrapper.querySelectorAll("br").forEach(function (br) {
+      br.remove();
+    });
+
+    let content = wrapper.innerHTML
+      .replace(/^.*?:/i, "")
+      .trim();
+
+    content = content.replace(/,\s*/g, "");
+
+    if (!content) return "";
+
+    return `
+      <div class="pixie-footer-users">
+        <h4>${title}</h4>
+
+        <div class="pixie-footer-user-list">
+          ${content}
+        </div>
+      </div>
+    `;
   }
 
   function getOnlineData() {
@@ -108,17 +136,15 @@ const PixieFooter = PixieKit("Footer", function (_) {
           </div>
         ` : ""}
 
-        ${data.onlineUsers ? `
-          <div class="pixie-footer-online-users">
-            ${data.onlineUsers}
-          </div>
-        ` : ""}
+        ${cleanUserList(
+          data.onlineUsers,
+          "CONECTADOS AHORA"
+        )}
 
-        ${data.lastConnected ? `
-          <div class="pixie-footer-last-connected">
-            ${data.lastConnected}
-          </div>
-        ` : ""}
+        ${cleanUserList(
+          data.lastConnected,
+          "CONECTADOS EN LAS ÚLTIMAS 24H"
+        )}
 
       </section>
     `;
@@ -143,7 +169,8 @@ const PixieFooter = PixieKit("Footer", function (_) {
     init,
     getOnlineData,
     renderStats,
-    renderOnline
+    renderOnline,
+    cleanUserList
   };
 
 });
