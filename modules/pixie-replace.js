@@ -353,7 +353,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
     },
     
     {
-      selector: ".sceditor-dropdown[style]",
+      selector: "#textarea_content[style]",
       target: "self",
       removeAttrs: ["style"]
     }
