@@ -2,7 +2,7 @@
  * PixieReplace.js
  * Sustituye elementos de ForoActivo por texto, iconos, clases o atributos
  * Requiere: pixiekit.js + lucide
- * Versión: 0.2.0
+ * Versión: 0.3.0
  */
 
 const PixieReplace = PixieKit("Replace", function (_) {
@@ -106,16 +106,26 @@ const PixieReplace = PixieKit("Replace", function (_) {
   }
 
   function applyContent(target, rule) {
-    if (rule.text) {
-      target.textContent = rule.text;
-    }
-
     if (rule.html) {
       target.innerHTML = rule.html;
+      return;
+    }
+
+    if (rule.icon && rule.text) {
+      target.innerHTML = `
+        ${icon(rule.icon)}
+        <span>${rule.text}</span>
+      `;
+      return;
     }
 
     if (rule.icon) {
       target.innerHTML = icon(rule.icon);
+      return;
+    }
+
+    if (rule.text) {
+      target.textContent = rule.text;
     }
   }
 
