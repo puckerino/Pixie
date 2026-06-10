@@ -1,7 +1,7 @@
 /*!
  * PixieKit.js
  * Mini toolkit para scripts de ForoActivo
- * Autor/a: Puck
+ * Autor: Puck
  * Versión: 0.1.0
  */
 
@@ -74,22 +74,22 @@
         return el;
       },
 
+      icons() {
+        if (!window.lucide) return;
+
+        window.lucide.createIcons({
+          attrs: {
+            "stroke-width": 1.75
+          }
+        });
+      },
+
       attr(el, name, value) {
         if (!el) return null;
         if (value === undefined) return el.getAttribute(name);
         el.setAttribute(name, value);
         return value;
       },
-
-        icons() {
-    if (!window.lucide) return;
-
-    window.lucide.createIcons({
-      attrs: {
-        "stroke-width": 1.75
-      }
-    });
-  },
 
       addClass(el, className) {
         if (!el) return;
@@ -183,6 +183,7 @@
 
         return new Promise((resolve, reject) => {
           const found = root.querySelector(selector);
+
           if (found) {
             resolve(found);
             return;
