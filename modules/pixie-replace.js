@@ -10,8 +10,9 @@ const PixieReplace = PixieKit("Replace", function (_) {
     {
       selector: "img.i_icon_quote, img#i_icon_quote",
       target: "a",
+      icon: "quote",
       text: "CITAR",
-      classes: ["button", "button-action"]
+      classes: ["button", "button-action-post"]
     },
 
     {
