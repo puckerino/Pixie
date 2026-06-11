@@ -1,0 +1,102 @@
+/* =========== UCP ================ */
+
+.panel-tabs {
+    display: grid;
+    grid-template-columns: 20vw 1fr;
+
+    @media (max-width: 700px) {
+        grid-template-columns: 1fr;
+    }
+
+    #tabs ul {
+        height: max-content;
+        position: sticky;
+        top: calc(var(--nav-size) + 1rem);
+        display: flex;
+        flex-direction: column;
+
+        @media (max-width: 700px) {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        li {
+            display: flex;
+            align-items: center;
+
+            a {
+                font: 1rem var(--f-label);
+                display: flex;
+                align-items: center;
+                gap: var(--spacing-s);
+                width: 100%;
+                padding: var(--spacing-s);
+                border-radius: .5rem;
+                corner-shape: squircle;
+
+                &:before {
+                    content: "";
+                    width: .75rem;
+                    height: .75rem;
+                    background: var(--text1);
+
+                    mask: var(--icon-chevron-right) center / contain no-repeat;
+                    -webkit-mask: var(--icon-chevron-right) center / contain no-repeat;
+                }
+
+                &:hover {
+                    background: var(--mono2);
+                }
+
+                .activetab & {
+                    font-weight: bold;
+                    background: var(--accent);
+
+                    &:hover {
+                        background: var(--accent);
+                    }
+                }
+
+
+            }
+        }
+    }
+}
+
+
+
+
+.supervised-topic {
+    width: 100%;
+    display: grid;
+    grid-template-columns: max-content 1fr .5fr .5fr .5fr .5fr 1fr max-content;
+    gap: var(--spacing-s);
+    border: 1px solid var(--mono4);
+    padding: var(--spacing-s);
+    border-radius: .5rem;
+    corner-shape: squircle;
+
+    &>* {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-s);
+    }
+
+    &>*:nth-child(2) {
+        font: bold 1rem var(--f-title);
+    }
+
+    &>*:nth-child(4),
+    &>*:nth-child(6) {
+        font: .75rem var(--f-mono);
+    }
+
+    &>*:nth-child(4):after {
+        content: "VISUALIZACIONES";
+    }
+
+    &>*:nth-child(6):after {
+        content: "RESPUESTAS";
+    }
+
+}
