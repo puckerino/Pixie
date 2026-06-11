@@ -186,8 +186,15 @@ DETAILS
 
 details summary {
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-s);
 
     &::marker {
+        content: "";
+    }
+
+    &::before {
         transition: all .3s ease-in-out;
         content: "";
         height: 1rem;
@@ -198,7 +205,7 @@ details summary {
     }
 }
 
-details[open] summary::marker {
+details[open] summary::before {
     transition: all .3s ease-in-out;
     transform: rotate(45deg);
 }
