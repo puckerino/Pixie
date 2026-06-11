@@ -17,5 +17,6 @@
 .sceditor-dropdown {
   position: absolute;
   position-anchor: --editorbutton;
+  position-area: center right;
   transition: all .2s ease-in-out;
 }
