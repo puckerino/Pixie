@@ -207,7 +207,7 @@ details summary {
 
 details[open] summary::before {
     transition: all .3s ease-in-out;
-    transform: rotate(45deg);
+    transform: rotate(90deg);
 }
 
 details::details-content {
