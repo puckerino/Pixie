@@ -9,14 +9,17 @@
   justify-content: space-around;
 }
 
-.sceditor-button {
-  anchor-name: --editorbutton;
-  anchor-scope: --editorbutton;
+.sceditor-button[data-sceditor-command="mention"] {
+  anchor-name: --mention-button;
+}
+
+.sceditor-dropdown.sceditor-mention {
+  position-anchor: --mention-button;
 }
 
 .sceditor-dropdown {
   position: absolute;
-  position-anchor: --editorbutton;
+  inset: unset !important;
   position-area: center right;
   transition: all .2s ease-in-out;
 }
