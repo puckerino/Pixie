@@ -167,19 +167,19 @@ const PixieReplace = PixieKit("Replace", function (_) {
     {
       selector: ".group-buttons",
       target: "self",
-      removeTextContains: "::"
+      removeTextMatching: /::/
     },
 
     {
       selector: "menu.form-list",
       target: "self",
-      removeBlankTextNodes: true
+      removeTextMatching: /^\s*(?:\u00a0)*\s*$/
     },
 
     {
       selector: ".forum .lastpost .username",
       target: "self",
-      removeBlankTextNodes: true
+      removeTextMatching: /^\s*(?:\u00a0)*\s*$/
     },
 
     {
@@ -350,6 +350,12 @@ const PixieReplace = PixieKit("Replace", function (_) {
       selector: ".sceditor-group",
       target: "self",
       unwrap: true
+    },
+
+    {
+      selector: ".post-options menu:last-child",
+      target: "self",
+      removeTextMatching: /^\s*(?:\u00a0)*\s*$/
     }
   ];
 
@@ -477,19 +483,6 @@ const PixieReplace = PixieKit("Replace", function (_) {
     target.setAttribute("aria-label", tooltip);
   }
 
-  function removeTextContains(target, text) {
-    if (!text) return;
-
-    Array.from(target.childNodes).forEach(function (node) {
-      if (
-        node.nodeType === 3 &&
-        node.nodeValue.includes(text)
-      ) {
-        node.remove();
-      }
-    });
-  }
-
   function replaceTextNodes(target, replacements) {
     if (!replacements || typeof replacements !== "object") return;
 
@@ -507,16 +500,23 @@ const PixieReplace = PixieKit("Replace", function (_) {
     }
   }
 
-  function removeBlankTextNodes(target) {
-    Array.from(target.childNodes).forEach(function (node) {
-      if (
-        node.nodeType === 3 &&
-        node.nodeValue.replace(/\u00a0/g, "").trim() === ""
-      ) {
-        node.remove();
-      }
-    });
-  }
+  function removeTextNodesMatching(target, pattern) {
+  if (!pattern) return;
+
+  const regex =
+    pattern instanceof RegExp
+      ? pattern
+      : new RegExp(pattern);
+
+  Array.from(target.childNodes).forEach(function (node) {
+    if (
+      node.nodeType === 3 &&
+      regex.test(node.nodeValue)
+    ) {
+      node.remove();
+    }
+  });
+}
 
   function insertAfter(target, html) {
     if (!html) return;
@@ -578,12 +578,15 @@ function prependHTML(target, html) {
         return;
       }
 
-      removeTextContains(target, rule.removeTextContains);
-      replaceTextNodes(target, rule.textReplace);
+removeTextNodesMatching(
+  target,
+  rule.removeTextMatching
+);
 
-      if (rule.removeBlankTextNodes) {
-        removeBlankTextNodes(target);
-      }
+replaceTextNodes(
+  target,
+  rule.textReplace
+);
 
     insertBefore(target, rule.beforeHTML);
     prependHTML(target, rule.prependHTML);
