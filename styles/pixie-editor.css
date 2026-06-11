@@ -62,7 +62,7 @@
 
 .sceditor-wrap {
   display: grid;
-  grid-template-columns: 20vw 1fr;
+  grid-template-columns: max-content 1fr;
 
   .status {
     grid-column: 1 / -1;
