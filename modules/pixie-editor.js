@@ -2,7 +2,7 @@
  * PixieEditor.js
  * Personaliza el editor SCEditor de ForoActivo
  * Requiere: pixiekit.js + lucide
- * Versión: 0.3.0
+ * Versión: 0.3.1
  */
 
 const PixieEditor = PixieKit("Editor", function (_) {
@@ -12,7 +12,6 @@ const PixieEditor = PixieKit("Editor", function (_) {
     container: ".sceditor-container",
     toolbar: ".sceditor-toolbar",
     buttons: ".sceditor-button",
-    dropdowns: ".sceditor-dropdown",
 
     defaultTheme: 'link[href*="fa.default.min.css"]',
 
@@ -68,9 +67,6 @@ const PixieEditor = PixieKit("Editor", function (_) {
     ]
   };
 
-  let dropdownObserver = null;
-  let isDropdownCleanerBound = false;
-
   function icon(name) {
     return `<i data-lucide="${name}"></i>`;
   }
@@ -99,7 +95,9 @@ const PixieEditor = PixieKit("Editor", function (_) {
   }
 
   function replaceIcon(command, btn) {
-    if (!Object.prototype.hasOwnProperty.call(config.icons, command)) return;
+    if (!Object.prototype.hasOwnProperty.call(config.icons, command)) {
+      return;
+    }
 
     btn.innerHTML = icon(config.icons[command]);
     btn.classList.add("pixie-editor-icon");
@@ -123,58 +121,9 @@ const PixieEditor = PixieKit("Editor", function (_) {
     _.icons();
   }
 
-  function cleanDropdownStyles() {
-    document
-      .querySelectorAll(config.dropdowns)
-      .forEach(function (dropdown) {
-        dropdown.style.setProperty("inset", "auto", "important");
-        dropdown.style.setProperty("top", "auto", "important");
-        dropdown.style.setProperty("left", "auto", "important");
-        dropdown.style.setProperty("right", "auto", "important");
-        dropdown.style.setProperty("bottom", "auto", "important");
-        dropdown.style.setProperty("transform", "none", "important");
-        dropdown.style.setProperty("margin-top", "0", "important");
-      });
-  }
-
-  function bindDropdownCleaner() {
-    if (isDropdownCleanerBound) return;
-
-    isDropdownCleanerBound = true;
-
-    document.addEventListener("click", function (event) {
-      const button = event.target.closest(config.buttons);
-
-      if (!button) return;
-
-      setTimeout(cleanDropdownStyles, 0);
-      setTimeout(cleanDropdownStyles, 25);
-      setTimeout(cleanDropdownStyles, 50);
-      setTimeout(cleanDropdownStyles, 100);
-    });
-  }
-
-  function observeDropdowns() {
-    if (dropdownObserver) return;
-
-    dropdownObserver = new MutationObserver(function () {
-      cleanDropdownStyles();
-    });
-
-    dropdownObserver.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["style"]
-    });
-  }
-
   function initEditor() {
     markEditor();
     customizeButtons();
-    bindDropdownCleaner();
-    observeDropdowns();
-    cleanDropdownStyles();
   }
 
   function init() {
@@ -205,9 +154,7 @@ const PixieEditor = PixieKit("Editor", function (_) {
     init,
     removeDefaultTheme,
     markEditor,
-    customizeButtons,
-    cleanDropdownStyles,
-    observeDropdowns
+    customizeButtons
   };
 
 });
