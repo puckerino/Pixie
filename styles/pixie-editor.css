@@ -44,3 +44,27 @@
     text-align: left;
   }
 }
+
+#sce_smilies_body {
+  width: 100%!important;
+  padding: 0!important;
+}
+
+.sceditor-wrap {
+  display: grid;
+  grid-template-columns: 20vw 1fr;
+
+  .status {
+    grid-column: 1 / -1;
+  }
+
+  .group-buttons {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-s);
+
+    input.button {
+      flex: 1;
+    }
+  }
+}
