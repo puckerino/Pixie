@@ -20,10 +20,14 @@
 .sceditor-dropdown {
   margin-top: var(--spacing-xs) !important;
   border-radius: var(--br);
-  background: var(--mono2);
+  background: var(--mono1);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
+  padding: var(--spacing-s);
+  border-radius: .5rem;
+  corner-shape: squircle;
+  border: 1px solid var(--mono4);
 
   & > div {
     display: flex;
