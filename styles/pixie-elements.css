@@ -188,6 +188,7 @@ details summary {
     cursor: pointer;
 
     &::marker {
+        transition: all .3s ease-in-out;
         content: "";
         height: 1rem;
         aspect-ratio: 1;
@@ -195,6 +196,11 @@ details summary {
         mask: var(--icon-chevron-right) center / contain no-repeat;
         -webkit-mask: var(--icon-chevron-right) center / contain no-repeat;
     }
+}
+
+details[open] summary::marker {
+    transition: all .3s ease-in-out;
+    transform: rotate(45deg);
 }
 
 details::details-content {
