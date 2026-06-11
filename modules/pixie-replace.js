@@ -302,7 +302,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "self",
       replaceTag: "section",
       removeAttrs: ["cellspacing"],
-      classes: ["supervised-topics", "stack"]
+      classes: ["supervised-topics", "stack", "column"]
     },
 
     {
