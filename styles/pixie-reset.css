@@ -49,6 +49,7 @@ a, a:visited {
 @media (prefers-reduced-motion: no-preference) {
   html {
     interpolate-size: allow-keywords;
+	scroll-behavior: smooth;
   }
 }
 
