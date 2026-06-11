@@ -6,6 +6,11 @@
   position: relative;
 }
 
+.sceditor-container > textarea {
+  outline: 2px solid var(--mono4);
+  corner-shape: square square squircle squircle;
+}
+
 .sceditor-toolbar {
   background: var(--accent);
   padding: var(--spacing-s);
