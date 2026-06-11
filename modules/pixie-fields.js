@@ -1,8 +1,8 @@
 /*!
  * PixieFields.js
- * Normaliza, estructura y mueve campos de perfil dentro de los posts
+ * Normaliza, estructura y mueve campos de perfil dentro de los posts y perfiles
  * Requiere: pixiekit.js
- * Versión: 0.4.0
+ * Versión: 0.4.1
  */
 
 const PixieFields = PixieKit("Fields", function (_) {
@@ -52,8 +52,13 @@ const PixieFields = PixieKit("Fields", function (_) {
   }
 
   function getFieldValue(field, opts) {
-    const clone = field.cloneNode(true);
+    const uneditable = field.querySelector(".field_uneditable");
 
+    if (uneditable) {
+      return cleanText(uneditable.textContent);
+    }
+
+    const clone = field.cloneNode(true);
     const cloneLabel = clone.querySelector(opts.label);
 
     if (cloneLabel) {
@@ -76,14 +81,19 @@ const PixieFields = PixieKit("Fields", function (_) {
   }
 
   function rebuildField(field, data, opts) {
+    const sourceValue = field.querySelector(".field_uneditable");
 
-    const clone = field.cloneNode(true);
+    const clone = sourceValue
+      ? sourceValue.cloneNode(true)
+      : field.cloneNode(true);
 
     const label = clone.querySelector(opts.label);
 
     if (label) {
       label.remove();
     }
+
+    clone.classList.remove("field_uneditable");
 
     field.innerHTML = "";
 
@@ -107,7 +117,6 @@ const PixieFields = PixieKit("Fields", function (_) {
   }
 
   function saveField(post, data) {
-
     if (!fieldStore.has(post)) {
       fieldStore.set(post, {});
     }
@@ -116,7 +125,6 @@ const PixieFields = PixieKit("Fields", function (_) {
   }
 
   function moveValueOnly(field, target) {
-
     const value = field.querySelector(".field-value");
 
     if (!value) return false;
@@ -131,7 +139,6 @@ const PixieFields = PixieKit("Fields", function (_) {
   }
 
   function renderToPlaceholder(field, post, slug, opts) {
-
     const fullTarget = post.querySelector(
       `[${opts.renderAttr}="${slug}"]`
     );
@@ -153,7 +160,6 @@ const PixieFields = PixieKit("Fields", function (_) {
   }
 
   function moveByConfig(field, post, slug, opts) {
-
     const targetSelector =
       getMoveTarget(slug, opts.move);
 
@@ -163,7 +169,6 @@ const PixieFields = PixieKit("Fields", function (_) {
       post.querySelector(targetSelector);
 
     if (!target) {
-
       _.log(
         `No encuentro ${targetSelector} para mover ${slug}`
       );
@@ -177,7 +182,6 @@ const PixieFields = PixieKit("Fields", function (_) {
   }
 
   function processField(field, post, opts) {
-
     const label =
       field.querySelector(opts.label);
 
@@ -236,7 +240,6 @@ const PixieFields = PixieKit("Fields", function (_) {
   }
 
   function processPost(post, opts) {
-
     const fieldsBox =
       post.querySelector(
         opts.fieldsBox
@@ -267,7 +270,6 @@ const PixieFields = PixieKit("Fields", function (_) {
   }
 
   function init(options = {}) {
-
     const opts = Object.assign(
       {},
       config,
@@ -276,17 +278,14 @@ const PixieFields = PixieKit("Fields", function (_) {
 
     _.getAll(opts.post)
       .forEach(function (post) {
-
         processPost(
           post,
           opts
         );
-
       });
   }
 
   function get(post, slug) {
-
     const fields =
       fieldStore.get(post);
 
