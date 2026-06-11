@@ -103,7 +103,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
     {
       selector: "#page-footer .rightside",
       target: "self",
-      removeTextContains: "|"
+      removeTextMatching: /\|/
     },
 
     {
