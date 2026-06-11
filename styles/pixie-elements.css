@@ -184,6 +184,19 @@ select {
 DETAILS
 ================================*/
 
+details summary {
+    cursor: pointer;
+
+    &::marker {
+        content: "";
+        height: 1rem;
+        aspect-ratio: 1;
+        background: var(--text1);
+        mask: var(--icon-chevron-right) center / contain no-repeat;
+        -webkit-mask: var(--icon-chevron-right) center / contain no-repeat;
+    }
+}
+
 details::details-content {
   height: 0;
   overflow-y: clip;
