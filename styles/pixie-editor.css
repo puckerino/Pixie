@@ -8,3 +8,14 @@
   display: flex;
   justify-content: space-around;
 }
+
+.sceditor-button {
+  anchor-name: --editorbutton;
+  anchor-scope: --editorbutton;
+}
+
+.sceditor-dropdown {
+  position: absolute;
+  position-anchor: --editorbutton;
+  transition: all .2s ease-in-out;
+}
