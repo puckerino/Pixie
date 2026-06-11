@@ -20,5 +20,15 @@
 .sceditor-dropdown {
   margin-top: var(--spacing-xs) !important;
   border-radius: var(--br);
-  background: var(--surface);
+  background: var(--mono2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+
+  & > div {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    text-align: left;
+  }
 }
