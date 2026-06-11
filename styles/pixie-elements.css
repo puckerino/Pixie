@@ -3,7 +3,7 @@
 input[type="checkbox"] {
     cursor: pointer;
     appearance: none;
-    width: var(--f-base);
+    width: 1rem;
     aspect-ratio: 1;
     border-radius: var(--br);
     corner-shape: squircle;
