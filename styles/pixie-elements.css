@@ -21,7 +21,7 @@ input[type="checkbox"] {
         position: absolute;
         width: .75rem;
         height: .75rem;
-        background: currentColor;
+        background: var(--accent);
 
         mask: var(--icon-check) center / contain no-repeat;
         -webkit-mask: var(--icon-check) center / contain no-repeat;
