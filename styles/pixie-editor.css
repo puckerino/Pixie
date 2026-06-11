@@ -9,29 +9,12 @@
   justify-content: space-around;
 }
 
-.sceditor-button[data-sceditor-command="mention"] {
-  anchor-name: --mention-button;
-}
-
-.sceditor-dropdown.sceditor-mention {
-  left: 0 !important;
-  top: 0 !important;
-
-  position-anchor: --mention-button;
-  position-area: bottom center;
-
-  translate: anchor(left) anchor(bottom);
+.sceditor-button {
+  position: relative;
 }
 
 .sceditor-dropdown {
-  position: absolute;
-inset: auto !important;
-
-  left: auto !important;
-  top: auto !important;
-  right: auto !important;
-  bottom: auto !important;
-  transform: none !important;
-  position-area: center bottom;
-  transition: all .2s ease-in-out;
+  margin-top: var(--spacing-xs) !important;
+  border-radius: var(--br);
+  background: var(--surface);
 }
