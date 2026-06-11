@@ -119,6 +119,19 @@ const PixieEditor = PixieKit("Editor", function (_) {
     _.icons();
   }
 
+  function cleanDropdownStyles() {
+  document
+    .querySelectorAll(".sceditor-dropdown")
+    .forEach(function (dropdown) {
+      dropdown.style.removeProperty("top");
+      dropdown.style.removeProperty("left");
+      dropdown.style.removeProperty("right");
+      dropdown.style.removeProperty("bottom");
+      dropdown.style.removeProperty("margin-top");
+      dropdown.style.removeProperty("transform");
+    });
+}
+
   function initEditor() {
     markEditor();
     customizeButtons();
