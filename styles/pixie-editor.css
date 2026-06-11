@@ -7,6 +7,7 @@
 }
 
 .sceditor-container > textarea {
+  width: 100% !important;
   outline: 0 !important;
   corner-shape: square square squircle squircle;
 }
