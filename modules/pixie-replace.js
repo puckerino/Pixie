@@ -257,7 +257,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       selector: ".drafts-list .table1",
       target: "self",
       replaceTag: "section",
-      classes: ["drafts", "stack"]
+      classes: ["drafts", "stack", "column"]
     },
 
     {
