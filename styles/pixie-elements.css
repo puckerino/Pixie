@@ -53,7 +53,7 @@ RADIO
 input[type="radio"] {
     cursor: pointer;
     appearance: none;
-    width: 1ren;
+    width: 1rem;
     aspect-ratio: 1;
     border-radius: 50%;
     background-color: var(--mono3);
