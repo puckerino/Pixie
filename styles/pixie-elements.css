@@ -179,3 +179,18 @@ select {
     }
   }
 }
+
+/* ===============================
+DETAILS
+================================*/
+
+details::details-content {
+  height: 0;
+  overflow-y: clip;
+  transition: 300ms allow-discrete;
+}
+
+details[open]::details-content {
+  /* Interpolation only */
+  height: calc-size(auto, size);
+}
