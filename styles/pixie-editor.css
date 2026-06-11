@@ -2,6 +2,10 @@
   width: 100% !important;
 }
 
+.sceditor-container {
+  position: relative;
+}
+
 .sceditor-toolbar {
   background: var(--accent);
   padding: var(--spacing-s);
