@@ -7,7 +7,7 @@
 }
 
 .sceditor-container > textarea {
-  outline: 2px solid var(--mono4);
+  outline: 0 !important;
   corner-shape: square square squircle squircle;
 }
 
