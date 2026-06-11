@@ -17,6 +17,8 @@
   padding: var(--spacing-s);
   display: flex;
   justify-content: space-around;
+  border-radius: .5rem;
+  corner-shape: squircle squircle square square;
 }
 
 .sceditor-button {
