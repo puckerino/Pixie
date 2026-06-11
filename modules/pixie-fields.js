@@ -10,7 +10,7 @@ const PixieFields = PixieKit("Fields", function (_) {
     post: ".post, .profile",
     fieldsBox: ".profile-fields",
     field: ".profile-field",
-    label: ".label",
+    label: ".label, .profile .profile-field > span",
 
     renderAttr: "data-profile-render",
     renderValueAttr: "data-profile-render-value",
