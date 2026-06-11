@@ -7,7 +7,7 @@
 
 const PixieFields = PixieKit("Fields", function (_) {
   const config = {
-    post: ".post",
+    post: ".post, .profile",
     fieldsBox: ".profile-fields",
     field: ".profile-field",
     label: ".label",
