@@ -43,7 +43,6 @@ const PixieEditor = PixieKit("Editor", function (_) {
       font: "case-sensitive",
 
       mention: "at-sign",
-      emoticon: "smile",
       source: "file-code"
     },
 
@@ -63,7 +62,8 @@ const PixieEditor = PixieKit("Editor", function (_) {
       "twemojifa",
       "subscript",
       "superscript",
-      "fascroll"
+      "fascroll",
+      "emoticon"
     ]
   };
 
