@@ -14,7 +14,13 @@
 }
 
 .sceditor-dropdown.sceditor-mention {
+  left: 0 !important;
+  top: 0 !important;
+
   position-anchor: --mention-button;
+  position-area: bottom center;
+
+  translate: anchor(left) anchor(bottom);
 }
 
 .sceditor-dropdown {
