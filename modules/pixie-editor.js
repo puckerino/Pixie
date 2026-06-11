@@ -2,7 +2,7 @@
  * PixieEditor.js
  * Personaliza el editor SCEditor de ForoActivo
  * Requiere: pixiekit.js + lucide
- * Versión: 0.2.1
+ * Versión: 0.3.0
  */
 
 const PixieEditor = PixieKit("Editor", function (_) {
@@ -12,6 +12,7 @@ const PixieEditor = PixieKit("Editor", function (_) {
     container: ".sceditor-container",
     toolbar: ".sceditor-toolbar",
     buttons: ".sceditor-button",
+    dropdowns: ".sceditor-dropdown",
 
     defaultTheme: 'link[href*="fa.default.min.css"]',
 
@@ -67,6 +68,9 @@ const PixieEditor = PixieKit("Editor", function (_) {
     ]
   };
 
+  let dropdownObserver = null;
+  let isDropdownCleanerBound = false;
+
   function icon(name) {
     return `<i data-lucide="${name}"></i>`;
   }
@@ -119,35 +123,26 @@ const PixieEditor = PixieKit("Editor", function (_) {
     _.icons();
   }
 
-  /**
-   * Elimina los estilos inline que SCEditor
-   * usa para posicionar los dropdowns.
-   * Permite que CSS Anchor Positioning
-   * tome el control.
-   */
   function cleanDropdownStyles() {
     document
-      .querySelectorAll(".sceditor-dropdown")
+      .querySelectorAll(config.dropdowns)
       .forEach(function (dropdown) {
-
-        dropdown.style.removeProperty("top");
-        dropdown.style.removeProperty("left");
-        dropdown.style.removeProperty("right");
-        dropdown.style.removeProperty("bottom");
-        dropdown.style.removeProperty("margin-top");
-        dropdown.style.removeProperty("transform");
-
+        dropdown.style.setProperty("inset", "auto", "important");
+        dropdown.style.setProperty("top", "auto", "important");
+        dropdown.style.setProperty("left", "auto", "important");
+        dropdown.style.setProperty("right", "auto", "important");
+        dropdown.style.setProperty("bottom", "auto", "important");
+        dropdown.style.setProperty("transform", "none", "important");
+        dropdown.style.setProperty("margin-top", "0", "important");
       });
   }
 
-  /**
-   * Detecta clicks en botones del editor
-   * y limpia los estilos del dropdown
-   * justo después de que SCEditor lo genere.
-   */
   function bindDropdownCleaner() {
-    document.addEventListener("click", function (event) {
+    if (isDropdownCleanerBound) return;
 
+    isDropdownCleanerBound = true;
+
+    document.addEventListener("click", function (event) {
       const button = event.target.closest(config.buttons);
 
       if (!button) return;
@@ -156,7 +151,21 @@ const PixieEditor = PixieKit("Editor", function (_) {
       setTimeout(cleanDropdownStyles, 25);
       setTimeout(cleanDropdownStyles, 50);
       setTimeout(cleanDropdownStyles, 100);
+    });
+  }
 
+  function observeDropdowns() {
+    if (dropdownObserver) return;
+
+    dropdownObserver = new MutationObserver(function () {
+      cleanDropdownStyles();
+    });
+
+    dropdownObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["style"]
     });
   }
 
@@ -164,6 +173,8 @@ const PixieEditor = PixieKit("Editor", function (_) {
     markEditor();
     customizeButtons();
     bindDropdownCleaner();
+    observeDropdowns();
+    cleanDropdownStyles();
   }
 
   function init() {
@@ -195,7 +206,8 @@ const PixieEditor = PixieKit("Editor", function (_) {
     removeDefaultTheme,
     markEditor,
     customizeButtons,
-    cleanDropdownStyles
+    cleanDropdownStyles,
+    observeDropdowns
   };
 
 });
