@@ -5,10 +5,10 @@ input[type="checkbox"] {
     appearance: none;
     width: 1rem;
     aspect-ratio: 1;
-    border-radius: var(--br);
+    border-radius: .5rem;
     corner-shape: squircle;
-    background-color: var(--input-surface);
-    border: 1px solid var(--input-border);
+    background-color: var(--mono3);
+    border: 1px solid var(--mono4);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -30,9 +30,9 @@ input[type="checkbox"] {
     }
 
     &:checked {
-        background: var(--accent-solid1);
-        outline: 2px solid var(--accent-border2);
-        color: var(--mono-contrast-text2);
+        background: var(--accent);
+        outline: 2px solid color-mix(in srgb, var(--accent), transparent 20%);
+        color: var(--text);
 
         &::before {
             opacity: 1;
@@ -52,12 +52,12 @@ input[type="radio"] {
     width: var(--f-base);
     aspect-ratio: 1;
     border-radius: 50%;
-    background-color: var(--input-surface);
-    border: 1px solid var(--input-border);
+    background-color: var(--mono3);
+    border: 1px solid var(--mono4);
     transition: all .3s ease-in-out;
 
     &:checked {
-        background: var(--accent-solid1);
+        background: var(--accent);
     }
 
 }
