@@ -2,7 +2,7 @@
   box-sizing: border-box;
 }
 
-#fa_toolbar, div[style="overflow:visible"], div[style="height:3px"], .group-icon:empty, a[href="#top"] {
+#fa_toolbar, div[style="overflow:visible"], div[style="height:3px"], .group-icon:empty, a[href="#top"], li:has(a[href="/search?search_id=favouritesearch"]) {
   display: none!important;
 }
 
