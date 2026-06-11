@@ -2,7 +2,7 @@
  * PixieEditor.js
  * Personaliza el editor SCEditor de ForoActivo
  * Requiere: pixiekit.js + lucide
- * Versión: 0.2.0
+ * Versión: 0.2.1
  */
 
 const PixieEditor = PixieKit("Editor", function (_) {
@@ -119,22 +119,51 @@ const PixieEditor = PixieKit("Editor", function (_) {
     _.icons();
   }
 
+  /**
+   * Elimina los estilos inline que SCEditor
+   * usa para posicionar los dropdowns.
+   * Permite que CSS Anchor Positioning
+   * tome el control.
+   */
   function cleanDropdownStyles() {
-  document
-    .querySelectorAll(".sceditor-dropdown")
-    .forEach(function (dropdown) {
-      dropdown.style.removeProperty("top");
-      dropdown.style.removeProperty("left");
-      dropdown.style.removeProperty("right");
-      dropdown.style.removeProperty("bottom");
-      dropdown.style.removeProperty("margin-top");
-      dropdown.style.removeProperty("transform");
+    document
+      .querySelectorAll(".sceditor-dropdown")
+      .forEach(function (dropdown) {
+
+        dropdown.style.removeProperty("top");
+        dropdown.style.removeProperty("left");
+        dropdown.style.removeProperty("right");
+        dropdown.style.removeProperty("bottom");
+        dropdown.style.removeProperty("margin-top");
+        dropdown.style.removeProperty("transform");
+
+      });
+  }
+
+  /**
+   * Detecta clicks en botones del editor
+   * y limpia los estilos del dropdown
+   * justo después de que SCEditor lo genere.
+   */
+  function bindDropdownCleaner() {
+    document.addEventListener("click", function (event) {
+
+      const button = event.target.closest(config.buttons);
+
+      if (!button) return;
+
+      setTimeout(cleanDropdownStyles, 0);
+      setTimeout(cleanDropdownStyles, 25);
+      setTimeout(cleanDropdownStyles, 50);
+      setTimeout(cleanDropdownStyles, 100);
+
     });
-}
+  }
 
   function initEditor() {
     markEditor();
     customizeButtons();
+    bindDropdownCleaner();
   }
 
   function init() {
@@ -150,13 +179,13 @@ const PixieEditor = PixieKit("Editor", function (_) {
       timeout: 10000
     })
 
-      .then(function () {
-        initEditor();
-      })
+    .then(function () {
+      initEditor();
+    })
 
-      .catch(function () {
-        _.log("No he encontrado la toolbar del editor.");
-      });
+    .catch(function () {
+      _.log("No he encontrado la toolbar del editor.");
+    });
   }
 
   _.ready(init);
@@ -165,7 +194,8 @@ const PixieEditor = PixieKit("Editor", function (_) {
     init,
     removeDefaultTheme,
     markEditor,
-    customizeButtons
+    customizeButtons,
+    cleanDropdownStyles
   };
 
 });
