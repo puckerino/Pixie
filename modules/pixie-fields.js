@@ -2,7 +2,7 @@
  * PixieFields.js
  * Normaliza, estructura y mueve campos de perfil dentro de los posts y perfiles
  * Requiere: pixiekit.js
- * Versión: 0.4.1
+ * Versión: 0.5.0
  */
 
 const PixieFields = PixieKit("Fields", function (_) {
@@ -46,8 +46,35 @@ const PixieFields = PixieKit("Fields", function (_) {
       .trim();
   }
 
-  function getLabelName(label) {
-    return cleanText(label.textContent)
+  function findLabelTextNode(field) {
+    return Array.from(field.childNodes)
+      .find(function (node) {
+        return (
+          node.nodeType === 3 &&
+          cleanText(node.nodeValue).includes(":")
+        );
+      });
+  }
+
+  function removeFirstLabelTextNode(field) {
+    const firstText = findLabelTextNode(field);
+
+    if (firstText) {
+      firstText.remove();
+    }
+  }
+
+  function getLabelName(field, label) {
+    if (label) {
+      return cleanText(label.textContent)
+        .replace(/\s*:\s*$/, "");
+    }
+
+    const firstText = findLabelTextNode(field);
+
+    if (!firstText) return "";
+
+    return cleanText(firstText.nodeValue)
       .replace(/\s*:\s*$/, "");
   }
 
@@ -63,6 +90,8 @@ const PixieFields = PixieKit("Fields", function (_) {
 
     if (cloneLabel) {
       cloneLabel.remove();
+    } else {
+      removeFirstLabelTextNode(clone);
     }
 
     return cleanText(clone.textContent)
@@ -91,6 +120,8 @@ const PixieFields = PixieKit("Fields", function (_) {
 
     if (label) {
       label.remove();
+    } else {
+      removeFirstLabelTextNode(clone);
     }
 
     clone.classList.remove("field_uneditable");
@@ -185,10 +216,8 @@ const PixieFields = PixieKit("Fields", function (_) {
     const label =
       field.querySelector(opts.label);
 
-    if (!label) return;
-
     const name =
-      getLabelName(label);
+      getLabelName(field, label);
 
     if (!name) return;
 
