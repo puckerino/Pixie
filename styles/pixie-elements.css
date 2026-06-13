@@ -9,8 +9,8 @@ input[type="checkbox"] {
     aspect-ratio: 1;
     border-radius: .5rem;
     corner-shape: squircle;
-    background-color: var(--mono3);
-    border: 1px solid var(--mono4);
+    background-color: var(--input);
+    border: 1px solid var(--input-border);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -23,7 +23,7 @@ input[type="checkbox"] {
         position: absolute;
         width: .75rem;
         height: .75rem;
-        background: var(--text1);
+        background: var(--text);
 
         mask: var(--icon-check) center / contain no-repeat;
         -webkit-mask: var(--icon-check) center / contain no-repeat;
@@ -33,8 +33,8 @@ input[type="checkbox"] {
 
     &:checked {
         background: var(--accent);
-        outline: 2px solid color-mix(in srgb, var(--accent), transparent 20%);
-        color: var(--text1);
+        outline: 2px solid var(--input-border-strong);
+        color: var(--text);
 
         &::before {
             opacity: 1;
@@ -56,8 +56,8 @@ input[type="radio"] {
     width: 1rem;
     aspect-ratio: 1;
     border-radius: 50%;
-    background-color: var(--mono3);
-    border: 1px solid var(--mono4);
+    background-color: var(--input);
+    border: 1px solid var(--input-border);
     transition: all .3s ease-in-out;
 
     &:checked {
@@ -78,8 +78,8 @@ input[type="text"],
 input[type="url"],
 input[type="time"],
 input[list] {
-
-    border: 1px solid var(--mono4);
+    background: var(--input)
+    border: 1px solid var(--input-border);
     border-radius: .5rem;
     corner-shape: squircle;
     padding: var(--spacing-xs);
@@ -89,7 +89,7 @@ input[list] {
     transition: all .3s ease-in-out;
 
     &:focus {
-        outline: 2px solid color-mix(in srgb, var(--accent), transparent 20%);
+        outline: 2px solid var(--input-border-strong);
         transition: all .3s ease-in-out;
         outline: 2px solid var(--accent);
     }
@@ -102,7 +102,7 @@ TEXTAREA
 
 textarea {
 
-    border: 1px solid var(--mono4);
+    border: 1px solid var(--input-border);
     border-radius: .5rem;
     corner-shape: squircle;
     padding: var(--spacing);
@@ -115,7 +115,7 @@ textarea {
 
     &:focus {
         transition: all .3s ease-in-out;
-        outline: 2px solid color-mix(in srgb, var(--accent), transparent 20%);
+        outline: 2px solid var(--input-border-strong);
         border: 1px solid var(--accent);
     }
 
@@ -129,7 +129,7 @@ select {
   cursor: pointer;
   appearance: base-select;
 
-  border: 1px solid var(--mono4);
+  border: 1px solid var(--card-border);
   border-radius: .5rem;
   corner-shape: squircle;
 
@@ -143,7 +143,7 @@ select {
   &::picker(select) {
     appearance: base-select;
 
-    border: 1px solid var(--mono4);
+    border: 1px solid var(--car-border);
     border-radius: .5rem;
     corner-shape: squircle;
 
