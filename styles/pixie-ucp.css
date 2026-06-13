@@ -71,7 +71,7 @@
     display: grid;
     grid-template-columns: max-content 1fr .5fr .5fr .5fr .5fr 1fr max-content;
     gap: var(--spacing-s);
-    border: 1px solid var(--mono4);
+    border: 1px solid var(--border);
     padding: var(--spacing-s);
     border-radius: .5rem;
     corner-shape: squircle;
