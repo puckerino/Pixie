@@ -5,15 +5,18 @@
   background: var(--surface);
   position: fixed;
   opacity: 0;
+  transform: var(--popover-transform);
   transition: all .5s allow-discrete;
 }
 
 .drawer[popover]:popover-open {
   opacity: 1;
+  transform: var(--popover-transform-open);
 }
 
 @starting-style {
   .drawer[popover]:popover-open {
     opacity: 0;
+    transform: var(--popover-transform);
   }
 }
