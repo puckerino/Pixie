@@ -1,1 +1,19 @@
+.drawer[popover] {
+  height: var(--popover-height);
+  width: var(--popover-width);
+  color: inherit;
+  background: var(--surface);
+  position: fixed;
+  opacity: 0;
+  transition: all .5s allow-discrete;
+}
 
+.drawer[popover]:popover-open {
+  opacity: 1;
+}
+
+@starting-style {
+  .drawer[popover]:popover-open {
+    opacity: 0;
+  }
+}
