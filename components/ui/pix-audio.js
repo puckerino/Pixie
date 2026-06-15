@@ -157,7 +157,7 @@ export default class PixAudio extends HTMLElement {
           aria-label="Reproducir audio"
         >
 
-          <i class="bi bi-play-fill"></i>
+          <i data-lucide="play"></i>
 
         </button>
 
@@ -231,7 +231,7 @@ https://www.youtube.com/embed/${videoId}?enablejsapi=1&origin=${origin}&playsinl
       this.playing = true;
 
       this.button.innerHTML =
-        '<i class="bi bi-pause-fill"></i>';
+        '<i data-lucide="pause"></i>';
 
       this.button.setAttribute(
         "aria-label",
