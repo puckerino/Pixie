@@ -53,7 +53,7 @@ a, a:visited {
 }
 
 /* 2. Remove default margin */
-*:not(dialog) {
+*:not(dialog, [popover]) {
   margin: 0;
 }
 
