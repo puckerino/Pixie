@@ -61,7 +61,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
 
     {
       selector: "img[src='https://puckerino.github.io/Pixie/assets/images/contact/ficha.png']",
-      target: "a";
+      target: "a",
       icon: "folder",
       tooltip: "Ficha",
       classes: ["button", "button-icon"]
