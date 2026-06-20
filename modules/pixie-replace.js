@@ -68,6 +68,38 @@ const PixieReplace = PixieKit("Replace", function (_) {
     },
 
     {
+      selector: "img[src='https://puckerino.github.io/Pixie/assets/images/contact/baul.png']",
+      target: "a",
+      icon: "box",
+      tooltip: "Baúl",
+      classes: ["button", "button-icon"]
+    },
+
+    {
+      selector: "img[src='https://puckerino.github.io/Pixie/assets/images/contact/busqueda.png']",
+      target: "a",
+      icon: "search",
+      tooltip: "Búsqueda",
+      classes: ["button", "button-icon"]
+    },
+
+    {
+      selector: "img[src='https://puckerino.github.io/Pixie/assets/images/contact/busquedapj.png']",
+      target: "a",
+      icon: "user-search",
+      tooltip: "Búsqueda de Personaje",
+      classes: ["button", "button-icon"]
+    },
+
+    {
+      selector: "img[src='https://puckerino.github.io/Pixie/assets/images/contact/ficha.png']",
+      target: "a",
+      icon: "book-search",
+      tooltip: "Búsqueda de Trama",
+      classes: ["button", "button-icon"]
+    },
+
+    {
       selector: ".button1",
       target: "self",
       replaceClasses: {
