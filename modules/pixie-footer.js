@@ -2,7 +2,7 @@
  * PixieFooter.js
  * Inserta estadísticas, usuarios conectados y grupos en el footer
  * Requiere: pixiekit.js
- * Versión: 0.4.0
+ * Versión: 0.4.1
  */
 
 const PixieFooter = PixieKit("Footer", function (_) {
