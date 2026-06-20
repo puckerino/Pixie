@@ -92,7 +92,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
     },
 
     {
-      selector: "img[src='https://puckerino.github.io/Pixie/assets/images/contact/ficha.png']",
+      selector: "img[src='https://puckerino.github.io/Pixie/assets/images/contact/busquedatrama.png']",
       target: "a",
       icon: "book-search",
       tooltip: "Búsqueda de Trama",
