@@ -48,7 +48,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "a",
       icon: "mail",
       tooltip: "Enviar Mensaje Privado",
-      classes: ["button", "button-icon"]
+      classes: ["button", "button-icon", "button-contact"]
     },
 
     {
@@ -56,7 +56,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "a",
       icon: "user",
       tooltip: "Ver Perfil",
-      classes: ["button-icon"]
+      classes: ["button", "button-icon", "button-contact"]
     },
 
     {
@@ -64,7 +64,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "a",
       icon: "folder",
       tooltip: "Ficha",
-      classes: ["button", "button-icon"]
+      classes: ["button", "button-icon", "button-contact"]
     },
 
     {
@@ -72,7 +72,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "a",
       icon: "box",
       tooltip: "Baúl",
-      classes: ["button", "button-icon"]
+      classes: ["button", "button-icon", "button-contact"]
     },
 
     {
@@ -80,7 +80,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "a",
       icon: "search",
       tooltip: "Búsqueda",
-      classes: ["button", "button-icon"]
+      classes: ["button", "button-icon", "button-contact"]
     },
 
     {
@@ -88,7 +88,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "a",
       icon: "user-search",
       tooltip: "Búsqueda de Personaje",
-      classes: ["button", "button-icon"]
+      classes: ["button", "button-icon", "button-contact"]
     },
 
     {
@@ -96,7 +96,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "a",
       icon: "book-search",
       tooltip: "Búsqueda de Trama",
-      classes: ["button", "button-icon"]
+      classes: ["button", "button-icon", "button-contact"]
     },
 
     {
