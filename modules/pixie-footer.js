@@ -142,7 +142,7 @@ const PixieFooter = PixieKit("Footer", function (_) {
           <strong>${vars.FORUMONLINEUSER || 0}</strong>
           <span>record online</span>
         </li>
-        </ul>
+      </ul>
 
         <article class="pixie-footer-stat pixie-footer-lastuser">
           <span>Último usuario</span>
