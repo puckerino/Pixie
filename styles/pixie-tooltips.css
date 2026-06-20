@@ -1,0 +1,56 @@
+[tooltip] {
+  anchor-name: --tooltip-anchor;
+  anchor-scope: --tooltip-anchor;
+}
+
+[tooltip]::after {
+  content: attr(tooltip);
+  position: fixed;
+  position-anchor: --tooltip-anchor;
+  position-area: top;
+  position-try-fallbacks: bottom, right, left;
+  z-index: 999;
+  max-width: 240px;
+  padding: var(--spacing-xs) var(--spacing-s);
+  background: var(--tooltip);
+  color: var(--tooltip-text);
+
+  border: 1px solid var(--border);
+  border-radius: .5rem;
+  corner-shape: squircle;
+
+  font: .75rem var(--f-label);
+  text-align: center;
+  text-transform: uppercase;
+
+  white-space: normal;
+  text-wrap: balance;
+
+  box-shadow: 0 4px 12px rgb(0 0 0 / .12),  0 1px 2px rgb(0 0 0 / .08);
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transition: opacity .2s ease, visibility .2s ease;
+}
+
+[tooltip]:hover::after,
+[tooltip]:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+[tooltip]::after {
+  margin: .75rem;
+}
+
+[tooltip=""]::after {
+  display: none;
+}
+
+@media (hover: none) {
+  [tooltip]::after {
+    display: none;
+  }
+}
