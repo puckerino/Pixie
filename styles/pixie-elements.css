@@ -88,8 +88,13 @@ input[list] {
     outline: 2px solid transparent;
     transition: all .3s ease-in-out;
 
+    &:hover {
+        transition: all .3s ease-in-out;
+        border: 1px solid var(--border-strong);
+        background: var(--input-hover);
+    }
+
     &:focus {
-        outline: 2px solid var(--input-border-strong);
         transition: all .3s ease-in-out;
         outline: 2px solid var(--accent);
     }
