@@ -1,66 +1,76 @@
-button, .button, input[type="button"], a[href$="?watch=forum"], input[type="file"], input[type="submit"], input[type="reset"], .watchtopic a {
-  border: 0;
-  padding: var(--spacing-s) var(--spacing);
-  cursor: pointer; 
-  
-  nav & {
-    background: transparent;
-    padding: 0;
-    font: inherit;
-    color: contrast-color(var(--navbar)) !important;
-  }
-  
-  &.button-action-post {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-s);
-    padding: var(--spacing-xs) var(--spacing-s);    
-    
-    svg {width: 1rem;height: 1rem;}
-  }
-  
-  &.copy-button {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-s);
-    
-    svg {
-      width: 1rem;
-      height: 1rem;
+button,
+.button,
+input[type="button"],
+a[href$="?watch=forum"],
+input[type="file"],
+input[type="submit"],
+input[type="reset"],
+.watchtopic a {
+    border: 0;
+    padding: var(--spacing-s) var(--spacing);
+    cursor: pointer;
+
+    nav & {
+        background: transparent;
+        padding: 0;
+        font: inherit;
+        color: contrast-color(var(--navbar)) !important;
     }
-  }
-  
-  &.button-icon {
-    padding: var(--spacing-xs);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    svg {
-      width: 1rem;
-      height: 1rem;
+
+    &.button-action-post {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-s);
+        padding: var(--spacing-xs) var(--spacing-s);
+
+        svg {
+            width: 1rem;
+            height: 1rem;
+        }
     }
-  }
-  
-  
-  &.close-button {
-    padding: var(--spacing-s);
-    aspect-ratio: 1;
-    
-    svg {
-      width: 1rem;
-      height: 1rem;
+
+    &.copy-button {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-s);
+
+        svg {
+            width: 1rem;
+            height: 1rem;
+        }
     }
-  }
-  
-  #dice_to_del & {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-s);
-    grid-column: 1 / -1;    
-  }
-  
+
+    &.button-icon {
+        padding: var(--spacing-xs);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        svg {
+            width: 1rem;
+            height: 1rem;
+        }
+    }
+
+
+    &.close-button {
+        padding: var(--spacing-s);
+        aspect-ratio: 1;
+
+        svg {
+            width: 1rem;
+            height: 1rem;
+        }
+    }
+
+    #dice_to_del & {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--spacing-s);
+        grid-column: 1 / -1;
+    }
+
 }
 
 /* ===============================
@@ -196,58 +206,58 @@ SELECT
 ================================*/
 
 select {
-  cursor: pointer;
-  appearance: base-select;
-
-  border: 1px solid var(--card-border);
-  border-radius: .5rem;
-  corner-shape: squircle;
-
-  padding: var(--spacing-xs) var(--spacing-s);
-
-  color: inherit;
-  font: 1rem var(--f-text);
-
-  transition: all .3s ease-in-out;
-
-  &::picker(select) {
+    cursor: pointer;
     appearance: base-select;
 
-    border: 1px solid var(--car-border);
+    border: 1px solid var(--card-border);
     border-radius: .5rem;
     corner-shape: squircle;
 
+    padding: var(--spacing-xs) var(--spacing-s);
+
     color: inherit;
     font: 1rem var(--f-text);
-  }
 
-  &::picker-icon {
-    content: "";
-    width: 1rem;
-    height: 1rem;
+    transition: all .3s ease-in-out;
 
-    background: currentColor;
-    mask: var(--icon-chevron-down) center / contain no-repeat;
-    -webkit-mask: var(--icon-chevron-down) center / contain no-repeat;
-  }
+    &::picker(select) {
+        appearance: base-select;
 
-  option {
-    padding: var(--spacing-xs);
-    cursor: pointer;
+        border: 1px solid var(--car-border);
+        border-radius: .5rem;
+        corner-shape: squircle;
 
-    &:hover {
-      background: var(--accent);
+        color: inherit;
+        font: 1rem var(--f-text);
     }
 
-    &::checkmark {
-      content: "";
-      width: 1rem;
-      height: 1rem;
-      background: currentColor;
-      mask: var(--icon-check) center / contain no-repeat;
-      -webkit-mask: var(--icon-check) center / contain no-repeat;
+    &::picker-icon {
+        content: "";
+        width: 1rem;
+        height: 1rem;
+
+        background: currentColor;
+        mask: var(--icon-chevron-down) center / contain no-repeat;
+        -webkit-mask: var(--icon-chevron-down) center / contain no-repeat;
     }
-  }
+
+    option {
+        padding: var(--spacing-xs);
+        cursor: pointer;
+
+        &:hover {
+            background: var(--accent);
+        }
+
+        &::checkmark {
+            content: "";
+            width: 1rem;
+            height: 1rem;
+            background: currentColor;
+            mask: var(--icon-check) center / contain no-repeat;
+            -webkit-mask: var(--icon-check) center / contain no-repeat;
+        }
+    }
 }
 
 /* ===============================
@@ -281,12 +291,12 @@ details[open] summary::before {
 }
 
 details::details-content {
-  height: 0;
-  overflow-y: clip;
-  transition: 300ms allow-discrete;
+    height: 0;
+    overflow-y: clip;
+    transition: 300ms allow-discrete;
 }
 
 details[open]::details-content {
-  /* Interpolation only */
-  height: calc-size(auto, size);
+    /* Interpolation only */
+    height: calc-size(auto, size);
 }
