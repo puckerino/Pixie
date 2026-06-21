@@ -304,3 +304,12 @@ details[open]::details-content {
     /* Interpolation only */
     height: calc-size(auto, size);
 }
+
+/* ===============================
+ALERTS
+================================*/
+
+.alert {
+    display: flex;
+    align-items: center;
+}
