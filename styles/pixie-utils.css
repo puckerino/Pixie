@@ -23,3 +23,119 @@
   --spacing-5xl: clamp(3.00rem, calc(1.600rem + 3.200vw), 10.00rem);
   --spacing-button: var(--spacing-s) var(--spacing);
 }
+
+/* ====== UTILS ====== */
+
+.stack {
+    display: flex;
+    gap: var(--spacing);
+
+    &.row {
+        align-items: center;
+    }
+
+    &.column {
+        flex-direction: column;
+    }
+
+}
+
+.grid-2 {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-2-leftmax {
+    display: grid !important;
+    grid-template-columns: max-content 1fr;
+}
+
+.grid-3 {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr);
+
+    &.list-item:has(.button) {
+        grid-template-columns: 1fr 1fr max-content;
+    }
+}
+
+.grid-4 {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr);
+    align-items: center;
+}
+
+.grid-2,
+.grid-3,
+.grid-4,
+.grid-2-leftmax {
+    gap: var(--spacing);
+
+    &>.wide {
+        grid-column: 1 / -1;
+    }
+
+    & input,
+    & select {
+        width: stretch;
+    }
+}
+
+.has-spacing {
+    padding: var(--spacing);
+}
+
+.list-item {
+    padding: var(--spacing-s);
+    gap: var(--spacing-s);
+    align-items: center;
+}
+
+.form-list,
+.form-control {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+
+    &.column {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+
+    input[type="text"],
+    input[type="url"] {
+        width: 100% !important;
+    }
+
+    .password-container {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: var(--spacing);
+
+        input {
+            width: 100%;
+        }
+    }
+}
+
+label:has(input[type="radio"], input[type="checkbox"]) {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.group-buttons {
+    display: flex;
+    gap: var(--spacing-s);
+    margin-top: var(--spacing-s);
+
+    .button {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+}
