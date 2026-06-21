@@ -1,0 +1,81 @@
+.topic {
+  padding: var(--spacing-s);
+    display: grid;
+    grid-template-columns: 60px 1fr .5fr .5fr;
+    align-items: center;
+    gap: 0 var(--spacing-s);
+
+    &:has(.pagination:empty):has(.description) {
+        grid-template-rows: repeat(3, max-content);
+        grid-template-areas: "icon title data lastpost" "icon description data lastpost" "icon author data lastpost";
+    }
+
+    &:has(.pagination:empty):not(:has(.description)) {
+        grid-template-rows: repeat(2, max-content);
+        grid-template-areas: "icon title data lastpost" "icon author data lastpost";
+    }
+
+    &:not(:has(.pagination:empty)):not(:has(.description)) {
+        grid-template-rows: repeat(3, max-content);
+        grid-template-areas: "icon title data lastpost" "icon author data lastpost" "icon pagination data lastpost";
+    }
+
+    &:has(.description):not(:has(.pagination:empty)) {
+        grid-template-rows: repeat(4, max-content);
+        grid-template-areas: "icon title data lastpost" "icon author data lastpost" "icon description data lastpost" "icon pagination data lastpost";
+    }
+
+    .icon {
+        grid-area: icon;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        aspect-ratio: 1;
+
+        img {
+            display: none;
+        }
+
+        &:before {
+            content: "";
+            position: absolute;
+            width: 1rem;
+            height: 1rem;
+        }
+    }
+
+    .topic-type {
+        grid-area: type;
+        display: none;
+    }
+
+    .title {
+        grid-area: title;
+    }
+
+    .pagination {
+        grid-area: pagination;
+
+        &:empty {
+            display: none;
+        }
+    }
+
+    .author {
+        grid-area: author;
+    }
+
+    .data {
+        grid-area: data;
+        place-content: center;
+    }
+
+    .lastpost {
+        grid-area: lastpost;
+    }
+
+    .description {
+        grid-area: description;
+    }
+}
