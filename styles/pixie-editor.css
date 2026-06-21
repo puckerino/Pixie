@@ -14,10 +14,15 @@
 
 .sceditor-container {
   position: relative;
+      width: 100%;
+    height: stretch;
+  display: flex;
+    flex-direction: column;
 }
 
 .sceditor-container > textarea {
   width: 100% !important;
+  height: 100% !important;
   outline: 0 !important;
   corner-shape: square square squircle squircle;
 }
