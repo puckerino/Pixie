@@ -70,6 +70,7 @@
   grid-template-columns: max-content 1fr;
   grid-template-rows: max-content 1fr max-content;
   grid-template-areas: "smiley editor" "status editor" ". buttons";
+  padding: var(--spacing);
 
   .status {
     grid-area: status;
