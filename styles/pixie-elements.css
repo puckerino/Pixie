@@ -1,3 +1,68 @@
+button, .button, input[type="button"], a[href$="?watch=forum"], input[type="file"], input[type="submit"], input[type="reset"], .watchtopic a {
+  border: 0;
+  padding: var(--spacing-s) var(--spacing);
+  cursor: pointer; 
+  
+  nav & {
+    background: transparent;
+    padding: 0;
+    font: inherit;
+    color: contrast-color(var(--navbar)) !important;
+  }
+  
+  &.button-action-post {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-s);
+    padding: var(--spacing-xs) var(--spacing-s);    
+    
+    svg {width: 1rem;height: 1rem;}
+  }
+  
+  &.copy-button {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-s);
+    
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+  
+  &.button-icon {
+    padding: var(--spacing-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+  
+  
+  &.close-button {
+    padding: var(--spacing-s);
+    aspect-ratio: 1;
+    
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+  
+  #dice_to_del & {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-s);
+    grid-column: 1 / -1;    
+  }
+  
+}
+
 /* ===============================
 CHECKBOX
 =================================*/
