@@ -83,3 +83,65 @@
         grid-area: description;
     }
 }
+
+/* ====== VIEWTOPIC BODY ========= */
+
+.viewtopic_body {
+
+    .post {
+        display: grid;
+
+        .profile {
+            grid-area: aside;
+
+            .contact {
+                grid-area: contact;
+                gap: var(--spacing-s);
+
+                li {
+                    display: flex;
+                }
+            }
+
+            .avatar-post {
+                grid-area: avatar;
+            }
+
+            .profile-data {
+                grid-area: avatar;
+                width: var(--avatar-post-width);
+                height: var(--avatar-post-height);
+            }
+
+
+        }
+
+        .postbody {
+            grid-area: body;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .content.message {
+            height: 100%;
+            display: block;
+        }
+
+        .signature {
+
+            br:first-of-type,
+            br:nth-of-type(2) {
+                display: none;
+            }
+        }
+    }
+
+    .quickreply {
+
+        &>.h3,
+        &>br {
+            display: none;
+        }
+    }
+
+}
