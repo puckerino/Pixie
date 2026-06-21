@@ -70,6 +70,7 @@
 .grid-4,
 .grid-2-leftmax {
     gap: var(--spacing);
+    align-items: center;
 
     &>.wide {
         grid-column: 1 / -1;
