@@ -1,7 +1,7 @@
 .topic {
   padding: var(--spacing-s);
   display: grid;
-    grid-template-columns: 60px 1fr .5fr .5fr;
+  grid-template-columns: 60px 1fr .5fr .5fr;
     align-items: center;
     gap: 0 var(--spacing-s);
 
