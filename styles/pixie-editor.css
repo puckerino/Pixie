@@ -63,13 +63,23 @@
 .sceditor-wrap {
   display: grid;
   grid-template-columns: max-content 1fr;
+  grid-template-rows: max-content 1fr max-content;
+  grid-template-areas: "smiley editor" "status editor" ". buttons";
 
   .status {
-    grid-column: 1 / -1;
+    grid-area: status;
+  }
+
+  #smiley-box {
+    grid-area: smiley;
+  }
+
+  #message-box {
+    grid-area: editor;
   }
 
   .group-buttons {
-    grid-column: 2;
+    grid-area: buttons;
     display: flex;
     align-items: center;
     gap: var(--spacing-s);
