@@ -1,0 +1,27 @@
+:root {
+    /* =========================================
+     UTILIDADES
+  ========================================= */
+  
+  --f-xs: clamp(0.5628rem, 0.6716rem + -0.1404vw, 0.64rem);
+  --f-s: clamp(0.7502rem, 0.8204rem + -0.0906vw, 0.8rem);
+  --f-base: clamp(1rem, 1rem + 0vw, 1rem);
+  --f-l: clamp(1.25rem, 1.216rem + 0.1509vw, 1.333rem);
+  --f-xl: clamp(1.5625rem, 1.4748rem + 0.3898vw, 1.7769rem);
+  --f-2xl: clamp(1.9531rem, 1.7832rem + 0.7554vw, 2.3686rem);
+  --f-3xl: clamp(2.4414rem, 2.1485rem + 1.3017vw, 3.1573rem);
+  --f-4xl: clamp(3.0518rem, 2.5785rem + 2.1036vw, 4.2087rem);
+  --f-5xl: clamp(3.8147rem, 3.0802rem + 3.2646vw, 5.6102rem);
+  
+  /****SPACINGS****/
+  --spacing-xs: .25rem;
+  --spacing-s: .5rem;
+  --spacing: 1rem;
+  --spacing-l: clamp(1.13rem, calc(1.050rem + 0.171vw), 1.50rem);
+  --spacing-xl: clamp(1.25rem, calc(1.100rem + 0.343vw), 2.00rem);
+  --spacing-2xl: clamp(1.45rem, calc(1.140rem + 0.709vw), 3.00rem);
+  --spacing-3xl: clamp(1.70rem, calc(1.240rem + 1.051vw), 4.00rem);
+  --spacing-4xl: clamp(2.00rem, calc(0.800rem + 2.743vw), 8.00rem);
+  --spacing-5xl: clamp(3.00rem, calc(1.600rem + 3.200vw), 10.00rem);
+  --spacing-button: var(--spacing-s) var(--spacing);
+}
