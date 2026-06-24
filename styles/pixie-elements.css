@@ -18,6 +18,17 @@ input[type="reset"],
     justify-content:center;
     text-align: center;
 
+    &:has(svg + span) {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-s);
+        
+        svg {
+            height: var(--f-base);
+            width: var(--f-base);
+        }
+    }
+
     nav & {
         background: transparent;
         padding: 0;
