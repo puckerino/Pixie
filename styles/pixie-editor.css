@@ -97,14 +97,6 @@
   }
 }
 
-#quick_reply {
-  div[style="text-align:center; margin-top:20px;"]:has(input[type="submit"] {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-s);
-
-    input[type="submit] {
-      flex: 1;
-    }
-  }
+#quick_reply div:not(#textarea_content) {
+  display: flex;
 }
