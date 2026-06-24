@@ -319,9 +319,13 @@ ALERTS
     gap: var(--spacing);
     padding: var(--spacing);
     border: 1px solid var(--border);
+    background: var(--background);
+    border-radius: .5rem;
+    corner-shape: squircle;
 
     &.info {
-        border: 1px solid #003EFF3E;
-        background: #0047F112;
+        --border: light-dark(#C1D0FF, #304384);
+        --background: light-dark(#EDF2FE, #182449);
+        color: contrast-color(var(--background));
     }
 }
