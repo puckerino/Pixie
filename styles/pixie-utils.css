@@ -80,6 +80,10 @@
     & select {
         width: stretch;
     }
+
+    @media (max-width: 700px) {
+        grid-template-columns: 1fr;
+    }
 }
 
 .has-spacing {
