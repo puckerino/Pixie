@@ -317,4 +317,6 @@ ALERTS
     display: flex;
     align-items: center;
     gap: var(--spacing);
+    padding: var(--spacing);
+    border: 1px solid var(--border);
 }
