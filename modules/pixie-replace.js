@@ -8,6 +8,15 @@
 const PixieReplace = PixieKit("Replace", function (_) {
   const rules = [
     {
+      selector: "img#i_icon_delete",
+      target: "a",
+      icon: "x",
+      text: "CERRAR ESTE SONDEO",
+      tooltip: "Cerrar este sondeo",
+      classes: ["button", "button-icon"]
+    },
+    
+    {
       selector: "img.i_icon_quote, img#i_icon_quote",
       target: "a",
       icon: "quote",
