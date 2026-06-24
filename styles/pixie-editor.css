@@ -98,7 +98,7 @@
 }
 
 #quick_reply {
-  #textarea_content + div:has(input[type="submit"] {
+  div[style="text-align:center; margin-top:20px;"]:has(input[type="submit"] {
     display: flex;
     align-items: center;
     gap: var(--spacing-s);
