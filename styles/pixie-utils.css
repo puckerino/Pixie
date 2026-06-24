@@ -50,6 +50,11 @@
     grid-template-columns: max-content 1fr;
 }
 
+.grid-2-rightmax {
+    display: grid !important;
+    grid-template-columns: 1fr max-content;
+}
+
 .grid-3 {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr);
