@@ -328,4 +328,16 @@ ALERTS
         --background: light-dark(#EDF2FE, #182449);
         color: contrast-color(var(--background));
     }
+    
+    &.warning {
+        --border: light-dark(#FFC182, #66350C);
+        --background: light-dark(#FFEFD6, #331E0B);
+        color: contrast-color(var(--background));
+    }
+
+    &.danger, &.error {
+        --border: light-dark(#FDBDBE, #72232D);
+        --background: light-dark(#FEEBEC, #3B1219);
+        color: contrast-color(var(--background));
+    }
 }
