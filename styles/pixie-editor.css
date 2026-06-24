@@ -96,3 +96,15 @@
     }
   }
 }
+
+#quick_reply {
+  #textarea_content + div:has(input[type="submit"] {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-s);
+
+    input[type="submit] {
+      flex: 1;
+    }
+  }
+}
