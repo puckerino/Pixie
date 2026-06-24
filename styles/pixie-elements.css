@@ -319,4 +319,9 @@ ALERTS
     gap: var(--spacing);
     padding: var(--spacing);
     border: 1px solid var(--border);
+
+    &.info {
+        border: 1px solid #003EFF3E;
+        background: #0047F112;
+    }
 }
