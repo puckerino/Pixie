@@ -99,4 +99,10 @@
 
 #quick_reply div:not(#textarea_content) {
   display: flex;
+  align-items: center;
+  gap: var(--spacing-s);
+
+  input[type="submit"] {
+    flex: 1;
+  }
 }
