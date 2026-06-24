@@ -73,7 +73,8 @@
 .grid-2,
 .grid-3,
 .grid-4,
-.grid-2-leftmax {
+.grid-2-leftmax,
+.grid-2-rightmax {
     gap: var(--spacing);
     align-items: center;
 
