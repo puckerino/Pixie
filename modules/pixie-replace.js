@@ -13,7 +13,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       icon: "x",
       text: "CERRAR ESTE SONDEO",
       tooltip: "Cerrar este sondeo",
-      classes: ["button", "button-icon"]
+      classes: ["button"]
     },
     
     {
