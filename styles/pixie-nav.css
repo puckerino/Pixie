@@ -17,3 +17,19 @@ button[popovertarget="notis-popover"] {
 body:has(#notif_unread:not(:empty)) .notis-alert {
     opacity: 1;
 }
+
+#notis {
+    padding: var(--spacing);
+
+    #notif_list {
+        left: 0;
+        display: flex;
+        flex-direction: column:
+        gap: var(--spacing-s);
+        
+        hr {
+        display: none;
+        }
+
+    }
+}
