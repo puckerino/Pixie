@@ -94,6 +94,10 @@
 
 .has-spacing {
     padding: var(--spacing);
+
+    @media (max-content: 700px) {
+        padding: var(--spacing-s);
+    }
 }
 
 .list-item {
