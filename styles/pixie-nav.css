@@ -1,0 +1,15 @@
+button[popovertarget="notis-popover"] {
+  position: relative;
+}
+
+  body:has(#fa_notifications.unread) {
+    button[popovertarget="notis-popover"]:after {
+      height: 5px;
+      width: 5px;
+      background: var(--accent);
+      position: absolute;
+      top: 0;
+      right: 0;
+    }
+  }
+
