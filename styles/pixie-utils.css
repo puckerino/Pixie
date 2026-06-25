@@ -30,6 +30,10 @@
     display: flex;
     gap: var(--spacing);
 
+    @media (max-width: 700px) {
+        gap: var(--spacing-xs);
+    }
+
     &.row {
         align-items: center;
     }
@@ -89,14 +93,15 @@
 
     @media (max-width: 700px) {
         grid-template-columns: 1fr;
+        gap: var(--spacing-xs);
     }
 }
 
 .has-spacing {
     padding: var(--spacing);
 
-    @media (max-content: 700px) {
-        padding: var(--spacing-s);
+    @media (max-width: 700px) {
+        padding: var(--spacing-xs);
     }
 }
 
@@ -104,6 +109,10 @@
     padding: var(--spacing-s);
     gap: var(--spacing-s);
     align-items: center;
+
+    @media (max-width: 700px) {
+        gap: var(--spacing-xs);
+    }
 }
 
 .form-list,
@@ -128,6 +137,10 @@
         display: flex;
         align-items: center;
         gap: var(--spacing);
+
+        @media (max-width: 700px) {
+            gap: var(--spacing-xs);
+        }
 
         input {
             width: 100%;
