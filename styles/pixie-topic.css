@@ -111,6 +111,10 @@
                 grid-area: avatar;
                 width: var(--avatar-post-width);
                 height: var(--avatar-post-height);
+
+              @media (max-width: 700px) {
+                display: none;
+              }
             }
 
 
