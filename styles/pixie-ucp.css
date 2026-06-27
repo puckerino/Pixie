@@ -25,7 +25,21 @@ SETTING BASE + MENU LATERAL, TABS
         li {
             display: flex;
             align-items: center;
+            font: 1rem var(--f-label);
 
+            &:not(:has(a)) {
+                #privmsgs-menu & {
+                font: 1rem var(--f-label);
+                display: flex;
+                align-items: center;
+                gap: var(--spacing-s);
+                width: 100%;
+                padding: var(--spacing-s);
+                border-radius: .5rem;
+                corner-shape: squircle;
+                }
+            }
+                    
             a {
                 font: 1rem var(--f-label);
                 display: flex;
@@ -35,16 +49,6 @@ SETTING BASE + MENU LATERAL, TABS
                 padding: var(--spacing-s);
                 border-radius: .5rem;
                 corner-shape: squircle;
-
-                &:before {
-                    content: "";
-                    width: .75rem;
-                    height: .75rem;
-                    background: var(--text1);
-
-                    mask: var(--icon-chevron-right) center / contain no-repeat;
-                    -webkit-mask: var(--icon-chevron-right) center / contain no-repeat;
-                }
 
                 &:hover {
                     background: var(--mono2);
@@ -58,8 +62,6 @@ SETTING BASE + MENU LATERAL, TABS
                         background: var(--accent);
                     }
                 }
-
-
             }
         }
     }
