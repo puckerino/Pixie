@@ -13,6 +13,12 @@
     &:has(.pagination:empty):not(:has(.description)) {
         grid-template-rows: repeat(2, max-content);
         grid-template-areas: "icon title data lastpost" "icon author data lastpost";
+      .title {
+        align-self: end;
+      }
+      .author {
+        align-self: start;
+      }
     }
 
     &:not(:has(.pagination:empty)):not(:has(.description)) {
