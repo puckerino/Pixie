@@ -71,9 +71,25 @@ body:has(#notif_unread:not(:empty)) .notis-alert {
                 gap: 0 var(--spacing-s);
                 grid-template-areas: "icon time" "icon content";
 
+                &[data-notif-type="0"] {
+                    --notif-type: mp;
+                }
+
+                &[data-notif-type="7"] {
+                    --notif-type: post;
+                }
+
+                &[data-notif-type="8"] {
+                    --notif-type: mention;
+                }
+
                 &:before {
                     grid-area: icon;
                     content: "icon";
+
+                    @container style(--notif-type: mp) {
+                        content: "MP";
+                    }
                 }
                     
                 .contentText { 
@@ -90,8 +106,8 @@ body:has(#notif_unread:not(:empty)) .notis-alert {
                 
                 .delete {
                     position: absolute;
-                    top: var(--spacing-s);
-                    right: var(--spacing-s);
+                    top: 0;
+                    right: 0;
                     height: var(--f-s);
                     width: var(--f-s);
                     background: var(--accent);
