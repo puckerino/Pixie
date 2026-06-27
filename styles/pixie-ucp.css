@@ -10,7 +10,7 @@ SETTING BASE + MENU LATERAL, TABS
         grid-template-columns: 1fr;
     }
 
-    #tabs ul, #privmsgs-menu {
+    #tabs ul {
         height: max-content;
         position: sticky;
         top: calc(var(--nav-size) + 1rem);
@@ -28,7 +28,6 @@ SETTING BASE + MENU LATERAL, TABS
             font: 1rem var(--f-label);
 
             &:not(:has(a)) {
-                #privmsgs-menu & {
                 font: 1rem var(--f-label);
                 display: flex;
                 align-items: center;
@@ -37,7 +36,6 @@ SETTING BASE + MENU LATERAL, TABS
                 padding: var(--spacing-s);
                 border-radius: .5rem;
                 corner-shape: squircle;
-                }
             }
                     
             a {
