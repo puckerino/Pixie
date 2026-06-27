@@ -3,6 +3,10 @@
     display: flex;
     align-items: center;
     gap: var(--spacing-s);
+
+    &:empty {
+        display: none;
+    }
     
     @media (max-width: 700px) {
         display: none;
