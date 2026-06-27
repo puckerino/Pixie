@@ -118,6 +118,9 @@ body:has(#notif_unread:not(:empty)) .notis-alert {
                 &:before {
                     grid-area: icon;
                     content: "";
+                    height: 100%;
+                    width: 100%;
+                    background: var(--text-subtle);
                     mask-position: center;
                     mask-repeat: no-repeat;
                     mask-size: contain;
@@ -127,7 +130,15 @@ body:has(#notif_unread:not(:empty)) .notis-alert {
                     }
 
                     @container style(--notif-type: mp) {
-                        mask-image: var(--icon-mail);
+                        mask-image: url("https://unpkg.com/lucide-static/icons/mail.svg");
+                    }
+                    
+                    @container style(--notif-type: post) {
+                        mask-image: url("https://unpkg.com/lucide-static/icons/pencil-sparkles.svg");
+                    }                   
+                    
+                    @container style(--notif-type: mention) {
+                        mask-image: url("https://unpkg.com/lucide-static/icons/at-sign.svg");
                     }
                 }
                     
