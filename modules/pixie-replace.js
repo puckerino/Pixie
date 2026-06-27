@@ -24,7 +24,8 @@ const PixieReplace = PixieKit("Replace", function (_) {
     {
       selector: "img[src='https://2img.net/i/fa/prosilver/button_topic_reply_en.png']",
       target: "a",
-      text: "Contestar"
+      text: "Contestar",
+      classes: ["button"]
     },
     
     {
