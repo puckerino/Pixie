@@ -39,6 +39,10 @@ button[popovertarget="notis-popover"] {
 
 }
 
+/* =========================================
+NOTIFICACIONES
+========================================== */
+
 body:has(#notif_unread:not(:empty)) .notis-alert {
     opacity: 1;
 }
@@ -56,5 +60,51 @@ body:has(#notif_unread:not(:empty)) .notis-alert {
         display: none;
         }
 
+        li {
+            padding: var(--spacing-s);
+            
+            .content { 
+                position: relative;
+                display: grid;
+                grid-template-columns: 60px 1fr;
+                grid-template-rows: max-content 1fr;
+                gap: 0 var(--spacing-s);
+                grid-template-areas: "icon time" "icon content";
+
+                &:before {
+                    grid-area: icon;
+                    content: "icon";
+                }
+                    
+                .contentText { 
+                    grid-area: content;
+                    
+                    a {
+                        
+                    }
+                }
+                
+                .contentTime {
+                    grid-area: time;
+                }
+                
+                .delete {
+                    position: absolute;
+                    top: var(--spacing-s);
+                    right: var(--spacing-s);
+                    height: var(--f-s);
+                    width: var(--f-s);
+                    background: var(--accent);
+                    color: contrast-color(var(--accent));
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+
+                    &:before {
+                        content: "x";
+                    }
+                }
+            }
+        }
     }
 }
