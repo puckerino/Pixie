@@ -14,6 +14,12 @@ const PixieReplace = PixieKit("Replace", function (_) {
       text: "CERRAR ESTE SONDEO",
       classes: ["button"]
     },
+
+    {
+      selector: "img.i_msg_newpost",
+      target: "a",
+      text: "Nuevo Mensaje Privado"
+    },
     
     {
       selector: "img.i_icon_quote, img#i_icon_quote",
