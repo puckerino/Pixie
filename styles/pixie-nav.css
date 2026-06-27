@@ -63,6 +63,18 @@ body:has(#notif_unread:not(:empty)) .notis-alert {
         li {
             padding: var(--spacing-s);
             
+            &[data-notif-type="0"] {
+                --notif-type: mp;
+            }
+            
+            &[data-notif-type="7"] {
+                --notif-type: post;
+            }
+
+            &[data-notif-type="8"] {
+                --notif-type: mention;
+            }
+            
             .content { 
                 position: relative;
                 display: grid;
@@ -70,19 +82,7 @@ body:has(#notif_unread:not(:empty)) .notis-alert {
                 grid-template-rows: max-content 1fr;
                 gap: 0 var(--spacing-s);
                 grid-template-areas: "icon time" "icon content";
-
-                &[data-notif-type="0"] {
-                    --notif-type: mp;
-                }
-
-                &[data-notif-type="7"] {
-                    --notif-type: post;
-                }
-
-                &[data-notif-type="8"] {
-                    --notif-type: mention;
-                }
-
+                
                 &:before {
                     grid-area: icon;
                     content: "icon";
