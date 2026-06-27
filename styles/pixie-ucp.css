@@ -10,7 +10,7 @@ SETTING BASE + MENU LATERAL, TABS
         grid-template-columns: 1fr;
     }
 
-    #tabs ul {
+    #tabs ul, #privmsgs-menu {
         height: max-content;
         position: sticky;
         top: calc(var(--nav-size) + 1rem);
