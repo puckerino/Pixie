@@ -110,16 +110,22 @@ body:has(#notif_unread:not(:empty)) .notis-alert {
                     position: absolute;
                     top: 0;
                     right: 0;
-                    height: var(--f-s);
-                    width: var(--f-s);
+                    height: 1rem;
+                    width: 1rem;
                     background: var(--accent);
-                    color: contrast-color(var(--accent));
                     display: flex;
                     justify-content: center;
                     align-items: center;
 
                     &:before {
-                        content: "x";
+                        content: "";
+                        mask-image: var(--icon-x);
+                        mask-position: center;
+                        mask-repeat: no-repeat;
+                        mask-size: contain;
+                        height: .75rem;
+                        width: .75rem;
+                        background: contrast-color(var(--accent));
                     }
                 }
             }
