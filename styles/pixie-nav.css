@@ -110,10 +110,10 @@ body:has(#notif_unread:not(:empty)) .notis-alert {
             .content { 
                 position: relative;
                 display: grid;
-                grid-template-columns: 60px 1fr;
+                grid-template-columns: 60px 1fr max-content;
                 grid-template-rows: max-content 1fr;
                 gap: 0 var(--spacing-s);
-                grid-template-areas: "icon time" "icon content";
+                grid-template-areas: "icon time close" "icon content close";
                 
                 &:before {
                     grid-area: icon;
@@ -157,9 +157,7 @@ body:has(#notif_unread:not(:empty)) .notis-alert {
                 }
                 
                 .delete {
-                    position: absolute;
-                    top: 0;
-                    right: 0;
+                    grid-area: close;
                     height: 1.5rem;
                     width: 1.5rem;
                     background: var(--accent);
@@ -170,6 +168,7 @@ body:has(#notif_unread:not(:empty)) .notis-alert {
                     corner-shape: squircle;
 
                     &:before {
+                        grid-area: close;
                         content: "";
                         mask-image: var(--icon-x);
                         mask-position: center;
