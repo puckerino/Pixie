@@ -91,6 +91,17 @@ body:has(#notif_unread:not(:empty)) .notis-alert {
         li {
             padding: var(--spacing-s);
 
+            &.see_all {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background: var(--accent);
+                color: contrast-color(var(--accent));
+                text-transform: uppercase;
+                font: var(--f-s) var(--f-button);
+                text-align: center;
+            }
+
             &.unread {
                 --status: unread;
             }
