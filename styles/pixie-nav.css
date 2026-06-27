@@ -90,6 +90,10 @@ body:has(#notif_unread:not(:empty)) .notis-alert {
 
         li {
             padding: var(--spacing-s);
+
+            &.unread {
+                --status: unread;
+            }
             
             &[data-notif-type="0"] {
                 --notif-type: mp;
@@ -113,10 +117,17 @@ body:has(#notif_unread:not(:empty)) .notis-alert {
                 
                 &:before {
                     grid-area: icon;
-                    content: "icon";
+                    content: "";
+                    mask-position: center;
+                    mask-repeat: no-repeat;
+                    mask-size: contain;
+
+                    @container style(--status: unread) {
+                        background: var(--accent);
+                    }
 
                     @container style(--notif-type: mp) {
-                        content: "MP";
+                        mask-image: var(--icon-mail);
                     }
                 }
                     
