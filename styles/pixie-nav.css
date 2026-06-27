@@ -1,3 +1,7 @@
+/* =========================================
+BREADCRUMBS
+========================================== */
+
 .breadcrumbs {
     font-size: 0;
     display: flex;
@@ -23,6 +27,34 @@
     }
 }
 
+/* =========================================
+LINK MPS
+========================================== */
+
+nav a[href$="/privmsg?folder=inbox"] {
+    position: relative;
+
+    &:before {
+        content: "";
+        height: 8px;
+        width: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+        position: absolute;
+        top: 0;
+        right: 0;
+        opacity: 0;
+    }   
+}
+
+body:has(.original-navbar:has(.new-message)) nav a[href$="/privmsg?folder=inbox"]:before {
+    opacity: 1;
+}
+
+/* =========================================
+NOTIFICACIONES
+========================================== */
+
 button[popovertarget="notis-popover"] {
     position: relative;
 
@@ -38,10 +70,6 @@ button[popovertarget="notis-popover"] {
     }
 
 }
-
-/* =========================================
-NOTIFICACIONES
-========================================== */
 
 body:has(#notif_unread:not(:empty)) .notis-alert {
     opacity: 1;
