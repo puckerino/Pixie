@@ -167,3 +167,9 @@ label:has(input[type="radio"], input[type="checkbox"]) {
         text-align: center;
     }
 }
+
+footer .pixie-footer-user-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-s);
+}
