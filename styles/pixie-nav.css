@@ -9,8 +9,8 @@
     }
 
     svg {
-        height: var(--f-s);
-        width: var(--f-s);
+        height: var(--f-s) !important;
+        width: var(--f-s) !important;
     }
 
     & > a.nav {
