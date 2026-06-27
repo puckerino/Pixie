@@ -100,3 +100,13 @@
     }
 
 }
+
+/* =====================================
+PRIVATE MESSAGES 
+======================================*/
+
+.privmsgs-body .pmlist .pm {
+    display: grid;
+    grid-template-columns: 50px 1fr .5fr .5fr max-content;
+    gap: 0 var(--spacing-s);
+}
