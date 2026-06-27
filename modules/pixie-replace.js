@@ -20,6 +20,12 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "a",
       text: "Nuevo Mensaje Privado"
     },
+
+    {
+      selector: "img[src='https://2img.net/i/fa/prosilver/button_topic_reply_en.png']",
+      target: "a",
+      text: "Contestar"
+    },
     
     {
       selector: "img.i_icon_quote, img#i_icon_quote",
