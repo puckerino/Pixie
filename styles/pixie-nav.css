@@ -102,6 +102,8 @@ body:has(#notif_unread:not(:empty)) .notis-alert {
                 
                 .contentTime {
                     grid-area: time;
+                    font-size: var(--f-s);
+                    text-transform: uppercase;
                 }
                 
                 .delete {
