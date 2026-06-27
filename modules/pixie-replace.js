@@ -231,6 +231,18 @@ const PixieReplace = PixieKit("Replace", function (_) {
     },
 
     {
+      selector: ".breadcrumbs",
+      target: "self",
+      removeTextMatching: /^\s*(?:\u00a0)*\s*$/
+    },
+
+    {
+      selector: ".breadcrumbs .nav",
+      target: "self",
+      beforeHTML: "<i data-lucide='chevron-right'></i>"
+    },
+
+    {
       custom() {
         const tabs = document.querySelector("#tabs");
         const cpMain = document.querySelector("#cp-main");
