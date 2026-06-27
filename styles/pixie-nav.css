@@ -110,7 +110,7 @@ body:has(#notif_unread:not(:empty)) .notis-alert {
             .content { 
                 position: relative;
                 display: grid;
-                grid-template-columns: 60px 1fr max-content;
+                grid-template-columns: 50px 1fr max-content;
                 grid-template-rows: max-content 1fr;
                 gap: 0 var(--spacing-s);
                 grid-template-areas: "icon time close" "icon content close";
