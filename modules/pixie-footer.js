@@ -105,8 +105,6 @@ const PixieFooter = PixieKit("Footer", function (_) {
 
     return `
       <section class="pixie-footer-groups">
-        <h4>GRUPOS</h4>
-
         <div class="pixie-footer-group-list">
           ${groups.map(function (group) {
             return `
