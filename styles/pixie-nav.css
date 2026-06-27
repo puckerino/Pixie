@@ -47,7 +47,7 @@ nav a[href$="/privmsg?folder=inbox"] {
     }   
 }
 
-body:has(.original-navbar:has(.new-message)) nav a[href$="/privmsg?folder=inbox"]:before {
+body:has(.original-navbar .new-message) nav a[href$="/privmsg?folder=inbox"]:before {
     opacity: 1;
 }
 
