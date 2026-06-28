@@ -473,7 +473,34 @@ const PixieReplace = PixieKit("Replace", function (_) {
       selector: ".post-options menu:last-child",
       target: "self",
       removeTextMatching: /^\s*(?:\u00a0)*\s*$/
+    },
+
+    {
+      selector: ".pagination > span",
+      target: "self",
+      unwrap: true
+    },
+
+    {
+      selector: ".pagination .page-sep",
+      target: "self",
+      remove: true
+    },
+
+    {
+      selector: "img.sprite-arrow_prosilver_left",
+      target: "a",
+      icon: "chevron-left",
+      tooltip: "Página anterior"
+    },
+
+    {
+      selector: "img.sprite-arrow_prosilver_right",
+      target: "a",
+      icon: "chevron-right",
+      tooltip: "Página siguiente"
     }
+      
   ];
 
   const processed = new WeakMap();
