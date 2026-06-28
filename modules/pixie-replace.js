@@ -506,6 +506,12 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "self",
       removeTextMatching: /^[ \u00A0]*•[ \u00A0]*$/
     },
+    
+    {
+      selector: ".pagination",
+      target: "self",
+      removeTextMatching: /^[ \u00A0]+$/
+    },
 
     {
       selector: ".signature-edit #smiley-box",
