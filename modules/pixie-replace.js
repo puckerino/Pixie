@@ -506,6 +506,24 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "self",
       removeTextMatching: /(?:\u00A0|•)+/g
     },
+
+    {
+      selector: ".signature-edit #smiley-box",
+      target: "self",
+      remove: true
+    },
+
+    {
+      selector: ".signature-edit #postingbox",
+      target: "self",
+      classes: ["has-spacing"]
+    },
+
+    {
+      selector: ".signature-edit .panel.row2.sig",
+      target: "self",
+      classes: ["page-bottom"]
+    }
       
   ];
 
