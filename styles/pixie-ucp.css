@@ -128,7 +128,7 @@ TEMAS SUPERVISADOS
             flex-direction: column;
 
             & > strong {
-                font: 200 var(--f-s) var(--f-text);
+                font: var(--f-s) var(--f-text);
                 text-transform: uppercase;
             }
 
