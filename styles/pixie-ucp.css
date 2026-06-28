@@ -170,8 +170,7 @@ BORRADORES - MENSAJES
     article:first-of-type {
         grid-column: 1 / -1;
         grid-row: 2;
-        padding: var(--spacing);
-        border: 1px solid var(--border);
+        border-top: 1px solid var(--border);
     }
 
         a[href$="mode=editpostdraft"]:not(.topictitle) {
