@@ -1,1 +1,17 @@
+/* ====================================
+MPS - BUSCAR USUARIO 
+==================================== */
 
+#find_user {
+    anchor-name: --findusername-anchor;
+}
+
+#find_username {
+    position: fixed;
+    position-anchor: --findusername-anchor;
+    position-area: bottom;
+    position-try-fallbacks: bottom, right, left;
+    z-index: 999;
+    box-shadow: 0 4px 12px rgb(0 0 0 / .12), 0 1px 2px rgb(0 0 0 / .08);
+    background: var(--surface-elevated);
+}
