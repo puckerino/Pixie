@@ -523,6 +523,15 @@ const PixieReplace = PixieKit("Replace", function (_) {
       selector: ".signature-edit .panel.row2.sig",
       target: "self",
       classes: ["page-bottom"]
+    },
+    
+    {
+      selector: ".supervised-topic .topictitle",
+      target: "self",
+      wrapAfter: {
+        tag: "span",
+        classes: ["pagination"]
+      }
     }
       
   ];
@@ -618,6 +627,24 @@ const PixieReplace = PixieKit("Replace", function (_) {
   target.replaceWith(replacement);
 
   return replacement;
+}
+
+  function wrapAfter(target, options) {
+  const wrapper = document.createElement(options.tag || "span");
+
+  if (Array.isArray(options.classes)) {
+    wrapper.classList.add(...options.classes);
+  }
+
+  let node = target.nextSibling;
+
+  while (node) {
+    const next = node.nextSibling;
+    wrapper.appendChild(node);
+    node = next;
+  }
+
+  target.parentNode.appendChild(wrapper);
 }
 
   function applyContent(target, rule) {
@@ -739,6 +766,10 @@ function prependHTML(target, html) {
 
       if (rule.replaceTag) {
         target = replaceTag(target, rule.replaceTag);
+      }
+      
+      if (rule.wrapAfter) {
+        wrapAfter(target, rule.wrapAfter);
       }
 
       if (rule.unwrap) {
