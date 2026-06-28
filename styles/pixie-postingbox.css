@@ -7,6 +7,7 @@ MPS - BUSCAR USUARIO
 }
 
 #find_username {
+    opacity: 1;
     position: fixed;
     position-anchor: --findusername-anchor;
     position-area: bottom;
@@ -16,7 +17,13 @@ MPS - BUSCAR USUARIO
     background: var(--surface-elevated);
     padding: var(--spacing);
 
-    br {
+    .inner {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-s);
+    }
+
+    br, .corners-top, .corners-bottom {
         display: none;
     }
 
