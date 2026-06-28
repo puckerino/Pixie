@@ -529,7 +529,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       selector: ".supervised-topic .topictitle",
       target: "self",
       wrapAfter: {
-        tag: "span",
+        wrapperTag: "article",
         classes: ["pagination"]
       }
     }
@@ -630,13 +630,17 @@ const PixieReplace = PixieKit("Replace", function (_) {
 }
 
   function wrapAfter(target, options) {
-  const wrapper = document.createElement(options.tag || "span");
+  let node = target.nextSibling;
+
+  if (!node) return;
+
+  const wrapper = document.createElement(
+    options.wrapperTag || options.tag || "div"
+  );
 
   if (Array.isArray(options.classes)) {
     wrapper.classList.add(...options.classes);
   }
-
-  let node = target.nextSibling;
 
   while (node) {
     const next = node.nextSibling;
