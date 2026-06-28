@@ -171,6 +171,7 @@ BORRADORES - MENSAJES
         grid-column: 1 / -1;
         grid-row: 2;
         border-top: 1px solid var(--border);
+        padding-top: var(--spacing);
     }
 
         a[href$="mode=editpostdraft"]:not(.topictitle) {
