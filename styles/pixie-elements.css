@@ -352,3 +352,13 @@ ALERTS
         color: contrast-color(var(--background));
     }
 }
+
+/* ===============================
+PAGINATION
+================================*/
+
+.pagination {
+    a[href="javascript:Pagination();"] {
+        display: none;
+    }
+}
