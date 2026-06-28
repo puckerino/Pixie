@@ -8,6 +8,10 @@ MPS - BUSCAR USUARIO
 
 #find_username {
 
+    &:empty {
+        display: none;
+    }
+
     &[style~="z-index: 999"] {
         opacity: 1!important;
     }
