@@ -504,7 +504,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
     {
       selector: ".pagination",
       target: "self",
-      removeTextMatching: /(?:\u00A0|•)+/g
+      removeTextMatching: /(?:\u00A0|•)+/
     },
 
     {
