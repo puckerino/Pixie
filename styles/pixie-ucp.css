@@ -66,6 +66,17 @@ SETTING BASE + MENU LATERAL, TABS
 }
 
 /* =====================================
+PREFERENCIAS
+======================================*/
+
+.switch-preferences {
+    menu {
+        display: grid;
+        grid-template-columns: 1fr repeat(3, max-content);
+    }
+}
+
+/* =====================================
 NOTIFICACIONES
 ======================================*/
 
