@@ -7,7 +7,11 @@ MPS - BUSCAR USUARIO
 }
 
 #find_username {
-    opacity: 1;
+
+    &[style~="z-index: 999"] {
+        opacity: 1!important;
+    }
+    
     position: fixed;
     position-anchor: --findusername-anchor;
     position-area: bottom;
