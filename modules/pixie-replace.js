@@ -550,6 +550,24 @@ const PixieReplace = PixieKit("Replace", function (_) {
         wrapperTag: "section",
         classes: ["page-bottom", "page-top", "has-spacing"]
       }
+    },    
+    
+    {
+      selector: ".table1.supervised-topics",
+      target: "self",
+      wrapAfter: {
+        wrapperTag: "section",
+        classes: ["page-bottom", "has-spacing"]
+      }
+    },    
+    
+    {
+      selector: ".table1.drafts",
+      target: "self",
+      wrapAfter: {
+        wrapperTag: "section",
+        classes: ["page-bottom", "has-spacing"]
+      }
     }
       
   ];
