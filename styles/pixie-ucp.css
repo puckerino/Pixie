@@ -69,6 +69,12 @@ SETTING BASE + MENU LATERAL, TABS
 NOTIFICACIONES
 ======================================*/
 
+.notif-preferences > menu.form-list {
+    display: grid;
+    grid-template-columns: 1fr max-content max-content;
+    align-items: center;
+}
+
 .notif_row {
     display: grid;
     align-items: center;
