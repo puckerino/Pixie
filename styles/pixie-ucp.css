@@ -65,6 +65,17 @@ SETTING BASE + MENU LATERAL, TABS
     }
 }
 
+/* =====================================
+NOTIFICACIONES
+======================================*/
+
+.notif_row {
+    display: grid;
+    align-items: center;
+    grid-template-columns: 1fr .5fr max-content;
+    gap: var(--spacing-s);
+}
+
 
 /* =====================================
 TEMAS SUPERVISADOS
