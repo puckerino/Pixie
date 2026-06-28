@@ -532,6 +532,15 @@ const PixieReplace = PixieKit("Replace", function (_) {
         wrapperTag: "article",
         classes: ["pagination"]
       }
+    },
+
+    {
+      selector: ".notif-list.table1",
+      target: "self",
+      wrapAfter: {
+        wrapperTag: "section",
+        classes: ["page-bottom", "has-spacing"]
+      }
     }
       
   ];
