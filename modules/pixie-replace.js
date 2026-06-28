@@ -276,10 +276,54 @@ const PixieReplace = PixieKit("Replace", function (_) {
     },
 
     {
+      selector: ".cp_notifs > form > .panel",
+      target: "self",
+      unwrap: true
+    },
+
+    {
+      selector: ".cp_notifs > form > fieldset",
+      target: "self",
+      unwrap: true
+    },
+
+    {
+      selector: ".cp_notifs > form .table1",
+      target: "self",
+      replaceTag: "section",
+      classes: ["notif-list", "stack", "column", "has-spacing"]
+    },
+
+    {
+      selector: ".cp_notifs .notif-list thead",
+      target: "self",
+      remove: true
+    },
+    
+    {
+      selector: ".cp_notifs .notif-list tbody",
+      target: "self",
+      unwrap: true
+    },
+    
+    {
+      selector: ".cp_notifs .notif-list tr",
+      target: "self",
+      replaceTag: "article",
+      classes: ["list-item", "notif_row"]
+    },    
+    
+    {
+      selector: ".cp_notifs .notif-list td",
+      target: "self",
+      replaceTag: "span"
+    },
+
+    {
       selector: "table#checkboxes.table1",
       target: "self",
       replaceTag: "section",
-      classes: ["notif-preferences"]
+      classes: ["notif-preferences", "stack", "column", "has-spacing"]
     },
 
     {
