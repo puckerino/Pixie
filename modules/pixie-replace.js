@@ -499,7 +499,13 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "a",
       icon: "chevron-right",
       tooltip: "Página siguiente"
-    }
+    },
+    
+    {
+      selector: ".pagination",
+      target: "self",
+      removeTextMatching: /(?:\u00A0|•)+/g
+    },
       
   ];
 
