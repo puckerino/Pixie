@@ -84,31 +84,56 @@ TEMAS SUPERVISADOS
     corner-shape: squircle;
 
     span {
-        &:first-of-type {grid-area: icon;}
-        &:nth-of-type(2) {grid-area: title;}
-        &:nth-of-type(3) {grid-area: forum;}
-        &:nth-of-type(4) {grid-area: posts;}
-        &:nth-of-type(5) {grid-area: author;}
-        &:nth-of-type(6) {grid-area: visitas;}
-        &:nth-of-type(7) {grid-area: lastpost;}
-        &:nth-of-type(8) {grid-area: checkbox;}
-    }
-
-    &>*:nth-child(2) {
-        font: bold 1rem var(--f-title);
-    }
-
-    &>*:nth-child(4),
-    &>*:nth-child(6) {
-        font: var(--f-s) var(--f-text);
-    }
-
-    &>*:nth-child(4):after {
-        content: "VISUALIZACIONES";
-    }
-
-    &>*:nth-child(6):after {
-        content: "RESPUESTAS";
+        &:first-of-type {
+            grid-area: icon;
+        }
+        
+        &:nth-of-type(2) {
+            grid-area: title;
+            font: bold 1rem var(--f-title);
+        }
+        
+        &:nth-of-type(3) {
+            grid-area: forum;
+        }
+        
+        &:nth-of-type(4) {
+            grid-area: posts;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            font: var(--f-s) var(--f-text);
+            text-transform: uppercase;
+            
+            &:after {
+                content: "VISITAS";
+            }
+        }
+        
+        &:nth-of-type(5) {
+            grid-area: author;
+        }
+        
+        &:nth-of-type(6) {
+            grid-area: visitas;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            font: var(--f-s) var(--f-text);
+            text-transform: uppercase;
+            
+            &:after {
+                content: "VISITAS";
+            }
+        }
+        
+        &:nth-of-type(7) {
+            grid-area: lastpost;
+        }
+        
+        &:nth-of-type(8) {
+            grid-area: checkbox;
+        }
     }
 
 }
