@@ -109,7 +109,7 @@ TEMAS SUPERVISADOS
             grid-area: title;
             font: bold 1rem var(--f-title);
 
-            &:not( > .topictitle) {
+            & > *:not(.topictitle) {
                 font-size: 0;
                 opacity: 0;
                 display: none;
