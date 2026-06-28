@@ -124,6 +124,20 @@ TEMAS SUPERVISADOS
         &:nth-of-type(2) {
             grid-area: title;
             font: bold 1rem var(--f-title);
+            display: flex;
+            flex-direction: column;
+
+            .pagination {
+                font-size: 0;
+
+                br, img {
+                    display: none;
+                }
+
+                a {
+                    font-size: var(--f-s) !important;
+                }
+            }
         }
         
         &:nth-of-type(3) {
