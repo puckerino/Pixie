@@ -155,6 +155,7 @@ BORRADORES - TEMAS
         padding: var(--spacing-s) var(--spacing);
         border-radius: .5rem;
         corner-shape: squircle;
+        text-align: center;
     }
 }
 
@@ -169,6 +170,17 @@ BORRADORES - MENSAJES
     article:first-of-type {
         grid-column: 1 / -1;
         grid-row: 2;
+    }
+
+        a[href$="mode=editpostdraft"]:not(.topictitle) {
+        background: var(--accent);
+        color: contrast-color(var(--accent));
+        font: var(--f-s) var(--f-buttons);
+        text-transform: uppercase;
+        padding: var(--spacing-s) var(--spacing);
+        border-radius: .5rem;
+        corner-shape: squircle;
+        text-align: center;
     }
         
 }
