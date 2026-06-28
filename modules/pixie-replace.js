@@ -342,7 +342,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       selector: ".notif-preferences tr",
       target: "self",
       replaceTag: "menu",
-      classes: ["form-list"]
+      classes: ["form-list", "list-item"]
     },
 
     {
