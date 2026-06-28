@@ -73,17 +73,25 @@ TEMAS SUPERVISADOS
 .supervised-topic {
     width: 100%;
     display: grid;
-    grid-template-columns: max-content 1fr .5fr .5fr .5fr .5fr 1fr max-content;
-    gap: var(--spacing-s);
-    border: 1px solid var(--border);
+    grid-template-columns: max-content 1fr .5fr .5fr 1fr max-content;
+    grid-template-areas:
+    "icon title author posts lastpost checkbox"
+    "icon forum author visitas lastpost checkbox";
+    
+    gap: 0 var(--spacing-s);
     padding: var(--spacing-s);
     border-radius: .5rem;
     corner-shape: squircle;
 
-    &>* {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-s);
+    span {
+        &:first-of-type {grid-area: icon;}
+        &:nth-of-type(2) {grid-area: title;}
+        &:nth-of-type(3) {grid-area: forum;}
+        &:nth-of-type(4) {grid-area: posts;}
+        &:nth-of-type(5) {grid-area: author;}
+        &:nth-of-type(6) {grid-area: visitas;}
+        &:nth-of-type(7) {grid-area: lastpost;}
+        &:nth-of-type(8) {grid-area: checkbox;}
     }
 
     &>*:nth-child(2) {
@@ -92,7 +100,7 @@ TEMAS SUPERVISADOS
 
     &>*:nth-child(4),
     &>*:nth-child(6) {
-        font: .75rem var(--f-mono);
+        font: var(--f-s) var(--f-text);
     }
 
     &>*:nth-child(4):after {
