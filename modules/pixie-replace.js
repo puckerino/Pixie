@@ -330,7 +330,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       selector: ".drafts-list .table1",
       target: "self",
       replaceTag: "section",
-      classes: ["drafts", "stack", "column"]
+      classes: ["drafts", "stack", "column", "has-spacing"]
     },
 
     {
@@ -349,7 +349,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       selector: ".drafts-list .drafts.stack tr",
       target: "self",
       replaceTag: "article",
-      classes: ["draft"]
+      classes: ["draft", "list-item"]
     },
 
     {
@@ -375,7 +375,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "self",
       replaceTag: "section",
       removeAttrs: ["cellspacing"],
-      classes: ["supervised-topics", "stack", "column"]
+      classes: ["supervised-topics", "stack", "column", "has-spacing"]
     },
 
     {
@@ -394,7 +394,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       selector: ".supervised-topics.stack tr",
       target: "self",
       replaceTag: "article",
-      classes: ["supervised-topic"]
+      classes: ["supervised-topic", "list-item"]
     },
 
     {
