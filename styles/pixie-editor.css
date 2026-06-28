@@ -73,12 +73,28 @@
   grid-template-areas: "smiley editor" "status editor" ". buttons";
   padding: var(--spacing);
 
+  @media (max-width: 700px) {
+    grid-template-columns: 1fr;
+    grid-template-rows: max-content 1fr max-content;
+    grid-template-areas: "status" "editor" "buttons";
+  }
+
   .status {
     grid-area: status;
+
+    @media (max-width: 700px) {
+      display: flex;
+      flex-direction: row;
+      align-items: center; 
+    }
   }
 
   #smiley-box {
     grid-area: smiley;
+
+    @media (max-width: 700px) {
+      display: none;
+    }
   }
 
   #message-box {
@@ -97,7 +113,7 @@
   }
 }
 
-#quick_reply div:not(#textarea_content) {
+#quick_reply div:not(#textarea_content, .sceditor-dropdown) {
   display: flex;
   align-items: center;
   width: 100%;
