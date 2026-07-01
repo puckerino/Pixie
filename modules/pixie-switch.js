@@ -1,17 +1,34 @@
 (function () {
-  window.PIXIE_SWITCH_VERSION = "PixieSwitch-v1.2";
+  "use strict";
+
+  window.PIXIE_SWITCH_VERSION = "PixieSwitch-v1.3";
 
   var PIXIE_SWITCH_STORAGE = "pixie_switch_accounts_v1";
   var PIXIE_SWITCH_PREFILL = "pixie_switch_prefill_username";
 
-  var PIXIE_SWITCH_OPTIONS = {
+  var PIXIE_SWITCH_DEFAULTS = {
     autoLogin: false,
     confirmSwitch: true
   };
 
+  var PIXIE_SWITCH_OPTIONS = Object.assign(
+    {},
+    PIXIE_SWITCH_DEFAULTS,
+    window.PIXIE_SWITCH_OPTIONS || {}
+  );
+
+  function ready(callback) {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", callback);
+    } else {
+      callback();
+    }
+  }
+
   function loadAccounts() {
     try {
       var data = JSON.parse(localStorage.getItem(PIXIE_SWITCH_STORAGE) || "[]");
+
       if (!Array.isArray(data)) return [];
 
       return data
@@ -108,6 +125,7 @@
     }
 
     var welcome = document.getElementById("fa_welcome");
+
     if (!welcome) return null;
 
     var nickText = String(welcome.textContent || "")
@@ -127,6 +145,7 @@
 
   function prefillUsername() {
     var username = sessionStorage.getItem(PIXIE_SWITCH_PREFILL);
+
     if (!username) return;
 
     var input =
@@ -150,7 +169,6 @@
 
   function getPixieSwitchUI() {
     return {
-      root: document.getElementById("pixie-switch"),
       button: document.getElementById("pixie-switch-button"),
       panel: document.getElementById("pixie-switch-panel"),
       list: document.getElementById("pixie-switch-list"),
@@ -164,7 +182,6 @@
 
   function hasRequiredUI(ui) {
     return (
-      ui.root &&
       ui.button &&
       ui.panel &&
       ui.list &&
@@ -310,7 +327,6 @@
     } else {
       item.addEventListener("click", function (event) {
         if (event.target === deleteButton) return;
-
         switchToAccount(account);
       });
     }
@@ -374,9 +390,11 @@
 
     var currentAccount = getCurrentAccount();
     var isGuest = !currentAccount;
+
     var currentUsername = currentAccount
       ? normalizeUsername(currentAccount.nick)
       : "";
+
     var currentId = currentAccount && currentAccount.id
       ? String(currentAccount.id)
       : "";
@@ -386,6 +404,9 @@
 
     if (ui.saveButton) {
       ui.saveButton.hidden = isGuest && !PIXIE_SWITCH_OPTIONS.autoLogin;
+      ui.saveButton.textContent = PIXIE_SWITCH_OPTIONS.autoLogin
+        ? "Añadir cuenta"
+        : "Guardar cuenta";
     }
 
     if (ui.deleteCurrentButton) {
@@ -596,5 +617,5 @@
     renderAccounts();
   }
 
-  initPixieSwitch();
+  ready(initPixieSwitch);
 })();
