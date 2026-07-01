@@ -4,48 +4,63 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
   warn,
   mergeOptions
 }) {
-  const defaults = {
+  const DEFAULTS = Object.freeze({
     autoLogin: false,
     confirmSwitch: true
-  };
+  });
 
-  const options = mergeOptions(defaults);
+  const OPTIONS = mergeOptions(DEFAULTS);
 
-  const storage = {
-    accounts: "pixie_switch_accounts_v1",
-    prefill: "pixie_switch_prefill_username",
-    pendingLogin: "pixie_switch_pending_login"
-  };
+  const STORAGE = Object.freeze({
+    ACCOUNTS: "pixie_switch_accounts_v1",
+    PREFILL: "pixie_switch_prefill_username",
+    PENDING_LOGIN: "pixie_switch_pending_login"
+  });
 
-  window.PIXIE_SWITCH_VERSION = "PixieSwitch-v1.6";
+  const SELECTORS = Object.freeze({
+    button: "#pixie-switch-button",
+    panel: "#pixie-switch-panel",
+    list: "#pixie-switch-list",
+    loginForm: "#pixie-switch-login-form",
+    accountTemplate: "#pixie-switch-account-template",
+    emptyTemplate: "#pixie-switch-empty-template",
+    saveButton: '[data-pixie-switch-action="save"]',
+    deleteCurrentButton: '[data-pixie-switch-action="delete-current"]',
+    avatar: "#fa_usermenu img",
+    welcome: "#fa_welcome",
+    logout: "#logout"
+  });
 
-  const AccountManager = {
-    load() {
-      try {
-        const data = JSON.parse(localStorage.getItem(storage.accounts) || "[]");
-        if (!Array.isArray(data)) return [];
+  const TEXT = Object.freeze({
+    save: "Guardar cuenta",
+    add: "Añadir cuenta",
+    active: "Activa",
+    autoSwitch: "Cambiar automáticamente",
+    prefillSwitch: "Cerrar sesión y preparar login",
+    emptyTitle: "Sin cuentas guardadas",
+    emptyGuest: "Inicia sesión y guarda tus multicuentas.",
+    emptyUser: "Pulsa “Guardar cuenta” para añadir la cuenta actual.",
+    confirmSwitch: "¿Cambiar a {username}?",
+    confirmDelete: "¿Eliminar esta cuenta?",
+    confirmDeleteCurrent: "¿Borrar la cuenta actual de la lista?",
+    saveError: "No se pudo guardar la cuenta. Puede que el almacenamiento esté bloqueado o lleno.",
+    loginRequired: "Primero inicia sesión para poder guardar la cuenta.",
+    noActiveSession: "No hay sesión activa que borrar.",
+    alreadySaved: "Esa cuenta ya está guardada.",
+    notSaved: "Esa cuenta no estaba guardada.",
+    loginFailed: "No se pudo iniciar sesión con esa cuenta.",
+    loginRequestFailed: "No se pudo iniciar sesión.",
+    missingHtml: "Falta el HTML base o los templates de PixieSwitch."
+  });
 
-        return data
-          .filter((account) => account && typeof account.nick === "string" && account.nick.trim())
-          .map((account) => ({
-            id: String(account.id || ""),
-            nick: String(account.nick || "").trim(),
-            avatar: String(account.avatar || ""),
-            password: String(account.password || "")
-          }));
-      } catch (error) {
-        return [];
-      }
-    },
+  const DEFAULT_AVATAR =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23333'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='28' fill='%23fff'%3E%3F%3C/text%3E%3C/svg%3E";
 
-    save(accounts) {
-      try {
-        localStorage.setItem(storage.accounts, JSON.stringify(accounts || []));
-        return true;
-      } catch (error) {
-        alert("No se pudo guardar la cuenta. Puede que el almacenamiento esté bloqueado o lleno.");
-        return false;
-      }
+  const Utils = {
+    format(text, values) {
+      return String(text || "").replace(/\{(\w+)\}/g, function (_, key) {
+        return values && values[key] != null ? values[key] : "";
+      });
     },
 
     normalizeUsername(value) {
@@ -65,8 +80,83 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       return decodeURIComponent(escape(atob(password)));
     },
 
+    getUserId() {
+      return window._userdata && _userdata.user_id
+        ? String(_userdata.user_id)
+        : "";
+    }
+  };
+
+  const StorageManager = {
+    loadAccounts() {
+      try {
+        const data = JSON.parse(localStorage.getItem(STORAGE.ACCOUNTS) || "[]");
+
+        if (!Array.isArray(data)) return [];
+
+        return data
+          .filter((account) => {
+            return account && typeof account.nick === "string" && account.nick.trim();
+          })
+          .map((account) => {
+            return {
+              id: String(account.id || ""),
+              nick: String(account.nick || "").trim(),
+              avatar: String(account.avatar || ""),
+              password: String(account.password || "")
+            };
+          });
+      } catch (error) {
+        return [];
+      }
+    },
+
+    saveAccounts(accounts) {
+      try {
+        localStorage.setItem(STORAGE.ACCOUNTS, JSON.stringify(accounts || []));
+        return true;
+      } catch (error) {
+        alert(TEXT.saveError);
+        return false;
+      }
+    },
+
+    getPendingLogin() {
+      const raw = sessionStorage.getItem(STORAGE.PENDING_LOGIN);
+      if (!raw) return null;
+
+      try {
+        return JSON.parse(raw);
+      } catch (error) {
+        this.clearPendingLogin();
+        return null;
+      }
+    },
+
+    setPendingLogin(account) {
+      sessionStorage.setItem(STORAGE.PENDING_LOGIN, JSON.stringify(account));
+    },
+
+    clearPendingLogin() {
+      sessionStorage.removeItem(STORAGE.PENDING_LOGIN);
+    },
+
+    setPrefillUsername(username) {
+      sessionStorage.setItem(STORAGE.PREFILL, username);
+    },
+
+    getPrefillUsername() {
+      return sessionStorage.getItem(STORAGE.PREFILL);
+    },
+
+    clearPrefillUsername() {
+      sessionStorage.removeItem(STORAGE.PREFILL);
+    }
+  };
+
+  const AccountManager = {
     getLogoutUrl() {
-      const logout = get("#logout");
+      const logout = get(SELECTORS.logout);
 
       if (
         logout &&
@@ -91,7 +181,7 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
     },
 
     getCurrent() {
-      const img = get("#fa_usermenu img");
+      const img = get(SELECTORS.avatar);
       const avatar = img && img.src ? img.src : "";
 
       let nickAlt = img && img.getAttribute
@@ -105,13 +195,13 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
 
       if (nickAlt) {
         return {
-          id: window._userdata && _userdata.user_id ? String(_userdata.user_id) : "",
+          id: Utils.getUserId(),
           nick: nickAlt,
           avatar
         };
       }
 
-      const welcome = get("#fa_welcome");
+      const welcome = get(SELECTORS.welcome);
       if (!welcome) return null;
 
       const nickText = String(welcome.textContent || "")
@@ -123,99 +213,109 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       if (!nickText) return null;
 
       return {
-        id: window._userdata && _userdata.user_id ? String(_userdata.user_id) : "",
+        id: Utils.getUserId(),
         nick: nickText,
         avatar
       };
     },
 
-    prefillUsername() {
-      const username = sessionStorage.getItem(storage.prefill);
-      if (!username) return;
+    isCurrentSaved(accounts, currentAccount) {
+      if (!currentAccount) return false;
 
-      const input =
-        get('input[name="username"]') ||
-        get("#username") ||
-        get('input[name="login_username"]');
+      const currentUsername = Utils.normalizeUsername(currentAccount.nick);
+      const currentId = currentAccount.id ? String(currentAccount.id) : "";
 
-      if (!input) return;
-
-      input.value = username;
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-      input.dispatchEvent(new Event("change", { bubbles: true }));
-      input.focus();
-
-      sessionStorage.removeItem(storage.prefill);
+      return accounts.some((account) => {
+        return (
+          (currentId && account.id === currentId) ||
+          Utils.normalizeUsername(account.nick) === currentUsername
+        );
+      });
     },
 
-    submitPendingLogin() {
-      const raw = sessionStorage.getItem(storage.pendingLogin);
-      if (!raw) return;
+    findActiveIndex(accounts, currentAccount) {
+      if (!currentAccount) return -1;
 
-      let pending;
+      const currentUsername = Utils.normalizeUsername(currentAccount.nick);
+      const currentId = currentAccount.id ? String(currentAccount.id) : "";
 
-      try {
-        pending = JSON.parse(raw);
-      } catch (error) {
-        sessionStorage.removeItem(storage.pendingLogin);
-        return;
+      return accounts.findIndex((account) => {
+        return (
+          (currentId && account.id === currentId) ||
+          (currentUsername && Utils.normalizeUsername(account.nick) === currentUsername)
+        );
+      });
+    },
+
+    saveCurrent() {
+      const currentAccount = this.getCurrent();
+
+      if (!currentAccount) {
+        alert(TEXT.loginRequired);
+        return false;
       }
 
-      if (!pending || !pending.nick || !pending.password) {
-        sessionStorage.removeItem(storage.pendingLogin);
-        return;
+      const accounts = StorageManager.loadAccounts();
+
+      if (this.isCurrentSaved(accounts, currentAccount)) {
+        alert(TEXT.alreadySaved);
+        return false;
       }
 
-      const form = document.createElement("form");
-      form.method = "post";
-      form.action = "/login";
-      form.style.display = "none";
+      accounts.push({
+        id: currentAccount.id || "",
+        nick: currentAccount.nick,
+        avatar: currentAccount.avatar || "",
+        password: ""
+      });
 
-      const username = document.createElement("input");
-      username.type = "text";
-      username.name = "username";
-      username.value = pending.nick;
-
-      const password = document.createElement("input");
-      password.type = "password";
-      password.name = "password";
-      password.value = this.decodePassword(pending.password);
-
-      const autologin = document.createElement("input");
-      autologin.type = "checkbox";
-      autologin.name = "autologin";
-      autologin.checked = true;
-      autologin.value = "on";
-
-      const login = document.createElement("input");
-      login.type = "submit";
-      login.name = "login";
-      login.value = "Conectarse";
-
-      form.appendChild(username);
-      form.appendChild(password);
-      form.appendChild(autologin);
-      form.appendChild(login);
-
-      document.body.appendChild(form);
-      sessionStorage.removeItem(storage.pendingLogin);
-
-      form.submit();
+      return StorageManager.saveAccounts(accounts);
     },
 
-    getAccountIdFromHtml(html) {
-      const match = html.match(/_userdata\["user_id"\]\s*=\s*(\d+)/);
-      return match ? match[1] : "";
+    removeCurrent() {
+      const currentAccount = this.getCurrent();
+
+      if (!currentAccount) {
+        alert(TEXT.noActiveSession);
+        return false;
+      }
+
+      const accounts = StorageManager.loadAccounts();
+      const currentUsername = Utils.normalizeUsername(currentAccount.nick);
+      const currentId = currentAccount.id ? String(currentAccount.id) : "";
+
+      const filtered = accounts.filter((account) => {
+        return !(
+          (currentId && account.id === currentId) ||
+          Utils.normalizeUsername(account.nick) === currentUsername
+        );
+      });
+
+      if (filtered.length === accounts.length) {
+        alert(TEXT.notSaved);
+        return false;
+      }
+
+      return StorageManager.saveAccounts(filtered);
     },
 
-    getAvatarFromHtml(html) {
-      const match = html.match(/_userdata\["avatar"\]\s*=\s*"(.+?)";/);
-      return match ? match[1].replace(/\\"/g, '"') : "";
-    },
+    removeSaved(account) {
+      const accounts = StorageManager.loadAccounts();
+      const targetUsername = Utils.normalizeUsername(account.nick);
+      const targetId = String(account.id || "");
+      const targetAvatar = String(account.avatar || "");
 
-    getUsernameFromHtml(html) {
-      const match = html.match(/_userdata\["username"\]\s*=\s*"(.+?)";/);
-      return match ? match[1].replace(/\\"/g, '"') : "";
+      const filtered = accounts.filter((savedAccount) => {
+        return !(
+          (targetId && savedAccount.id === targetId) ||
+          (
+            Utils.normalizeUsername(savedAccount.nick) === targetUsername &&
+            String(savedAccount.avatar || "") === targetAvatar
+          )
+        );
+      });
+
+      return StorageManager.saveAccounts(filtered);
     },
 
     login(username, password) {
@@ -236,108 +336,19 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       }).then((response) => response.text());
     },
 
-    isCurrentSaved(accounts, currentAccount) {
-      const currentUsername = currentAccount
-        ? this.normalizeUsername(currentAccount.nick)
-        : "";
-
-      const currentId = currentAccount && currentAccount.id
-        ? String(currentAccount.id)
-        : "";
-
-      return accounts.some((account) => {
-        return (
-          (currentId && account.id === currentId) ||
-          this.normalizeUsername(account.nick) === currentUsername
-        );
-      });
+    getAccountIdFromHtml(html) {
+      const match = html.match(/_userdata\["user_id"\]\s*=\s*(\d+)/);
+      return match ? match[1] : "";
     },
 
-    findActiveIndex(accounts, currentAccount) {
-      if (!currentAccount) return -1;
-
-      const currentUsername = this.normalizeUsername(currentAccount.nick);
-      const currentId = currentAccount.id ? String(currentAccount.id) : "";
-
-      return accounts.findIndex((account) => {
-        return (
-          (currentId && account.id === currentId) ||
-          (currentUsername && this.normalizeUsername(account.nick) === currentUsername)
-        );
-      });
+    getAvatarFromHtml(html) {
+      const match = html.match(/_userdata\["avatar"\]\s*=\s*"(.+?)";/);
+      return match ? match[1].replace(/\\"/g, '"') : "";
     },
 
-    removeCurrent() {
-      const currentAccount = this.getCurrent();
-
-      if (!currentAccount) {
-        alert("No hay sesión activa que borrar.");
-        return false;
-      }
-
-      const accounts = this.load();
-      const currentUsername = this.normalizeUsername(currentAccount.nick);
-      const currentId = currentAccount.id ? String(currentAccount.id) : "";
-
-      const filtered = accounts.filter((account) => {
-        return !(
-          (currentId && account.id === currentId) ||
-          this.normalizeUsername(account.nick) === currentUsername
-        );
-      });
-
-      if (filtered.length === accounts.length) {
-        alert("Esa cuenta no estaba guardada.");
-        return false;
-      }
-
-      this.save(filtered);
-      return true;
-    },
-
-    removeSaved(account) {
-      const accounts = this.load();
-      const targetUsername = this.normalizeUsername(account.nick);
-      const targetId = String(account.id || "");
-      const targetAvatar = String(account.avatar || "");
-
-      const filtered = accounts.filter((savedAccount) => {
-        return !(
-          (targetId && savedAccount.id === targetId) ||
-          (
-            this.normalizeUsername(savedAccount.nick) === targetUsername &&
-            String(savedAccount.avatar || "") === targetAvatar
-          )
-        );
-      });
-
-      this.save(filtered);
-    },
-
-    saveCurrent() {
-      const currentAccount = this.getCurrent();
-
-      if (!currentAccount) {
-        alert("Primero inicia sesión para poder guardar la cuenta.");
-        return false;
-      }
-
-      const accounts = this.load();
-
-      if (this.isCurrentSaved(accounts, currentAccount)) {
-        alert("Esa cuenta ya está guardada.");
-        return false;
-      }
-
-      accounts.push({
-        id: currentAccount.id || "",
-        nick: currentAccount.nick,
-        avatar: currentAccount.avatar || "",
-        password: ""
-      });
-
-      this.save(accounts);
-      return true;
+    getUsernameFromHtml(html) {
+      const match = html.match(/_userdata\["username"\]\s*=\s*"(.+?)";/);
+      return match ? match[1].replace(/\\"/g, '"') : "";
     },
 
     saveWithLogin(form) {
@@ -353,21 +364,21 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
           const avatar = this.getAvatarFromHtml(html);
 
           if (!id) {
-            alert("No se pudo iniciar sesión con esa cuenta.");
+            alert(TEXT.loginFailed);
             return;
           }
 
-          const accounts = this.load();
+          const accounts = StorageManager.loadAccounts();
 
           const alreadyExists = accounts.some((account) => {
             return (
               account.id === id ||
-              this.normalizeUsername(account.nick) === this.normalizeUsername(parsedUsername)
+              Utils.normalizeUsername(account.nick) === Utils.normalizeUsername(parsedUsername)
             );
           });
 
           if (alreadyExists) {
-            alert("Esa cuenta ya está guardada.");
+            alert(TEXT.alreadySaved);
             return;
           }
 
@@ -375,57 +386,117 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
             id,
             nick: parsedUsername,
             avatar,
-            password: this.encodePassword(password)
+            password: Utils.encodePassword(password)
           });
 
-          this.save(accounts);
+          StorageManager.saveAccounts(accounts);
           window.location.reload();
         })
         .catch(() => {
-          alert("No se pudo iniciar sesión.");
+          alert(TEXT.loginRequestFailed);
         });
     },
 
     switchTo(account) {
-      if (
-        options.confirmSwitch &&
-        !confirm("¿Cambiar a " + account.nick + "?")
-      ) {
-        return;
-      }
+      const confirmed =
+        !OPTIONS.confirmSwitch ||
+        confirm(Utils.format(TEXT.confirmSwitch, { username: account.nick }));
 
-      if (options.autoLogin && account.password) {
-        sessionStorage.setItem(
-          storage.pendingLogin,
-          JSON.stringify({
-            nick: account.nick,
-            password: account.password
-          })
-        );
+      if (!confirmed) return;
+
+      if (OPTIONS.autoLogin && account.password) {
+        StorageManager.setPendingLogin({
+          nick: account.nick,
+          password: account.password
+        });
 
         const logoutUrl = this.getLogoutUrl();
         window.location.href = logoutUrl || "/login";
         return;
       }
 
-      sessionStorage.setItem(storage.prefill, account.nick);
+      StorageManager.setPrefillUsername(account.nick);
 
       const logoutUrl = this.getLogoutUrl();
       window.location.href = logoutUrl || "/login";
+    },
+
+    submitPendingLogin() {
+      const pending = StorageManager.getPendingLogin();
+
+      if (!pending || !pending.nick || !pending.password) {
+        StorageManager.clearPendingLogin();
+        return;
+      }
+
+      const form = document.createElement("form");
+      form.method = "post";
+      form.action = "/login";
+      form.style.display = "none";
+
+      const username = document.createElement("input");
+      username.type = "text";
+      username.name = "username";
+      username.value = pending.nick;
+
+      const password = document.createElement("input");
+      password.type = "password";
+      password.name = "password";
+      password.value = Utils.decodePassword(pending.password);
+
+      const autologin = document.createElement("input");
+      autologin.type = "checkbox";
+      autologin.name = "autologin";
+      autologin.checked = true;
+      autologin.value = "on";
+
+      const login = document.createElement("input");
+      login.type = "submit";
+      login.name = "login";
+      login.value = "Conectarse";
+
+      form.appendChild(username);
+      form.appendChild(password);
+      form.appendChild(autologin);
+      form.appendChild(login);
+
+      document.body.appendChild(form);
+      StorageManager.clearPendingLogin();
+
+      form.submit();
+    },
+
+    prefillUsername() {
+      const username = StorageManager.getPrefillUsername();
+      if (!username) return;
+
+      const input =
+        get('input[name="username"]') ||
+        get("#username") ||
+        get('input[name="login_username"]');
+
+      if (!input) return;
+
+      input.value = username;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      input.focus();
+
+      StorageManager.clearPrefillUsername();
     }
   };
 
   const SwitchUI = {
     get() {
       return {
-        button: get("#pixie-switch-button"),
-        panel: get("#pixie-switch-panel"),
-        list: get("#pixie-switch-list"),
-        loginForm: get("#pixie-switch-login-form"),
-        accountTemplate: get("#pixie-switch-account-template"),
-        emptyTemplate: get("#pixie-switch-empty-template"),
-        saveButton: get('[data-pixie-switch-action="save"]'),
-        deleteCurrentButton: get('[data-pixie-switch-action="delete-current"]')
+        button: get(SELECTORS.button),
+        panel: get(SELECTORS.panel),
+        list: get(SELECTORS.list),
+        loginForm: get(SELECTORS.loginForm),
+        accountTemplate: get(SELECTORS.accountTemplate),
+        emptyTemplate: get(SELECTORS.emptyTemplate),
+        saveButton: get(SELECTORS.saveButton),
+        deleteCurrentButton: get(SELECTORS.deleteCurrentButton)
       };
     },
 
@@ -440,17 +511,18 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       );
     },
 
-    getDefaultAvatar() {
-      return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23333'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='28' fill='%23fff'%3E%3F%3C/text%3E%3C/svg%3E";
-    },
-
     createEmptyState(isGuest, ui) {
       const item = ui.emptyTemplate.content.firstElementChild.cloneNode(true);
+      const title = item.querySelector(".pixie-switch-nick");
       const description = item.querySelector(".pixie-switch-sub");
 
-      description.textContent = isGuest
-        ? "Inicia sesión y guarda tus multicuentas."
-        : "Pulsa “Guardar cuenta” para añadir la cuenta actual.";
+      if (title) title.textContent = TEXT.emptyTitle;
+
+      if (description) {
+        description.textContent = isGuest
+          ? TEXT.emptyGuest
+          : TEXT.emptyUser;
+      }
 
       return item;
     },
@@ -463,16 +535,20 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       const status = item.querySelector(".pixie-switch-sub");
       const deleteButton = item.querySelector(".pixie-switch-delete");
 
-      avatar.src = account.avatar || this.getDefaultAvatar();
-      username.textContent = account.nick;
+      if (avatar) avatar.src = account.avatar || DEFAULT_AVATAR;
+      if (username) username.textContent = account.nick;
 
-      status.textContent = isActive
-        ? "Activa"
-        : options.autoLogin && account.password
-          ? "Cambiar automáticamente"
-          : "Cerrar sesión y preparar login";
+      if (status) {
+        status.textContent = isActive
+          ? TEXT.active
+          : OPTIONS.autoLogin && account.password
+            ? TEXT.autoSwitch
+            : TEXT.prefillSwitch;
+      }
 
-      deleteButton.setAttribute("aria-label", "Eliminar " + account.nick);
+      if (deleteButton) {
+        deleteButton.setAttribute("aria-label", "Eliminar " + account.nick);
+      }
 
       if (isActive) {
         item.classList.add("pixie-switch-active");
@@ -483,15 +559,17 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
         });
       }
 
-      deleteButton.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
+      if (deleteButton) {
+        deleteButton.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
 
-        if (!confirm("¿Eliminar esta cuenta?")) return;
+          if (!confirm(TEXT.confirmDelete)) return;
 
-        AccountManager.removeSaved(account);
-        this.render();
-      });
+          AccountManager.removeSaved(account);
+          this.render();
+        });
+      }
 
       return item;
     },
@@ -500,20 +578,18 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       const ui = this.get();
 
       if (!this.hasRequired(ui)) {
-        warn("Falta el HTML base o los templates de PixieSwitch.");
+        warn(TEXT.missingHtml);
         return;
       }
 
       const currentAccount = AccountManager.getCurrent();
       const isGuest = !currentAccount;
-      const accounts = AccountManager.load();
+      const accounts = StorageManager.loadAccounts();
       const isSaved = !isGuest && AccountManager.isCurrentSaved(accounts, currentAccount);
 
       if (ui.saveButton) {
-        ui.saveButton.hidden = isGuest && !options.autoLogin;
-        ui.saveButton.textContent = options.autoLogin
-          ? "Añadir cuenta"
-          : "Guardar cuenta";
+        ui.saveButton.hidden = isGuest && !OPTIONS.autoLogin;
+        ui.saveButton.textContent = OPTIONS.autoLogin ? TEXT.add : TEXT.save;
       }
 
       if (ui.deleteCurrentButton) {
@@ -569,7 +645,7 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       const ui = this.get();
 
       if (!this.hasRequired(ui)) {
-        warn("Falta el HTML base o los templates de PixieSwitch.");
+        warn(TEXT.missingHtml);
         return false;
       }
 
@@ -587,18 +663,21 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
         const action = actionButton.getAttribute("data-pixie-switch-action");
 
         if (action === "save") {
-          if (options.autoLogin) {
+          if (OPTIONS.autoLogin) {
             this.showLoginForm();
-          } else {
-            if (AccountManager.saveCurrent()) this.render();
+          } else if (AccountManager.saveCurrent()) {
+            this.render();
           }
 
           return;
         }
 
         if (action === "delete-current") {
-          if (!confirm("¿Borrar la cuenta actual de la lista?")) return;
-          if (AccountManager.removeCurrent()) this.render();
+          if (!confirm(TEXT.confirmDeleteCurrent)) return;
+
+          if (AccountManager.removeCurrent()) {
+            this.render();
+          }
         }
       });
 
