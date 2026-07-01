@@ -1,50 +1,38 @@
-(function () {
-  "use strict";
-
-  const PixieSwitch = {
-    version: "PixieSwitch-v1.5",
-
-    options: {
-      autoLogin: false,
-      confirmSwitch: true
-    },
-
-    storage: {
-      accounts: "pixie_switch_accounts_v1",
-      prefill: "pixie_switch_prefill_username",
-      pendingLogin: "pixie_switch_pending_login"
-    }
+const PixieSwitch = PixieKit("PixieSwitch", function ({
+  ready,
+  get,
+  warn,
+  mergeOptions
+}) {
+  const defaults = {
+    autoLogin: false,
+    confirmSwitch: true
   };
 
-  window.PIXIE_SWITCH_VERSION = PixieSwitch.version;
+  const options = mergeOptions(defaults);
 
-  function ready(callback) {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", callback);
-    } else {
-      callback();
-    }
-  }
+  const storage = {
+    accounts: "pixie_switch_accounts_v1",
+    prefill: "pixie_switch_prefill_username",
+    pendingLogin: "pixie_switch_pending_login"
+  };
+
+  window.PIXIE_SWITCH_VERSION = "PixieSwitch-v1.6";
 
   const AccountManager = {
     load() {
       try {
-        const data = JSON.parse(localStorage.getItem(PixieSwitch.storage.accounts) || "[]");
-
+        const data = JSON.parse(localStorage.getItem(storage.accounts) || "[]");
         if (!Array.isArray(data)) return [];
 
         return data
-          .filter((account) => {
-            return account && typeof account.nick === "string" && account.nick.trim();
-          })
-          .map((account) => {
-            return {
-              id: String(account.id || ""),
-              nick: String(account.nick || "").trim(),
-              avatar: String(account.avatar || ""),
-              password: String(account.password || "")
-            };
-          });
+          .filter((account) => account && typeof account.nick === "string" && account.nick.trim())
+          .map((account) => ({
+            id: String(account.id || ""),
+            nick: String(account.nick || "").trim(),
+            avatar: String(account.avatar || ""),
+            password: String(account.password || "")
+          }));
       } catch (error) {
         return [];
       }
@@ -52,7 +40,7 @@
 
     save(accounts) {
       try {
-        localStorage.setItem(PixieSwitch.storage.accounts, JSON.stringify(accounts || []));
+        localStorage.setItem(storage.accounts, JSON.stringify(accounts || []));
         return true;
       } catch (error) {
         alert("No se pudo guardar la cuenta. Puede que el almacenamiento esté bloqueado o lleno.");
@@ -78,13 +66,13 @@
     },
 
     getLogoutUrl() {
-      const logout = document.getElementById("logout");
+      const logout = get("#logout");
 
       if (
         logout &&
         logout.href &&
-        logout.href.indexOf("logout=1") > -1 &&
-        logout.href.indexOf("key=") > -1
+        logout.href.includes("logout=1") &&
+        logout.href.includes("key=")
       ) {
         return logout.href;
       }
@@ -94,10 +82,7 @@
       for (let i = 0; i < links.length; i++) {
         const href = links[i].href || "";
 
-        if (
-          href.indexOf("logout=1") > -1 &&
-          href.indexOf("key=") > -1
-        ) {
+        if (href.includes("logout=1") && href.includes("key=")) {
           return href;
         }
       }
@@ -106,7 +91,7 @@
     },
 
     getCurrent() {
-      const img = document.querySelector("#fa_usermenu img");
+      const img = get("#fa_usermenu img");
       const avatar = img && img.src ? img.src : "";
 
       let nickAlt = img && img.getAttribute
@@ -122,12 +107,11 @@
         return {
           id: window._userdata && _userdata.user_id ? String(_userdata.user_id) : "",
           nick: nickAlt,
-          avatar: avatar
+          avatar
         };
       }
 
-      const welcome = document.getElementById("fa_welcome");
-
+      const welcome = get("#fa_welcome");
       if (!welcome) return null;
 
       const nickText = String(welcome.textContent || "")
@@ -141,19 +125,18 @@
       return {
         id: window._userdata && _userdata.user_id ? String(_userdata.user_id) : "",
         nick: nickText,
-        avatar: avatar
+        avatar
       };
     },
 
     prefillUsername() {
-      const username = sessionStorage.getItem(PixieSwitch.storage.prefill);
-
+      const username = sessionStorage.getItem(storage.prefill);
       if (!username) return;
 
       const input =
-        document.querySelector('input[name="username"]') ||
-        document.querySelector("input#username") ||
-        document.querySelector('input[name="login_username"]');
+        get('input[name="username"]') ||
+        get("#username") ||
+        get('input[name="login_username"]');
 
       if (!input) return;
 
@@ -162,12 +145,11 @@
       input.dispatchEvent(new Event("change", { bubbles: true }));
       input.focus();
 
-      sessionStorage.removeItem(PixieSwitch.storage.prefill);
+      sessionStorage.removeItem(storage.prefill);
     },
 
     submitPendingLogin() {
-      const raw = sessionStorage.getItem(PixieSwitch.storage.pendingLogin);
-
+      const raw = sessionStorage.getItem(storage.pendingLogin);
       if (!raw) return;
 
       let pending;
@@ -175,12 +157,12 @@
       try {
         pending = JSON.parse(raw);
       } catch (error) {
-        sessionStorage.removeItem(PixieSwitch.storage.pendingLogin);
+        sessionStorage.removeItem(storage.pendingLogin);
         return;
       }
 
       if (!pending || !pending.nick || !pending.password) {
-        sessionStorage.removeItem(PixieSwitch.storage.pendingLogin);
+        sessionStorage.removeItem(storage.pendingLogin);
         return;
       }
 
@@ -216,8 +198,7 @@
       form.appendChild(login);
 
       document.body.appendChild(form);
-
-      sessionStorage.removeItem(PixieSwitch.storage.pendingLogin);
+      sessionStorage.removeItem(storage.pendingLogin);
 
       form.submit();
     },
@@ -391,9 +372,9 @@
           }
 
           accounts.push({
-            id: id,
+            id,
             nick: parsedUsername,
-            avatar: avatar,
+            avatar,
             password: this.encodePassword(password)
           });
 
@@ -407,15 +388,15 @@
 
     switchTo(account) {
       if (
-        PixieSwitch.options.confirmSwitch &&
+        options.confirmSwitch &&
         !confirm("¿Cambiar a " + account.nick + "?")
       ) {
         return;
       }
 
-      if (PixieSwitch.options.autoLogin && account.password) {
+      if (options.autoLogin && account.password) {
         sessionStorage.setItem(
-          PixieSwitch.storage.pendingLogin,
+          storage.pendingLogin,
           JSON.stringify({
             nick: account.nick,
             password: account.password
@@ -427,24 +408,24 @@
         return;
       }
 
-      sessionStorage.setItem(PixieSwitch.storage.prefill, account.nick);
+      sessionStorage.setItem(storage.prefill, account.nick);
 
       const logoutUrl = this.getLogoutUrl();
       window.location.href = logoutUrl || "/login";
     }
   };
 
-  const PixieSwitchUI = {
+  const SwitchUI = {
     get() {
       return {
-        button: document.getElementById("pixie-switch-button"),
-        panel: document.getElementById("pixie-switch-panel"),
-        list: document.getElementById("pixie-switch-list"),
-        loginForm: document.getElementById("pixie-switch-login-form"),
-        accountTemplate: document.getElementById("pixie-switch-account-template"),
-        emptyTemplate: document.getElementById("pixie-switch-empty-template"),
-        saveButton: document.querySelector('[data-pixie-switch-action="save"]'),
-        deleteCurrentButton: document.querySelector('[data-pixie-switch-action="delete-current"]')
+        button: get("#pixie-switch-button"),
+        panel: get("#pixie-switch-panel"),
+        list: get("#pixie-switch-list"),
+        loginForm: get("#pixie-switch-login-form"),
+        accountTemplate: get("#pixie-switch-account-template"),
+        emptyTemplate: get("#pixie-switch-empty-template"),
+        saveButton: get('[data-pixie-switch-action="save"]'),
+        deleteCurrentButton: get('[data-pixie-switch-action="delete-current"]')
       };
     },
 
@@ -487,7 +468,7 @@
 
       status.textContent = isActive
         ? "Activa"
-        : PixieSwitch.options.autoLogin && account.password
+        : options.autoLogin && account.password
           ? "Cambiar automáticamente"
           : "Cerrar sesión y preparar login";
 
@@ -519,7 +500,7 @@
       const ui = this.get();
 
       if (!this.hasRequired(ui)) {
-        console.warn("[PixieSwitch] Falta el HTML base o los templates.");
+        warn("Falta el HTML base o los templates de PixieSwitch.");
         return;
       }
 
@@ -529,8 +510,8 @@
       const isSaved = !isGuest && AccountManager.isCurrentSaved(accounts, currentAccount);
 
       if (ui.saveButton) {
-        ui.saveButton.hidden = isGuest && !PixieSwitch.options.autoLogin;
-        ui.saveButton.textContent = PixieSwitch.options.autoLogin
+        ui.saveButton.hidden = isGuest && !options.autoLogin;
+        ui.saveButton.textContent = options.autoLogin
           ? "Añadir cuenta"
           : "Guardar cuenta";
       }
@@ -588,7 +569,7 @@
       const ui = this.get();
 
       if (!this.hasRequired(ui)) {
-        console.warn("[PixieSwitch] Falta el HTML base o los templates.");
+        warn("Falta el HTML base o los templates de PixieSwitch.");
         return false;
       }
 
@@ -606,7 +587,7 @@
         const action = actionButton.getAttribute("data-pixie-switch-action");
 
         if (action === "save") {
-          if (PixieSwitch.options.autoLogin) {
+          if (options.autoLogin) {
             this.showLoginForm();
           } else {
             if (AccountManager.saveCurrent()) this.render();
@@ -639,5 +620,5 @@
     }
   };
 
-  ready(() => PixieSwitchUI.init());
-})();
+  ready(() => SwitchUI.init());
+});
