@@ -1,14 +1,15 @@
 (function () {
   "use strict";
 
-  window.PIXIE_SWITCH_VERSION = "PixieSwitch-v1.3";
+  window.PIXIE_SWITCH_VERSION = "PixieSwitch-v1.4";
 
   var PIXIE_SWITCH_STORAGE = "pixie_switch_accounts_v1";
   var PIXIE_SWITCH_PREFILL = "pixie_switch_prefill_username";
+  var PIXIE_SWITCH_PENDING_LOGIN = "pixie_switch_pending_login";
 
   var PIXIE_SWITCH_DEFAULTS = {
-    autoLogin: true,
-    confirmSwitch: false
+    autoLogin: false,
+    confirmSwitch: true
   };
 
   var PIXIE_SWITCH_OPTIONS = Object.assign(
@@ -163,6 +164,63 @@
     sessionStorage.removeItem(PIXIE_SWITCH_PREFILL);
   }
 
+  function submitPendingLogin() {
+    var raw = sessionStorage.getItem(PIXIE_SWITCH_PENDING_LOGIN);
+
+    if (!raw) return;
+
+    var pending;
+
+    try {
+      pending = JSON.parse(raw);
+    } catch (error) {
+      sessionStorage.removeItem(PIXIE_SWITCH_PENDING_LOGIN);
+      return;
+    }
+
+    if (!pending || !pending.nick || !pending.password) {
+      sessionStorage.removeItem(PIXIE_SWITCH_PENDING_LOGIN);
+      return;
+    }
+
+    var form = document.createElement("form");
+    form.method = "post";
+    form.action = "/login";
+    form.style.display = "none";
+
+    var username = document.createElement("input");
+    username.type = "text";
+    username.name = "username";
+    username.value = pending.nick;
+
+    var password = document.createElement("input");
+    password.type = "password";
+    password.name = "password";
+    password.value = decodePassword(pending.password);
+
+    var autologin = document.createElement("input");
+    autologin.type = "checkbox";
+    autologin.name = "autologin";
+    autologin.checked = true;
+    autologin.value = "on";
+
+    var login = document.createElement("input");
+    login.type = "submit";
+    login.name = "login";
+    login.value = "Conectarse";
+
+    form.appendChild(username);
+    form.appendChild(password);
+    form.appendChild(autologin);
+    form.appendChild(login);
+
+    document.body.appendChild(form);
+
+    sessionStorage.removeItem(PIXIE_SWITCH_PENDING_LOGIN);
+
+    form.submit();
+  }
+
   function getDefaultAvatar() {
     return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23333'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='28' fill='%23fff'%3E%3F%3C/text%3E%3C/svg%3E";
   }
@@ -223,19 +281,6 @@
       body: body.toString()
     }).then(function (response) {
       return response.text();
-    });
-  }
-
-  function logoutAccount() {
-    var logoutUrl = getLogoutUrl();
-
-    if (!logoutUrl) {
-      return Promise.resolve();
-    }
-
-    return fetch(logoutUrl, {
-      method: "GET",
-      credentials: "same-origin"
     });
   }
 
@@ -353,31 +398,29 @@
     }
 
     if (PIXIE_SWITCH_OPTIONS.autoLogin && account.password) {
-      logoutAccount()
-        .then(function () {
-          return loginAccount(account.nick, decodePassword(account.password));
+      sessionStorage.setItem(
+        PIXIE_SWITCH_PENDING_LOGIN,
+        JSON.stringify({
+          nick: account.nick,
+          password: account.password
         })
-        .then(function (html) {
-          var id = getAccountIdFromHtml(html);
+      );
 
-          if (!id) {
-            alert("No se pudo iniciar sesión con esa cuenta.");
-            return;
-          }
+      var logoutUrl = getLogoutUrl();
 
-          window.location.reload();
-        })
-        .catch(function () {
-          alert("No se pudo cambiar de cuenta.");
-        });
+      if (logoutUrl) {
+        window.location.href = logoutUrl;
+      } else {
+        window.location.href = "/login";
+      }
 
       return;
     }
 
     sessionStorage.setItem(PIXIE_SWITCH_PREFILL, account.nick);
 
-    var logoutUrl = getLogoutUrl();
-    window.location.href = logoutUrl || "/login";
+    var fallbackLogoutUrl = getLogoutUrl();
+    window.location.href = fallbackLogoutUrl || "/login";
   }
 
   function renderAccounts() {
@@ -610,6 +653,7 @@
   }
 
   function initPixieSwitch() {
+    submitPendingLogin();
     prefillUsername();
 
     if (!bindPixieSwitchEvents()) return;
