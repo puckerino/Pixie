@@ -163,3 +163,28 @@
     }
 
 }
+
+/* ==========================================
+POLLS
+=========================================== */
+.poll_results {
+  .poll-result {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .alert ~ .vote-recap {
+    margin-top: var(--spacing);
+  }
+  
+  .vote-recap {
+    hgroup {
+      width: 100%;
+      span:nth-of-type(2) {
+        font: var(--f-s) var(--f-text);
+        padding: var(--spacing-xs) var(--spacing);
+      }
+    }
+  }
+}
