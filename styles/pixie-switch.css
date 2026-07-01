@@ -101,3 +101,29 @@
 .pixie-switch-delete {
   cursor: pointer;
 }
+
+.pixie-switch-password-form {
+  display: grid;
+  gap: .75rem;
+  padding: 1rem;
+  background: var(--background, #111);
+  color: var(--text-1);
+  border-top: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+}
+
+.pixie-switch-password-form[hidden] {
+  display: none;
+}
+
+.pixie-switch-password-title {
+  margin: 0;
+}
+
+.pixie-switch-field {
+  display: grid;
+  gap: .35rem;
+}
+
+.pixie-switch-field input {
+  width: 100%;
+}
