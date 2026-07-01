@@ -1,14 +1,12 @@
 /*!
  * PixieNavbar.js
  * Requiere: pixiekit.js + lucide
- * Versión: 0.2.1
+ * Versión: 0.2.2
  */
 
 const PixieNavbar = PixieKit("Navbar", function (_) {
 
   const config = {
-    originalNavbar: ".original-navbar",
-
     profileLink: ".link-perfil",
     avatarBox: ".avatar-nav",
     usernameBox: ".username",
@@ -16,35 +14,13 @@ const PixieNavbar = PixieKit("Navbar", function (_) {
     userNav: ".user-nav",
     adminNav: ".admin-nav",
 
-    inboxLink: '.user-nav a[href*="/privmsg"]',
-    logoutLink: '.user-nav a[href*="logout"]',
-
     notifList: "#notif_list",
     notifTarget: "#notis"
   };
 
-  function getOriginalLink(hrefPart) {
-    const original = _.get(config.originalNavbar, {
-      required: false
-    });
-
-    if (!original) return null;
-
-    return _.get(
-      `a[href*="${hrefPart}"]`,
-      original,
-      { required: false }
-    );
-  }
-
   function hydrateVisibility() {
-    const userNav = _.get(config.userNav, {
-      required: false
-    });
-
-    const adminNav = _.get(config.adminNav, {
-      required: false
-    });
+    const userNav = _.get(config.userNav, { required: false });
+    const adminNav = _.get(config.adminNav, { required: false });
 
     if (!_.isLogged()) {
       if (userNav) userNav.hidden = true;
@@ -58,62 +34,33 @@ const PixieNavbar = PixieKit("Navbar", function (_) {
   function hydrateUser() {
     const user = _.user();
 
-    const profileLink = _.get(config.profileLink, {
-      required: false
-    });
-
-    const avatarBox = _.get(config.avatarBox, {
-      required: false
-    });
-
-    const usernameBox = _.get(config.usernameBox, {
-      required: false
-    });
+    const profileLink = _.get(config.profileLink, { required: false });
+    const avatarBox = _.get(config.avatarBox, { required: false });
+    const usernameBox = _.get(config.usernameBox, { required: false });
 
     if (profileLink && user.id) {
       profileLink.href = `/u${user.id}`;
     }
 
-    if (usernameBox && user.name) {
-      usernameBox.textContent = user.name;
+    if (usernameBox) {
+      usernameBox.textContent = user.name ?? "";
     }
 
-    if (avatarBox && user.avatar) {
-      avatarBox.innerHTML = `
-        <img
-          src="${user.avatar}"
-          alt="${user.name}"
-          loading="lazy"
-        >
-      `;
-    }
-  }
-
-  function hydrateOriginalLinks() {
-    const inboxOriginal = getOriginalLink("/privmsg");
-    const logoutOriginal = getOriginalLink("logout");
-
-    const inboxLink = _.get(config.inboxLink, {
-      required: false
-    });
-
-    const logoutLink = _.get(config.logoutLink, {
-      required: false
-    });
-
-    if (inboxOriginal && inboxLink) {
-      inboxLink.href = inboxOriginal.href;
-    }
-
-    if (logoutOriginal && logoutLink) {
-      logoutLink.href = logoutOriginal.href;
+    if (avatarBox) {
+      avatarBox.innerHTML = user.avatar
+        ? `
+          <img
+            src="${user.avatar}"
+            alt="${user.name ?? ""}"
+            loading="lazy"
+          >
+        `
+        : "";
     }
   }
 
   function hydrateAdmin() {
-    const adminNav = _.get(config.adminNav, {
-      required: false
-    });
+    const adminNav = _.get(config.adminNav, { required: false });
 
     if (!adminNav) return;
 
@@ -125,38 +72,32 @@ const PixieNavbar = PixieKit("Navbar", function (_) {
     if (adminNav.dataset.pixieReady === "true") return;
 
     adminNav.innerHTML = `
-      <a href="/admin">
+      <a href="/admin" tooltip="Panel de administración">
         <i data-lucide="shield"></i>
         ACP
       </a>
     `;
 
+    adminNav.hidden = false;
     adminNav.dataset.pixieReady = "true";
 
     _.icons();
   }
 
   function moveNotifications() {
-    _.waitFor(config.notifList, {
-      timeout: 10000
-    })
+    _.waitFor(config.notifList, { timeout: 10000 })
 
-    .then(function (notifList) {
-      const target = _.get(
-        config.notifTarget,
-        { required: false }
-      );
+      .then(function (notifList) {
+        const target = _.get(config.notifTarget, { required: false });
 
-      if (!target) return;
+        if (!target) return;
 
-      target.appendChild(notifList);
-    })
+        target.appendChild(notifList);
+      })
 
-    .catch(function () {
-      _.log(
-        "No he encontrado la lista de notificaciones."
-      );
-    });
+      .catch(function () {
+        _.log("No he encontrado la lista de notificaciones.");
+      });
   }
 
   function init() {
@@ -164,7 +105,6 @@ const PixieNavbar = PixieKit("Navbar", function (_) {
 
     if (_.isLogged()) {
       hydrateUser();
-      hydrateOriginalLinks();
       hydrateAdmin();
       moveNotifications();
     }
@@ -178,7 +118,6 @@ const PixieNavbar = PixieKit("Navbar", function (_) {
     init,
     hydrateVisibility,
     hydrateUser,
-    hydrateOriginalLinks,
     hydrateAdmin,
     moveNotifications
   };
