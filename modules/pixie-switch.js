@@ -1,7 +1,6 @@
 const PixieSwitch = PixieKit("PixieSwitch", function ({
   ready,
   get,
-  create,
   storage,
   user,
   isLogged,
@@ -50,7 +49,7 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
   });
 
   const DEFAULT_AVATAR =
-    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23333'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='28' fill='%23fff'%3E%3F%3C/text%3E%3F%3C/text%3E%3C/svg%3E";
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23333'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='28' fill='%23fff'%3E%3F%3C/text%3E%3C/svg%3E";
 
   const accountStore = storage(KEYS.accounts);
 
@@ -234,9 +233,8 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
 
       const form = this.getLoginForm();
 
-      if (form) {
-        const usernameInput = form.elements.username;
-        if (usernameInput) usernameInput.focus();
+      if (form && form.elements.username) {
+        form.elements.username.focus();
       }
     },
 
