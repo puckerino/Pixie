@@ -129,15 +129,6 @@ const PixieNavbar = PixieKit("Navbar", function (_) {
         <i data-lucide="shield"></i>
         ACP
       </a>
-
-      <button
-        popovertarget="menuamin"
-        class="drawer left">
-
-        <i data-lucide="wrench"></i>
-        ADMIN
-
-      </button>
     `;
 
     adminNav.dataset.pixieReady = "true";
