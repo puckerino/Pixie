@@ -4,11 +4,11 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
   warn
 }) {
   const DEFAULTS = Object.freeze({
-    autoLogin: false,
+    autoLogin: true,
     confirmSwitch: true
   });
 
-  let OPTIONS = Object.assign({}, DEFAULTS);
+  const OPTIONS = Object.assign({}, DEFAULTS);
 
   const STORAGE = Object.freeze({
     ACCOUNTS: "pixie_switch_accounts_v1",
@@ -240,31 +240,6 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
           (currentUsername && Utils.normalizeUsername(account.nick) === currentUsername)
         );
       });
-    },
-
-    saveCurrent(password) {
-      const currentAccount = this.getCurrent();
-
-      if (!currentAccount) {
-        alert(TEXT.loginRequired);
-        return false;
-      }
-
-      const accounts = StorageManager.loadAccounts();
-
-      if (this.isCurrentSaved(accounts, currentAccount)) {
-        alert(TEXT.alreadySaved);
-        return false;
-      }
-
-      accounts.push({
-        id: currentAccount.id || "",
-        nick: currentAccount.nick,
-        avatar: currentAccount.avatar || "",
-        password: password ? Utils.encodePassword(password) : ""
-      });
-
-      return StorageManager.saveAccounts(accounts);
     },
 
     removeCurrent() {
@@ -629,8 +604,6 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
         if (action === "save") {
           if (OPTIONS.autoLogin) {
             this.showLoginForm();
-          } else if (AccountManager.saveCurrent()) {
-            this.render();
           }
 
           return;
@@ -668,8 +641,26 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
     }
   };
 
-  return function initPixieSwitch(userOptions) {
-    OPTIONS = Object.assign({}, DEFAULTS, userOptions || {});
-    ready(() => SwitchUI.init());
+  ready(() => SwitchUI.init());
+
+  return {
+    init() {
+      SwitchUI.init();
+    },
+
+    render() {
+      SwitchUI.render();
+    },
+
+    getAccounts() {
+      return StorageManager.loadAccounts();
+    },
+
+    clearAccounts() {
+      StorageManager.saveAccounts([]);
+      SwitchUI.render();
+    },
+
+    options: OPTIONS
   };
 });
