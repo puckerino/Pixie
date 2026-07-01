@@ -1,15 +1,14 @@
 const PixieSwitch = PixieKit("PixieSwitch", function ({
   ready,
   get,
-  warn,
-  mergeOptions
+  warn
 }) {
   const DEFAULTS = Object.freeze({
     autoLogin: false,
     confirmSwitch: true
   });
 
-  const OPTIONS = mergeOptions(DEFAULTS);
+  let OPTIONS = Object.assign({}, DEFAULTS);
 
   const STORAGE = Object.freeze({
     ACCOUNTS: "pixie_switch_accounts_v1",
@@ -95,17 +94,13 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
         if (!Array.isArray(data)) return [];
 
         return data
-          .filter((account) => {
-            return account && typeof account.nick === "string" && account.nick.trim();
-          })
-          .map((account) => {
-            return {
-              id: String(account.id || ""),
-              nick: String(account.nick || "").trim(),
-              avatar: String(account.avatar || ""),
-              password: String(account.password || "")
-            };
-          });
+          .filter((account) => account && typeof account.nick === "string" && account.nick.trim())
+          .map((account) => ({
+            id: String(account.id || ""),
+            nick: String(account.nick || "").trim(),
+            avatar: String(account.avatar || ""),
+            password: String(account.password || "")
+          }));
       } catch (error) {
         return [];
       }
@@ -439,7 +434,6 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       }
 
       StorageManager.clearSessionItem(STORAGE.PENDING_LOGIN);
-
       this.submitLoginForm(pending.username, pending.password);
     },
 
@@ -618,14 +612,7 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       }
     },
 
-    bindEvents() {
-      const ui = this.get();
-
-      if (!this.hasRequired(ui)) {
-        warn(TEXT.missingHtml);
-        return false;
-      }
-
+    bindEvents(ui) {
       ui.button.addEventListener("click", () => {
         this.render();
       });
@@ -662,8 +649,6 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
         event.preventDefault();
         AccountManager.saveWithLogin(ui.loginForm);
       });
-
-      return true;
     },
 
     init() {
@@ -671,11 +656,20 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       AccountManager.submitPendingLogin();
       AccountManager.prefillUsername();
 
-      if (!this.bindEvents()) return;
+      const ui = this.get();
 
+      if (!this.hasRequired(ui)) {
+        warn(TEXT.missingHtml);
+        return;
+      }
+
+      this.bindEvents(ui);
       this.render();
     }
   };
 
-  ready(() => SwitchUI.init());
+  return function initPixieSwitch(userOptions) {
+    OPTIONS = Object.assign({}, DEFAULTS, userOptions || {});
+    ready(() => SwitchUI.init());
+  };
 });
