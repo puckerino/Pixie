@@ -6,7 +6,7 @@
   inline-size: min(22rem, calc(100vw - 2rem));
   padding: 0;
   border: 0;
-  background: transparent;
+  background: var(--surface);
 }
 
 .pixie-switch-panel::backdrop {
