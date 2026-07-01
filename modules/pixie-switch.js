@@ -22,11 +22,12 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
     button: "#pixie-switch-button",
     panel: "#pixie-switch-panel",
     list: "#pixie-switch-list",
-    loginForm: "#pixie-switch-login-form",
     accountTemplate: "#pixie-switch-account-template",
     emptyTemplate: "#pixie-switch-empty-template",
     saveButton: '[data-pixie-switch-action="save"]',
     deleteCurrentButton: '[data-pixie-switch-action="delete-current"]',
+    loginPopover: "#login-popover",
+    loginForm: 'form[name="form_login"]',
     logout: "#logout"
   });
 
@@ -42,13 +43,14 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
     alreadySaved: "Esa cuenta ya está guardada.",
     loginFailed: "No se pudo iniciar sesión con esa cuenta.",
     missingHtml: "Falta el HTML base de PixieSwitch.",
+    missingLoginForm: "No encuentro el formulario real de login.",
     confirmSwitch: "¿Cambiar a {username}?",
     confirmDelete: "¿Eliminar esta cuenta?",
     confirmDeleteCurrent: "¿Borrar la cuenta actual de la lista?"
   });
 
   const DEFAULT_AVATAR =
-    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23333'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='28' fill='%23fff'%3E%3F%3C/text%3E%3C/svg%3E";
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='64' height='64' fill='%23333'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='28' fill='%23fff'%3E%3F%3C/text%3E%3F%3C/text%3E%3C/svg%3E";
 
   const accountStore = storage(KEYS.accounts);
 
@@ -157,6 +159,7 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
 
       accounts.push(account);
       this.save(accounts);
+
       return true;
     },
 
@@ -187,6 +190,14 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
   };
 
   const Auth = {
+    getLoginForm() {
+      return get(SELECTORS.loginForm, { required: false });
+    },
+
+    getLoginPopover() {
+      return get(SELECTORS.loginPopover, { required: false });
+    },
+
     logoutUrl() {
       const logout = get(SELECTORS.logout, { required: false });
 
@@ -209,60 +220,88 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       return found ? found.href : "";
     },
 
-    submitLogin(username, encodedPassword) {
-      const form = create("form", {
-        attrs: {
-          method: "post",
-          action: "/login"
-        }
+    openLoginForSave() {
+      Session.set(KEYS.pendingAuth, {
+        action: "save"
       });
 
-      form.style.display = "none";
+      const popover = this.getLoginPopover();
 
-      const usernameInput = create("input", {
-        attrs: {
-          type: "text",
-          name: "username",
-          value: username
-        }
+      if (popover && popover.showPopover) {
+        popover.showPopover();
+        return;
+      }
+
+      const form = this.getLoginForm();
+
+      if (form) {
+        const usernameInput = form.elements.username;
+        if (usernameInput) usernameInput.focus();
+      }
+    },
+
+    captureLoginSubmit() {
+      const form = this.getLoginForm();
+
+      if (!form) {
+        log(TEXT.missingLoginForm);
+        return;
+      }
+
+      form.addEventListener("submit", () => {
+        const pending = Session.get(KEYS.pendingAuth);
+
+        if (!pending || pending.action !== "save") return;
+
+        const passwordInput = form.elements.password;
+
+        if (!passwordInput || !passwordInput.value) return;
+
+        pending.password = Utils.encodePassword(passwordInput.value);
+        Session.set(KEYS.pendingAuth, pending);
       });
+    },
 
-      const passwordInput = create("input", {
-        attrs: {
-          type: "password",
-          name: "password",
-          value: Utils.decodePassword(encodedPassword)
-        }
-      });
+    fillAndSubmitLogin(username, encodedPassword) {
+      const form = this.getLoginForm();
 
-      const autologinInput = create("input", {
-        attrs: {
-          type: "checkbox",
-          name: "autologin",
-          value: "on"
-        }
-      });
+      if (!form) {
+        log(TEXT.missingLoginForm);
+        return;
+      }
 
-      autologinInput.checked = true;
+      if (form.elements.username) {
+        form.elements.username.value = username;
+      }
 
-      const loginInput = create("input", {
-        attrs: {
-          type: "submit",
-          name: "login",
-          value: "Conectarse"
-        }
-      });
+      if (form.elements.password) {
+        form.elements.password.value = Utils.decodePassword(encodedPassword);
+      }
 
-      form.append(usernameInput, passwordInput, autologinInput, loginInput);
-      document.body.appendChild(form);
+      if (form.elements.autologin) {
+        form.elements.autologin.checked = true;
+      }
+
+      const submitButton = form.querySelector('[name="login"]');
+
+      if (submitButton) {
+        submitButton.click();
+        return;
+      }
+
+      if (form.requestSubmit) {
+        form.requestSubmit();
+        return;
+      }
+
       form.submit();
     },
 
-    start(action, username, encodedPassword) {
+    startSwitch(account) {
       Session.set(KEYS.pendingAuth, {
-        action,
-        username,
-        password: encodedPassword,
+        action: "switch",
+        username: account.nick,
+        password: account.password,
         attempted: false
       });
 
@@ -271,36 +310,43 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
         return;
       }
 
-      this.continue();
+      this.continuePending();
     },
 
-    continue() {
+    continuePending() {
       const pending = Session.get(KEYS.pendingAuth);
 
-      if (!pending || !pending.username || !pending.password) {
+      if (!pending) return;
+
+      if (pending.action === "save") {
+        if (!pending.password) return;
+
+        if (!isLogged()) return;
+
+        Accounts.addCurrent(pending.password);
         Session.remove(KEYS.pendingAuth);
         return;
       }
 
-      if (isLogged()) {
-        if (pending.action === "save") {
-          Accounts.addCurrent(pending.password);
+      if (pending.action === "switch") {
+        if (!pending.username || !pending.password) {
+          Session.remove(KEYS.pendingAuth);
+          return;
         }
 
-        Session.remove(KEYS.pendingAuth);
-        return;
+        if (isLogged()) return;
+
+        if (pending.attempted) {
+          Session.remove(KEYS.pendingAuth);
+          alert(TEXT.loginFailed);
+          return;
+        }
+
+        pending.attempted = true;
+        Session.set(KEYS.pendingAuth, pending);
+
+        this.fillAndSubmitLogin(pending.username, pending.password);
       }
-
-      if (pending.attempted) {
-        Session.remove(KEYS.pendingAuth);
-        alert(TEXT.loginFailed);
-        return;
-      }
-
-      pending.attempted = true;
-      Session.set(KEYS.pendingAuth, pending);
-
-      this.submitLogin(pending.username, pending.password);
     }
   };
 
@@ -310,7 +356,6 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
         button: get(SELECTORS.button, { required: false }),
         panel: get(SELECTORS.panel, { required: false }),
         list: get(SELECTORS.list, { required: false }),
-        loginForm: get(SELECTORS.loginForm, { required: false }),
         accountTemplate: get(SELECTORS.accountTemplate, { required: false }),
         emptyTemplate: get(SELECTORS.emptyTemplate, { required: false }),
         saveButton: get(SELECTORS.saveButton, { required: false }),
@@ -323,7 +368,6 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
         ui.button &&
         ui.panel &&
         ui.list &&
-        ui.loginForm &&
         ui.accountTemplate &&
         ui.emptyTemplate
       );
@@ -395,7 +439,7 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       }
 
       if (OPTIONS.autoLogin && account.password) {
-        Auth.start("switch", account.nick, account.password);
+        Auth.startSwitch(account);
         return;
       }
 
@@ -407,32 +451,16 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       const username = sessionStorage.getItem(KEYS.prefill);
       if (!username) return;
 
-      const input =
-        get('input[name="username"]', { required: false }) ||
-        get("#username", { required: false }) ||
-        get('input[name="login_username"]', { required: false });
+      const form = Auth.getLoginForm();
 
-      if (!input) return;
+      if (!form || !form.elements.username) return;
 
-      input.value = username;
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-      input.dispatchEvent(new Event("change", { bubbles: true }));
-      input.focus();
+      form.elements.username.value = username;
+      form.elements.username.dispatchEvent(new Event("input", { bubbles: true }));
+      form.elements.username.dispatchEvent(new Event("change", { bubbles: true }));
+      form.elements.username.focus();
 
       sessionStorage.removeItem(KEYS.prefill);
-    },
-
-    showLoginForm() {
-      const ui = this.get();
-
-      if (!ui.loginForm) return;
-
-      ui.loginForm.hidden = !ui.loginForm.hidden;
-
-      if (!ui.loginForm.hidden) {
-        const usernameInput = ui.loginForm.querySelector('input[name="username"]');
-        if (usernameInput) usernameInput.focus();
-      }
     },
 
     render() {
@@ -461,9 +489,11 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
 
       if (activeIndex > -1) {
         const active = accounts.splice(activeIndex, 1)[0];
+
         accounts.sort((a, b) =>
           String(a.nick).localeCompare(String(b.nick), "es", { sensitivity: "base" })
         );
+
         accounts.unshift(active);
       } else {
         accounts.sort((a, b) =>
@@ -508,7 +538,7 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
 
         if (action === "save") {
           if (OPTIONS.autoLogin) {
-            this.showLoginForm();
+            Auth.openLoginForSave();
           } else {
             Accounts.addCurrent("");
             this.render();
@@ -529,22 +559,13 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
         }
       });
 
-      ui.loginForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-
-        const username = ui.loginForm.elements.username.value.trim();
-        const password = ui.loginForm.elements.password.value;
-
-        if (!username || !password) return;
-
-        Auth.start("save", username, Utils.encodePassword(password));
-      });
-
       return true;
     },
 
     init() {
-      Auth.continue();
+      Auth.captureLoginSubmit();
+      Auth.continuePending();
+
       this.prefillLogin();
 
       if (!this.bind()) return;
