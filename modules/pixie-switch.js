@@ -6,14 +6,8 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
   isLogged,
   log
 }) {
-  const OPTIONS = Object.freeze({
-    autoLogin: true,
-    confirmSwitch: true
-  });
-
   const KEYS = Object.freeze({
-    accounts: "pixie_switch_accounts_v2",
-    pendingAuth: "pixie_switch_pending_auth",
+    accounts: "pixie_switch_accounts_v1",
     prefill: "pixie_switch_prefill_username"
   });
 
@@ -25,27 +19,25 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
     emptyTemplate: "#pixie-switch-empty-template",
     saveButton: '[data-pixie-switch-action="save"]',
     deleteCurrentButton: '[data-pixie-switch-action="delete-current"]',
-    loginPopover: "#login-popover",
-    loginForm: 'form[name="form_login"]',
-    logout: "#logout"
+    logout: "#logout",
+    toolbarAvatar: "#fa_usermenu img",
+    welcome: "#fa_welcome"
   });
 
   const TEXT = Object.freeze({
-    add: "Añadir cuenta",
     save: "Guardar cuenta",
     active: "Activa",
-    autoSwitch: "Cambiar automáticamente",
-    prefillSwitch: "Cerrar sesión y preparar login",
+    switch: "Cerrar sesión y preparar login",
     emptyTitle: "Sin cuentas guardadas",
-    emptyGuest: "Añade una cuenta para usar PixieSwitch.",
+    emptyGuest: "Inicia sesión y guarda tus multicuentas.",
     emptyUser: "Pulsa “Guardar cuenta” para añadir la cuenta actual.",
     alreadySaved: "Esa cuenta ya está guardada.",
-    loginFailed: "No se pudo iniciar sesión con esa cuenta.",
-    missingHtml: "Falta el HTML base de PixieSwitch.",
-    missingLoginForm: "No encuentro el formulario real de login.",
-    confirmSwitch: "¿Cambiar a {username}?",
+    loginRequired: "Primero inicia sesión para poder guardar la cuenta.",
+    noActiveSession: "No hay sesión activa que borrar.",
+    notSaved: "Esa cuenta no estaba guardada.",
     confirmDelete: "¿Eliminar esta cuenta?",
-    confirmDeleteCurrent: "¿Borrar la cuenta actual de la lista?"
+    confirmDeleteCurrent: "¿Borrar la cuenta actual de la lista?",
+    missingHtml: "Falta el HTML base de PixieSwitch."
   });
 
   const DEFAULT_AVATAR =
@@ -53,54 +45,18 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
 
   const accountStore = storage(KEYS.accounts);
 
-  const Utils = {
-    normalize(value) {
-      return String(value || "")
-        .replace(/\u00a0/g, " ")
-        .replace(/\s+/g, " ")
-        .trim()
-        .toLowerCase();
-    },
-
-    format(text, values) {
-      return String(text).replace(/\{(\w+)\}/g, function (_, key) {
-        return values && values[key] != null ? values[key] : "";
-      });
-    },
-
-    encodePassword(password) {
-      return btoa(unescape(encodeURIComponent(password)));
-    },
-
-    decodePassword(password) {
-      return decodeURIComponent(escape(atob(password)));
-    }
-  };
-
-  const Session = {
-    get(key) {
-      try {
-        const raw = sessionStorage.getItem(key);
-        return raw ? JSON.parse(raw) : null;
-      } catch {
-        sessionStorage.removeItem(key);
-        return null;
-      }
-    },
-
-    set(key, value) {
-      sessionStorage.setItem(key, JSON.stringify(value));
-    },
-
-    remove(key) {
-      sessionStorage.removeItem(key);
-    }
-  };
+  function normalize(value) {
+    return String(value || "")
+      .replace(/\u00a0/g, " ")
+      .replace(/bienvenido\/a\s*/i, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }
 
   const Accounts = {
     load() {
       const accounts = accountStore.get([]);
-
       if (!Array.isArray(accounts)) return [];
 
       return accounts
@@ -108,8 +64,7 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
         .map((account) => ({
           id: String(account.id || ""),
           nick: String(account.nick || "").trim(),
-          avatar: String(account.avatar || ""),
-          password: String(account.password || "")
+          avatar: String(account.avatar || "")
         }));
     },
 
@@ -118,16 +73,52 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
     },
 
     current() {
-      if (!isLogged()) return null;
+      if (isLogged()) {
+        const currentUser = user();
 
-      const currentUser = user();
+        if (currentUser && currentUser.name) {
+          return {
+            id: currentUser.id ? String(currentUser.id) : "",
+            nick: currentUser.name,
+            avatar: currentUser.avatar || ""
+          };
+        }
+      }
 
-      if (!currentUser || !currentUser.name) return null;
+      const img = get(SELECTORS.toolbarAvatar, { required: false });
+      const avatar = img && img.src ? img.src : "";
+
+      const alt = img && img.getAttribute
+        ? String(img.getAttribute("alt") || "")
+            .replace(/\u00a0/g, " ")
+            .replace(/\s+/g, " ")
+            .trim()
+        : "";
+
+      if (alt) {
+        return {
+          id: "",
+          nick: alt,
+          avatar
+        };
+      }
+
+      const welcome = get(SELECTORS.welcome, { required: false });
+
+      if (!welcome) return null;
+
+      const nick = String(welcome.textContent || "")
+        .replace(/\u00a0/g, " ")
+        .replace(/bienvenido\/a\s*/i, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      if (!nick) return null;
 
       return {
-        id: currentUser.id ? String(currentUser.id) : "",
-        nick: currentUser.name,
-        avatar: currentUser.avatar || ""
+        id: "",
+        nick,
+        avatar
       };
     },
 
@@ -139,47 +130,62 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
 
       if (idA && idB && idA === idB) return true;
 
-      return Utils.normalize(a.nick) === Utils.normalize(b.nick);
+      return normalize(a.nick) === normalize(b.nick);
     },
 
     exists(account) {
       return this.load().some((saved) => this.isSame(saved, account));
     },
 
-    add(account) {
-      if (!account || !account.nick) return false;
+    addCurrent() {
+      const current = this.current();
 
-      const accounts = this.load();
+      if (!current) {
+        alert(TEXT.loginRequired);
+        return false;
+      }
 
-      if (accounts.some((saved) => this.isSame(saved, account))) {
+      if (this.exists(current)) {
         alert(TEXT.alreadySaved);
         return false;
       }
 
-      accounts.push(account);
-      this.save(accounts);
+      const accounts = this.load();
 
+      accounts.push({
+        id: current.id || "",
+        nick: current.nick,
+        avatar: current.avatar || ""
+      });
+
+      this.save(accounts);
       return true;
     },
 
     remove(account) {
       const accounts = this.load();
       const filtered = accounts.filter((saved) => !this.isSame(saved, account));
-
       this.save(filtered);
     },
 
-    addCurrent(encodedPassword = "") {
+    removeCurrent() {
       const current = this.current();
 
-      if (!current) return false;
+      if (!current) {
+        alert(TEXT.noActiveSession);
+        return false;
+      }
 
-      return this.add({
-        id: current.id || "",
-        nick: current.nick,
-        avatar: current.avatar || "",
-        password: encodedPassword || ""
-      });
+      const accounts = this.load();
+      const filtered = accounts.filter((saved) => !this.isSame(saved, current));
+
+      if (filtered.length === accounts.length) {
+        alert(TEXT.notSaved);
+        return false;
+      }
+
+      this.save(filtered);
+      return true;
     },
 
     activeIndex(accounts, current) {
@@ -189,14 +195,6 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
   };
 
   const Auth = {
-    getLoginForm() {
-      return get(SELECTORS.loginForm, { required: false });
-    },
-
-    getLoginPopover() {
-      return get(SELECTORS.loginPopover, { required: false });
-    },
-
     logoutUrl() {
       const logout = get(SELECTORS.logout, { required: false });
 
@@ -219,132 +217,32 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       return found ? found.href : "";
     },
 
-    openLoginForSave() {
-      Session.set(KEYS.pendingAuth, {
-        action: "save"
-      });
+    switchTo(account) {
+      sessionStorage.setItem(KEYS.prefill, account.nick);
 
-      const popover = this.getLoginPopover();
+      const logoutUrl = this.logoutUrl();
 
-      if (popover && popover.showPopover) {
-        popover.showPopover();
-        return;
-      }
-
-      const form = this.getLoginForm();
-
-      if (form && form.elements.username) {
-        form.elements.username.focus();
-      }
+      window.location.href = logoutUrl || "/login";
     },
 
-    captureLoginSubmit() {
-      const form = this.getLoginForm();
+    prefillLogin() {
+      const username = sessionStorage.getItem(KEYS.prefill);
 
-      if (!form) {
-        log(TEXT.missingLoginForm);
-        return;
-      }
+      if (!username) return;
 
-      form.addEventListener("submit", () => {
-        const pending = Session.get(KEYS.pendingAuth);
+      const input =
+        get('input[name="username"]', { required: false }) ||
+        get("#username", { required: false }) ||
+        get('input[name="login_username"]', { required: false });
 
-        if (!pending || pending.action !== "save") return;
+      if (!input) return;
 
-        const passwordInput = form.elements.password;
+      input.value = username;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      input.focus();
 
-        if (!passwordInput || !passwordInput.value) return;
-
-        pending.password = Utils.encodePassword(passwordInput.value);
-        Session.set(KEYS.pendingAuth, pending);
-      });
-    },
-
-    fillAndSubmitLogin(username, encodedPassword) {
-      const form = this.getLoginForm();
-
-      if (!form) {
-        log(TEXT.missingLoginForm);
-        return;
-      }
-
-      if (form.elements.username) {
-        form.elements.username.value = username;
-      }
-
-      if (form.elements.password) {
-        form.elements.password.value = Utils.decodePassword(encodedPassword);
-      }
-
-      if (form.elements.autologin) {
-        form.elements.autologin.checked = true;
-      }
-
-      const submitButton = form.querySelector('[name="login"]');
-
-      if (submitButton) {
-        submitButton.click();
-        return;
-      }
-
-      if (form.requestSubmit) {
-        form.requestSubmit();
-        return;
-      }
-
-      form.submit();
-    },
-
-    startSwitch(account) {
-      Session.set(KEYS.pendingAuth, {
-        action: "switch",
-        username: account.nick,
-        password: account.password,
-        attempted: false
-      });
-
-      if (isLogged()) {
-        window.location.href = this.logoutUrl() || "/login";
-        return;
-      }
-
-      this.continuePending();
-    },
-
-    continuePending() {
-      const pending = Session.get(KEYS.pendingAuth);
-
-      if (!pending) return;
-
-      if (pending.action === "save") {
-        if (!pending.password) return;
-
-        if (!isLogged()) return;
-
-        Accounts.addCurrent(pending.password);
-        Session.remove(KEYS.pendingAuth);
-        return;
-      }
-
-      if (pending.action === "switch") {
-        if (!pending.username || !pending.password) {
-          Session.remove(KEYS.pendingAuth);
-          return;
-        }
-
-        if (isLogged()) return;
-
-        if (pending.attempted) {
-          Session.remove(KEYS.pendingAuth);
-          alert(TEXT.loginFailed);
-          return;
-        }
-
-        pending.attempted = true;
-        Session.set(KEYS.pendingAuth, pending);
-
-        this.fillAndSubmitLogin(pending.username, pending.password);
-      }
+      sessionStorage.removeItem(KEYS.prefill);
     }
   };
 
@@ -391,16 +289,13 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       const sub = item.querySelector(".pixie-switch-sub");
       const deleteButton = item.querySelector(".pixie-switch-delete");
 
-      if (avatar) avatar.src = account.avatar || DEFAULT_AVATAR;
-      if (nick) nick.textContent = account.nick;
-
-      if (sub) {
-        sub.textContent = isActive
-          ? TEXT.active
-          : OPTIONS.autoLogin && account.password
-            ? TEXT.autoSwitch
-            : TEXT.prefillSwitch;
+      if (avatar) {
+        avatar.src = account.avatar || DEFAULT_AVATAR;
+        avatar.alt = "";
       }
+
+      if (nick) nick.textContent = account.nick;
+      if (sub) sub.textContent = isActive ? TEXT.active : TEXT.switch;
 
       if (deleteButton) {
         deleteButton.setAttribute("aria-label", "Eliminar " + account.nick);
@@ -421,44 +316,11 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       } else {
         item.addEventListener("click", (event) => {
           if (event.target === deleteButton) return;
-          this.switchTo(account);
+          Auth.switchTo(account);
         });
       }
 
       return item;
-    },
-
-    switchTo(account) {
-      if (
-        OPTIONS.confirmSwitch &&
-        !confirm(Utils.format(TEXT.confirmSwitch, { username: account.nick }))
-      ) {
-        return;
-      }
-
-      if (OPTIONS.autoLogin && account.password) {
-        Auth.startSwitch(account);
-        return;
-      }
-
-      sessionStorage.setItem(KEYS.prefill, account.nick);
-      window.location.href = Auth.logoutUrl() || "/login";
-    },
-
-    prefillLogin() {
-      const username = sessionStorage.getItem(KEYS.prefill);
-      if (!username) return;
-
-      const form = Auth.getLoginForm();
-
-      if (!form || !form.elements.username) return;
-
-      form.elements.username.value = username;
-      form.elements.username.dispatchEvent(new Event("input", { bubbles: true }));
-      form.elements.username.dispatchEvent(new Event("change", { bubbles: true }));
-      form.elements.username.focus();
-
-      sessionStorage.removeItem(KEYS.prefill);
     },
 
     render() {
@@ -474,8 +336,8 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       const isCurrentSaved = current ? Accounts.exists(current) : false;
 
       if (ui.saveButton) {
-        ui.saveButton.textContent = OPTIONS.autoLogin ? TEXT.add : TEXT.save;
-        ui.saveButton.hidden = isGuest && !OPTIONS.autoLogin;
+        ui.saveButton.textContent = TEXT.save;
+        ui.saveButton.hidden = isGuest || isCurrentSaved;
       }
 
       if (ui.deleteCurrentButton) {
@@ -535,25 +397,13 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
         const action = actionButton.getAttribute("data-pixie-switch-action");
 
         if (action === "save") {
-          if (OPTIONS.autoLogin) {
-            Auth.openLoginForSave();
-          } else {
-            Accounts.addCurrent("");
-            this.render();
-          }
-
+          if (Accounts.addCurrent()) this.render();
           return;
         }
 
         if (action === "delete-current") {
           if (!confirm(TEXT.confirmDeleteCurrent)) return;
-
-          const current = Accounts.current();
-
-          if (current) {
-            Accounts.remove(current);
-            this.render();
-          }
+          if (Accounts.removeCurrent()) this.render();
         }
       });
 
@@ -561,10 +411,7 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
     },
 
     init() {
-      Auth.captureLoginSubmit();
-      Auth.continuePending();
-
-      this.prefillLogin();
+      Auth.prefillLogin();
 
       if (!this.bind()) return;
 
@@ -590,8 +437,6 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
     clearAccounts() {
       Accounts.save([]);
       UI.render();
-    },
-
-    options: OPTIONS
+    }
   };
 });
