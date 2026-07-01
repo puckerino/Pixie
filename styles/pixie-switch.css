@@ -1,0 +1,120 @@
+.pixie-switch-button {
+  cursor: pointer;
+}
+
+.pixie-switch-panel {
+  inline-size: min(22rem, calc(100vw - 2rem));
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.pixie-switch-panel::backdrop {
+  background: transparent;
+}
+
+.pixie-switch-panel:popover-open {
+  display: grid;
+}
+
+.pixie-switch-head,
+.pixie-switch-body,
+.pixie-switch-login-form {
+  background: var(--surface, #111);
+  color: var(--foreground, #fff);
+}
+
+.pixie-switch-head {
+  display: grid;
+  gap: .75rem;
+  padding: 1rem;
+  border-radius: .75rem .75rem 0 0;
+}
+
+.pixie-switch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.pixie-switch-login-form {
+  display: grid;
+  gap: .75rem;
+  padding: 1rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+}
+
+.pixie-switch-login-form[hidden] {
+  display: none;
+}
+
+.pixie-switch-field {
+  display: grid;
+  gap: .35rem;
+}
+
+.pixie-switch-field input {
+  width: 100%;
+}
+
+.pixie-switch-body {
+  padding: .5rem;
+  border-radius: 0 0 .75rem .75rem;
+}
+
+.pixie-switch-list {
+  display: grid;
+  gap: .25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pixie-switch-item {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr auto;
+  align-items: center;
+  gap: .75rem;
+  padding: .5rem;
+  border-radius: .5rem;
+  cursor: pointer;
+}
+
+.pixie-switch-item:hover {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.pixie-switch-active {
+  cursor: default;
+  opacity: .75;
+}
+
+.pixie-switch-empty {
+  grid-template-columns: 1fr;
+  cursor: default;
+}
+
+.pixie-switch-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.pixie-switch-meta {
+  display: grid;
+  gap: .15rem;
+}
+
+.pixie-switch-nick {
+  font-weight: 700;
+}
+
+.pixie-switch-sub {
+  font-size: .8rem;
+  opacity: .7;
+}
+
+.pixie-switch-delete {
+  cursor: pointer;
+}
