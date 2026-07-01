@@ -14,7 +14,8 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
   const STORAGE = Object.freeze({
     ACCOUNTS: "pixie_switch_accounts_v1",
     PREFILL: "pixie_switch_prefill_username",
-    PENDING_LOGIN: "pixie_switch_pending_login"
+    PENDING_LOGIN: "pixie_switch_pending_login",
+    PENDING_SAVE: "pixie_switch_pending_save"
   });
 
   const SELECTORS = Object.freeze({
@@ -49,7 +50,6 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
     alreadySaved: "Esa cuenta ya está guardada.",
     notSaved: "Esa cuenta no estaba guardada.",
     loginFailed: "No se pudo iniciar sesión con esa cuenta.",
-    loginRequestFailed: "No se pudo iniciar sesión.",
     missingHtml: "Falta el HTML base o los templates de PixieSwitch."
   });
 
@@ -121,24 +121,24 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       }
     },
 
-    getPendingLogin() {
-      const raw = sessionStorage.getItem(STORAGE.PENDING_LOGIN);
+    getSessionItem(key) {
+      const raw = sessionStorage.getItem(key);
       if (!raw) return null;
 
       try {
         return JSON.parse(raw);
       } catch (error) {
-        this.clearPendingLogin();
+        sessionStorage.removeItem(key);
         return null;
       }
     },
 
-    setPendingLogin(account) {
-      sessionStorage.setItem(STORAGE.PENDING_LOGIN, JSON.stringify(account));
+    setSessionItem(key, value) {
+      sessionStorage.setItem(key, JSON.stringify(value));
     },
 
-    clearPendingLogin() {
-      sessionStorage.removeItem(STORAGE.PENDING_LOGIN);
+    clearSessionItem(key) {
+      sessionStorage.removeItem(key);
     },
 
     setPrefillUsername(username) {
@@ -247,7 +247,7 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       });
     },
 
-    saveCurrent() {
+    saveCurrent(password) {
       const currentAccount = this.getCurrent();
 
       if (!currentAccount) {
@@ -266,7 +266,7 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
         id: currentAccount.id || "",
         nick: currentAccount.nick,
         avatar: currentAccount.avatar || "",
-        password: ""
+        password: password ? Utils.encodePassword(password) : ""
       });
 
       return StorageManager.saveAccounts(accounts);
@@ -318,37 +318,42 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       return StorageManager.saveAccounts(filtered);
     },
 
-    login(username, password) {
-      const body = new URLSearchParams();
+    submitLoginForm(username, encodedPassword) {
+      const passwordValue = Utils.decodePassword(encodedPassword);
 
-      body.set("username", username);
-      body.set("password", password);
-      body.set("autologin", "on");
-      body.set("login", "Conectarse");
+      const form = document.createElement("form");
+      form.method = "post";
+      form.action = "/login";
+      form.style.display = "none";
 
-      return fetch("/login", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: body.toString()
-      }).then((response) => response.text());
-    },
+      const usernameInput = document.createElement("input");
+      usernameInput.type = "text";
+      usernameInput.name = "username";
+      usernameInput.value = username;
 
-    getAccountIdFromHtml(html) {
-      const match = html.match(/_userdata\["user_id"\]\s*=\s*(\d+)/);
-      return match ? match[1] : "";
-    },
+      const passwordInput = document.createElement("input");
+      passwordInput.type = "password";
+      passwordInput.name = "password";
+      passwordInput.value = passwordValue;
 
-    getAvatarFromHtml(html) {
-      const match = html.match(/_userdata\["avatar"\]\s*=\s*"(.+?)";/);
-      return match ? match[1].replace(/\\"/g, '"') : "";
-    },
+      const autologinInput = document.createElement("input");
+      autologinInput.type = "checkbox";
+      autologinInput.name = "autologin";
+      autologinInput.checked = true;
+      autologinInput.value = "on";
 
-    getUsernameFromHtml(html) {
-      const match = html.match(/_userdata\["username"\]\s*=\s*"(.+?)";/);
-      return match ? match[1].replace(/\\"/g, '"') : "";
+      const loginInput = document.createElement("input");
+      loginInput.type = "submit";
+      loginInput.name = "login";
+      loginInput.value = "Conectarse";
+
+      form.appendChild(usernameInput);
+      form.appendChild(passwordInput);
+      form.appendChild(autologinInput);
+      form.appendChild(loginInput);
+
+      document.body.appendChild(form);
+      form.submit();
     },
 
     saveWithLogin(form) {
@@ -357,44 +362,48 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
 
       if (!username || !password) return;
 
-      this.login(username, password)
-        .then((html) => {
-          const id = this.getAccountIdFromHtml(html);
-          const parsedUsername = this.getUsernameFromHtml(html) || username;
-          const avatar = this.getAvatarFromHtml(html);
+      const encodedPassword = Utils.encodePassword(password);
 
-          if (!id) {
-            alert(TEXT.loginFailed);
-            return;
-          }
+      StorageManager.setSessionItem(STORAGE.PENDING_SAVE, {
+        username,
+        password: encodedPassword
+      });
 
-          const accounts = StorageManager.loadAccounts();
+      this.submitLoginForm(username, encodedPassword);
+    },
 
-          const alreadyExists = accounts.some((account) => {
-            return (
-              account.id === id ||
-              Utils.normalizeUsername(account.nick) === Utils.normalizeUsername(parsedUsername)
-            );
-          });
+    handlePendingSave() {
+      const pending = StorageManager.getSessionItem(STORAGE.PENDING_SAVE);
 
-          if (alreadyExists) {
-            alert(TEXT.alreadySaved);
-            return;
-          }
+      if (!pending || !pending.username || !pending.password) {
+        StorageManager.clearSessionItem(STORAGE.PENDING_SAVE);
+        return;
+      }
 
-          accounts.push({
-            id,
-            nick: parsedUsername,
-            avatar,
-            password: Utils.encodePassword(password)
-          });
+      const currentAccount = this.getCurrent();
 
-          StorageManager.saveAccounts(accounts);
-          window.location.reload();
-        })
-        .catch(() => {
-          alert(TEXT.loginRequestFailed);
-        });
+      if (!currentAccount) {
+        alert(TEXT.loginFailed);
+        StorageManager.clearSessionItem(STORAGE.PENDING_SAVE);
+        return;
+      }
+
+      const accounts = StorageManager.loadAccounts();
+
+      if (this.isCurrentSaved(accounts, currentAccount)) {
+        StorageManager.clearSessionItem(STORAGE.PENDING_SAVE);
+        return;
+      }
+
+      accounts.push({
+        id: currentAccount.id || "",
+        nick: currentAccount.nick,
+        avatar: currentAccount.avatar || "",
+        password: pending.password
+      });
+
+      StorageManager.saveAccounts(accounts);
+      StorageManager.clearSessionItem(STORAGE.PENDING_SAVE);
     },
 
     switchTo(account) {
@@ -405,8 +414,8 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
       if (!confirmed) return;
 
       if (OPTIONS.autoLogin && account.password) {
-        StorageManager.setPendingLogin({
-          nick: account.nick,
+        StorageManager.setSessionItem(STORAGE.PENDING_LOGIN, {
+          username: account.nick,
           password: account.password
         });
 
@@ -422,48 +431,16 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
     },
 
     submitPendingLogin() {
-      const pending = StorageManager.getPendingLogin();
+      const pending = StorageManager.getSessionItem(STORAGE.PENDING_LOGIN);
 
-      if (!pending || !pending.nick || !pending.password) {
-        StorageManager.clearPendingLogin();
+      if (!pending || !pending.username || !pending.password) {
+        StorageManager.clearSessionItem(STORAGE.PENDING_LOGIN);
         return;
       }
 
-      const form = document.createElement("form");
-      form.method = "post";
-      form.action = "/login";
-      form.style.display = "none";
+      StorageManager.clearSessionItem(STORAGE.PENDING_LOGIN);
 
-      const username = document.createElement("input");
-      username.type = "text";
-      username.name = "username";
-      username.value = pending.nick;
-
-      const password = document.createElement("input");
-      password.type = "password";
-      password.name = "password";
-      password.value = Utils.decodePassword(pending.password);
-
-      const autologin = document.createElement("input");
-      autologin.type = "checkbox";
-      autologin.name = "autologin";
-      autologin.checked = true;
-      autologin.value = "on";
-
-      const login = document.createElement("input");
-      login.type = "submit";
-      login.name = "login";
-      login.value = "Conectarse";
-
-      form.appendChild(username);
-      form.appendChild(password);
-      form.appendChild(autologin);
-      form.appendChild(login);
-
-      document.body.appendChild(form);
-      StorageManager.clearPendingLogin();
-
-      form.submit();
+      this.submitLoginForm(pending.username, pending.password);
     },
 
     prefillUsername() {
@@ -690,6 +667,7 @@ const PixieSwitch = PixieKit("PixieSwitch", function ({
     },
 
     init() {
+      AccountManager.handlePendingSave();
       AccountManager.submitPendingLogin();
       AccountManager.prefillUsername();
 
