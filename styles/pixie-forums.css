@@ -12,11 +12,54 @@
 
 
 .forum {
-  @container style(--forum-wide: first) {
-    &:first-child { grid-column: 1 / -1;}
-  }
-  
-  @container style(--forum-wide:last) {
-  &:last-child {grid-column: 1 / -1;}
-  }
+    --forum-rows: 7;
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: span var(--forum-rows);
+    grid-template-areas: "icon" "title" "data" "img" "desc" "links" "lastpost";
+
+    .icon {
+        grid-area: icon;
+    }
+
+    .title {
+        grid-area: title;
+    }
+
+    .data {
+        grid-area: data;
+    }
+
+    .forum-img {
+        grid-area: img;
+
+        @container style(--forum-img: no) {
+            display: none;
+        }
+
+    }
+
+    .description {
+        grid-area: desc;
+    }
+
+    .links {
+        grid-area: links;
+    }
+
+    .lastpost {
+        grid-area: lastpost;
+    }
+
+    @container style(--forum-wide: first) {
+        &:first-child {
+            grid-column: 1 / -1;
+        }
+    }
+
+    @container style(--forum-wide:last) {
+        &:last-child {
+            grid-column: 1 / -1;
+        }
+    }
 }
