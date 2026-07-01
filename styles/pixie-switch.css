@@ -18,10 +18,9 @@
 }
 
 .pixie-switch-head,
-.pixie-switch-body,
-.pixie-switch-login-form {
+.pixie-switch-body {
   background: var(--surface, #111);
-  color: var(--foreground, #fff);
+  color: var(--text-1);
 }
 
 .pixie-switch-head {
@@ -31,30 +30,14 @@
   border-radius: .75rem .75rem 0 0;
 }
 
+.pixie-switch-title {
+  font-weight: 700;
+}
+
 .pixie-switch-actions {
   display: flex;
   flex-wrap: wrap;
   gap: .5rem;
-}
-
-.pixie-switch-login-form {
-  display: grid;
-  gap: .75rem;
-  padding: 1rem;
-  border-top: 1px solid color-mix(in srgb, currentColor 15%, transparent);
-}
-
-.pixie-switch-login-form[hidden] {
-  display: none;
-}
-
-.pixie-switch-field {
-  display: grid;
-  gap: .35rem;
-}
-
-.pixie-switch-field input {
-  width: 100%;
 }
 
 .pixie-switch-body {
