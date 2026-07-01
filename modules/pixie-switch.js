@@ -7,8 +7,8 @@
   var PIXIE_SWITCH_PREFILL = "pixie_switch_prefill_username";
 
   var PIXIE_SWITCH_DEFAULTS = {
-    autoLogin: false,
-    confirmSwitch: true
+    autoLogin: true,
+    confirmSwitch: false
   };
 
   var PIXIE_SWITCH_OPTIONS = Object.assign(
