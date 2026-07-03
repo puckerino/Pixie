@@ -114,6 +114,10 @@
   }
 }
 
+.quickreply:not(:has(form)) {
+  display: none;
+}
+
 #quick_reply div:not(#textarea_content, .sceditor-dropdown) {
   display: flex;
   align-items: center;
