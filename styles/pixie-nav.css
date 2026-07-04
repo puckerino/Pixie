@@ -117,6 +117,10 @@ body:has(#notif_unread:not(:empty)) .notis-alert {
             &[data-notif-type="0"] {
                 --notif-type: mp;
             }
+
+            &[data-notif-type="1"] {
+                --notif-type: report;
+            }
             
             &[data-notif-type="7"] {
                 --notif-type: post;
