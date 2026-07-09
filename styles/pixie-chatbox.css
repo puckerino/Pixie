@@ -1,0 +1,8 @@
+html:has( > body.chatbox) {
+  height: 100%;
+}
+
+body.chatbox {
+  height: 100%;
+  background: var(--surface);
+}
