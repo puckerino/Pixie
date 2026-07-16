@@ -1,14 +1,13 @@
+.forum-wrap {
+    display: grid;
+    grid-template-columns: repeat(var(--columns), 1fr);
+    grid-auto-rows: max-content;
+    gap: var(--spacing);
 
- .forum-wrap {
-  display: grid;
-  grid-template-columns: repeat(var(--columns),1fr);
-  grid-auto-rows: max-content;
-  gap: var(--spacing);
-    
     @media (max-width: 700px) {
-      grid-template-columns: 1fr;
+        grid-template-columns: 1fr;
     }
-  }
+}
 
 
 .forum {
@@ -18,23 +17,24 @@
     grid-row: span var(--forum-rows);
     grid-template-areas: "icon" "title" "data" "img" "desc" "links" "lastpost";
 
-   &:has(.icon img[src$="forum_read_locked.gif"]) {
-    --forum-status: locked;
-   }
- 
-   &:has(.icon img[src$="forum_read.gif"]) {
-    --forum-status: read;
-   }
+    &:has(.icon img[src$="forum_read_locked.gif"]) {
+        --forum-status: locked;
+    }
+
+    &:has(.icon img[src$="forum_read.gif"]) {
+        --forum-status: read;
+    }
 
     &:has(.icon img[src$="forum_unread.gif"]) {
-    --forum-status: unread;
-   }
+        --forum-status: unread;
+    }
 
     .icon {
         grid-area: icon;
-     @container style(--icon: no) {
-      display: none;
-     }
+
+        @container style(--icon: no) {
+            display: none;
+        }
     }
 
     .title {
@@ -42,22 +42,27 @@
     }
 
     .data {
-        grid-area: data;     
-     
-     @container style(--data: no) {
-      display: none;
-     }
+        grid-area: data;
+
+        @container style(--data: no) {
+            display: none;
+        }
     }
 
     .forum-img {
-     grid-area: img;
-     @container style(--img: no) {
-      display: none;
-     }
+        grid-area: img;
+
+        @container style(--img: no) {
+            display: none;
+        }
     }
 
     .description {
         grid-area: desc;
+
+        br:last-of-type {
+            display: none;
+        }
     }
 
     .links {
@@ -67,9 +72,9 @@
     .lastpost {
         grid-area: lastpost;
 
-     @container style(--lastpost: no) {
-      display: none;
-     }
+        @container style(--lastpost: no) {
+            display: none;
+        }
     }
 
 
