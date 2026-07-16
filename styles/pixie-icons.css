@@ -31,6 +31,26 @@
   --icon-moon: url("https://unpkg.com/lucide-static/icons/moon.svg");
   --icon-menu: url("https://unpkg.com/lucide-static/icons/menu.svg");
   --icon-info: url("https://unpkg.com/lucide-static/icons/info.svg");
+
+  /* Notificaciones */
+  --icon-mp: url("https://unpkg.com/lucide-static/icons/mail.svg");
+  --icon-report: url("https://unpkg.com/lucide-static/icons/flag.svg");
+  --icon-friendrequest: url("https://unpkg.com/lucide-static/icons/handshake.svg");
+  --icon-grouprequest: url("https://unpkg.com/lucide-static/icons/users.svg");
+  --icon-friendcon: url("https://unpkg.com/lucide-static/icons/contact.svg");
+  --icon-wallmsg: url("https://unpkg.com/lucide-static/icons/message-square-text.svg");
+  --icon-abuse: url("https://unpkg.com/lucide-static/icons/message-circle-warning.svg");
+  --icon-topicwatch: url("https://unpkg.com/lucide-static/icons/pencil-sparkles.svg");
+  --icon-mention: url("https://unpkg.com/lucide-static/icons/at-sign.svg");
+  --icon-hashtag: url("https://unpkg.com/lucide-static/icons/hash.svg");
+  --icon-advert: url("https://unpkg.com/lucide-static/icons/megaphone.svg");
+  --icon-like: url("https://unpkg.com/lucide-static/icons/thumbs-up.svg");
+  --icon-dislike: url("https://unpkg.com/lucide-static/icons/thumbs-down.svg");
+  --icon-forumwatch: url("https://unpkg.com/lucide-static/icons/pencil-sparkles.svg");
+  --icon-award: url("https://unpkg.com/lucide-static/icons/trophy.svg");
+  --icon-followernewtopic: url("https://unpkg.com/lucide-static/icons/user-round-check.svg");
+  --icon-followernewpost: url("https://unpkg.com/lucide-static/icons/user-round-check.svg");
+  --icon-donation: url("https://unpkg.com/lucide-static/icons/circle-dollar-sign.svg");
 }
 
 .pixie-icon-mask {
