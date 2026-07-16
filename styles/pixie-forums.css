@@ -32,6 +32,9 @@
 
     .icon {
         grid-area: icon;
+     @container style(--icon: no) {
+      display: none;
+     }
     }
 
     .title {
@@ -39,11 +42,18 @@
     }
 
     .data {
-        grid-area: data;
+        grid-area: data;     
+     
+     @container style(--data: no) {
+      display: none;
+     }
     }
 
     .forum-img {
-        grid-area: img;
+     grid-area: img;
+     @container style(--img: no) {
+      display: none;
+     }
     }
 
     .description {
@@ -56,7 +66,12 @@
 
     .lastpost {
         grid-area: lastpost;
+
+     @container style(--lastpost: no) {
+      display: none;
+     }
     }
+
 
     @container style(--forum-wide: first) {
         &:first-child {
