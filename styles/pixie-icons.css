@@ -32,6 +32,10 @@
   --icon-menu: url("https://unpkg.com/lucide-static/icons/menu.svg");
   --icon-info: url("https://unpkg.com/lucide-static/icons/info.svg");
 
+  /* Topics */
+  --icon-topic-pinned: url("https://unpkg.com/lucide-static/icons/pin.svg");
+  --icon-topic-closed: url("https://unpkg.com/lucide-static/icons/lock.svg");
+
   /* Notificaciones */
   --icon-mp: url("https://unpkg.com/lucide-static/icons/mail.svg");
   --icon-report: url("https://unpkg.com/lucide-static/icons/flag.svg");
