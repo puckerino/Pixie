@@ -183,12 +183,12 @@ const PixieFooter = PixieKit("Footer", function (_) {
 
         ${cleanUserList(
           data.onlineUsers,
-          "CONECTADOS AHORA"
+          "ONLINE"
         )}
 
         ${cleanUserList(
           data.lastConnected,
-          "CONECTADOS EN LAS ÚLTIMAS 24H"
+          "24HRS"
         )}
 
       </section>
