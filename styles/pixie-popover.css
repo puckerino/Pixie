@@ -21,3 +21,9 @@
     transform: var(--popover-transform);
   }
 }
+
+.close-button {
+  #forumnavmenu & {
+    justify-self: end;
+  }
+}
