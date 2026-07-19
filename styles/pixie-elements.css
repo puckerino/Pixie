@@ -80,6 +80,10 @@ input[type="reset"],
             width: 1rem;
             height: 1rem;
         }
+        
+        #forumnavmenu & {
+            justify-self: end;
+        }
     }
 
     #dice_to_del & {
