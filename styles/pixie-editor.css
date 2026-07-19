@@ -26,7 +26,7 @@
   width: 100% !important;
   height: 100% !important;
   outline: 0 !important;
-  corner-shape: square square squircle squircle;
+  corner-shape: square square var(--shape-elements) var(--shape-elements);
 }
 
 .sceditor-toolbar {
@@ -35,7 +35,7 @@
   display: flex;
   justify-content: space-around;
   border-radius: .5rem;
-  corner-shape: squircle squircle square square;
+  corner-shape: var(--shape-elements) var(--shape-elements) square square;
 }
 
 .sceditor-button {
