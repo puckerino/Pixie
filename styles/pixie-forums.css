@@ -73,6 +73,10 @@
         br:last-of-type {
             display: none;
         }
+      
+      @container style(--desc: no) {
+        display: none;
+      }
     }
 
     .links {
