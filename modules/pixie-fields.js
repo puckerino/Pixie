@@ -1,8 +1,10 @@
 /*!
  * PixieFields.js
- * Normaliza, estructura y mueve campos de perfil dentro de los posts y perfiles
+ * Normaliza, estructura y clona campos de perfil dentro de posts y perfiles
  * Requiere: pixiekit.js
- * Versión: 0.5.0
+ * Versión: 0.5.1
+ * data-profile-render="fecha-de-inscripcion"
+ * data-profile-render-value="fecha-de-inscripcion"
  */
 
 const PixieFields = PixieKit("Fields", function (_) {
@@ -29,6 +31,12 @@ const PixieFields = PixieKit("Fields", function (_) {
 
   const fieldStore = new WeakMap();
 
+  /**
+   * Convierte el nombre de un campo en un slug.
+   *
+   * Ejemplo:
+   * "Fecha de inscripción" → "fecha-de-inscripcion"
+   */
   function slugify(text) {
     return String(text || "")
       .normalize("NFD")
@@ -39,6 +47,9 @@ const PixieFields = PixieKit("Fields", function (_) {
       .replace(/^-+|-+$/g, "");
   }
 
+  /**
+   * Limpia espacios, saltos de línea y espacios no separables.
+   */
   function cleanText(text) {
     return String(text || "")
       .replace(/\u00a0/g, " ")
@@ -46,6 +57,10 @@ const PixieFields = PixieKit("Fields", function (_) {
       .trim();
   }
 
+  /**
+   * Busca el nodo de texto que contiene el nombre del campo
+   * cuando Foroactivo no lo envuelve en un elemento.
+   */
   function findLabelTextNode(field) {
     return Array.from(field.childNodes)
       .find(function (node) {
@@ -56,6 +71,9 @@ const PixieFields = PixieKit("Fields", function (_) {
       });
   }
 
+  /**
+   * Elimina del clon el primer nodo de texto usado como etiqueta.
+   */
   function removeFirstLabelTextNode(field) {
     const firstText = findLabelTextNode(field);
 
@@ -64,6 +82,9 @@ const PixieFields = PixieKit("Fields", function (_) {
     }
   }
 
+  /**
+   * Obtiene el nombre visible del campo.
+   */
   function getLabelName(field, label) {
     if (label) {
       return cleanText(label.textContent)
@@ -78,15 +99,24 @@ const PixieFields = PixieKit("Fields", function (_) {
       .replace(/\s*:\s*$/, "");
   }
 
+  /**
+   * Obtiene el valor textual del campo.
+   */
   function getFieldValue(field, opts) {
-    const uneditable = field.querySelector(".field_uneditable");
+    const uneditable =
+      field.querySelector(".field_uneditable");
 
     if (uneditable) {
-      return cleanText(uneditable.textContent);
+      return cleanText(
+        uneditable.textContent
+      );
     }
 
-    const clone = field.cloneNode(true);
-    const cloneLabel = clone.querySelector(opts.label);
+    const clone =
+      field.cloneNode(true);
+
+    const cloneLabel =
+      clone.querySelector(opts.label);
 
     if (cloneLabel) {
       cloneLabel.remove();
@@ -99,6 +129,9 @@ const PixieFields = PixieKit("Fields", function (_) {
       .trim();
   }
 
+  /**
+   * Comprueba si el slug del campo aparece en la configuración move.
+   */
   function getMoveTarget(slug, map) {
     for (const target in map) {
       if (map[target].includes(slug)) {
@@ -109,14 +142,22 @@ const PixieFields = PixieKit("Fields", function (_) {
     return null;
   }
 
+  /**
+   * Reconstruye el campo con una estructura uniforme:
+   *
+   * .field-name
+   * .field-value
+   */
   function rebuildField(field, data, opts) {
-    const sourceValue = field.querySelector(".field_uneditable");
+    const sourceValue =
+      field.querySelector(".field_uneditable");
 
     const clone = sourceValue
       ? sourceValue.cloneNode(true)
       : field.cloneNode(true);
 
-    const label = clone.querySelector(opts.label);
+    const label =
+      clone.querySelector(opts.label);
 
     if (label) {
       label.remove();
@@ -124,7 +165,9 @@ const PixieFields = PixieKit("Fields", function (_) {
       removeFirstLabelTextNode(clone);
     }
 
-    clone.classList.remove("field_uneditable");
+    clone.classList.remove(
+      "field_uneditable"
+    );
 
     field.innerHTML = "";
 
@@ -140,79 +183,155 @@ const PixieFields = PixieKit("Fields", function (_) {
     });
 
     while (clone.firstChild) {
-      valueEl.appendChild(clone.firstChild);
+      valueEl.appendChild(
+        clone.firstChild
+      );
     }
 
     field.appendChild(nameEl);
     field.appendChild(valueEl);
   }
 
+  /**
+   * Guarda la información del campo para poder recuperarla
+   * posteriormente mediante PixieFields.get().
+   */
   function saveField(post, data) {
     if (!fieldStore.has(post)) {
       fieldStore.set(post, {});
     }
 
-    fieldStore.get(post)[data.slug] = data;
+    fieldStore.get(post)[data.slug] =
+      data;
   }
 
-  function moveValueOnly(field, target) {
-    const value = field.querySelector(".field-value");
+  /**
+   * Clona únicamente el contenido de .field-value
+   * dentro del destino.
+   *
+   * El campo original permanece en .profile-fields.
+   */
+  function cloneValueOnly(field, target) {
+    const value =
+      field.querySelector(".field-value");
 
     if (!value) return false;
 
-    while (value.firstChild) {
-      target.appendChild(value.firstChild);
-    }
-
-    field.remove();
+    Array.from(value.childNodes)
+      .forEach(function (node) {
+        target.appendChild(
+          node.cloneNode(true)
+        );
+      });
 
     return true;
   }
 
-  function renderToPlaceholder(field, post, slug, opts) {
-    const fullTarget = post.querySelector(
-      `[${opts.renderAttr}="${slug}"]`
-    );
+  /**
+   * Clona el campo en los placeholders declarados mediante:
+   *
+   * data-profile-render
+   * data-profile-render-value
+   */
+  function renderToPlaceholder(
+    field,
+    post,
+    slug,
+    opts
+  ) {
+    const fullTarget =
+      post.querySelector(
+        `[${opts.renderAttr}="${slug}"]`
+      );
 
-    const valueTarget = post.querySelector(
-      `[${opts.renderValueAttr}="${slug}"]`
-    );
+    const valueTarget =
+      post.querySelector(
+        `[${opts.renderValueAttr}="${slug}"]`
+      );
 
+    /*
+     * Clona el campo completo:
+     *
+     * <div
+     *   data-profile-render="fecha-de-inscripcion"
+     * ></div>
+     */
     if (fullTarget) {
-      fullTarget.appendChild(field);
+      fullTarget.appendChild(
+        field.cloneNode(true)
+      );
+
       return true;
     }
 
+    /*
+     * Clona solamente el valor:
+     *
+     * <div
+     *   data-profile-render-value="fecha-de-inscripcion"
+     * ></div>
+     */
     if (valueTarget) {
-      return moveValueOnly(field, valueTarget);
+      return cloneValueOnly(
+        field,
+        valueTarget
+      );
     }
 
     return false;
   }
 
-  function moveByConfig(field, post, slug, opts) {
+  /**
+   * Clona el campo completo en el destino indicado
+   * mediante la configuración move.
+   *
+   * Se conserva el nombre "move" para mantener la
+   * compatibilidad con la configuración original.
+   */
+  function moveByConfig(
+    field,
+    post,
+    slug,
+    opts
+  ) {
     const targetSelector =
-      getMoveTarget(slug, opts.move);
+      getMoveTarget(
+        slug,
+        opts.move
+      );
 
-    if (!targetSelector) return false;
+    if (!targetSelector) {
+      return false;
+    }
 
     const target =
-      post.querySelector(targetSelector);
+      post.querySelector(
+        targetSelector
+      );
 
     if (!target) {
       _.log(
-        `No encuentro ${targetSelector} para mover ${slug}`
+        `No encuentro ${targetSelector} para clonar ${slug}`
       );
 
       return false;
     }
 
-    target.appendChild(field);
+    target.appendChild(
+      field.cloneNode(true)
+    );
 
     return true;
   }
 
-  function processField(field, post, opts) {
+  /**
+   * Normaliza y procesa un campo individual.
+   */
+  function processField(
+    field,
+    post,
+    opts
+  ) {
     const label =
       field.querySelector(opts.label);
 
@@ -249,6 +368,9 @@ const PixieFields = PixieKit("Fields", function (_) {
 
     saveField(post, data);
 
+    /*
+     * Primero busca un placeholder HTML.
+     */
     if (
       renderToPlaceholder(
         field,
@@ -260,6 +382,10 @@ const PixieFields = PixieKit("Fields", function (_) {
       return;
     }
 
+    /*
+     * Si no hay placeholder, busca un destino
+     * dentro de la configuración move.
+     */
     moveByConfig(
       field,
       post,
@@ -268,7 +394,13 @@ const PixieFields = PixieKit("Fields", function (_) {
     );
   }
 
-  function processPost(post, opts) {
+  /**
+   * Procesa todos los campos de un post o perfil.
+   */
+  function processPost(
+    post,
+    opts
+  ) {
     const fieldsBox =
       post.querySelector(
         opts.fieldsBox
@@ -276,11 +408,16 @@ const PixieFields = PixieKit("Fields", function (_) {
 
     if (!fieldsBox) return;
 
-    const fields = Array.from(
-      fieldsBox.querySelectorAll(
-        opts.field
-      )
-    );
+    /*
+     * Se crea una lista fija antes de empezar.
+     * Así, los clones generados no vuelven a procesarse.
+     */
+    const fields =
+      Array.from(
+        fieldsBox.querySelectorAll(
+          opts.field
+        )
+      );
 
     fields.forEach(function (field) {
       processField(
@@ -290,6 +427,10 @@ const PixieFields = PixieKit("Fields", function (_) {
       );
     });
 
+    /*
+     * Al clonarse los campos, normalmente la caja
+     * original conservará contenido y no se ocultará.
+     */
     if (
       opts.hideEmptyBox &&
       !fieldsBox.children.length
@@ -298,12 +439,16 @@ const PixieFields = PixieKit("Fields", function (_) {
     }
   }
 
+  /**
+   * Inicializa PixieFields.
+   */
   function init(options = {}) {
-    const opts = Object.assign(
-      {},
-      config,
-      options || {}
-    );
+    const opts =
+      Object.assign(
+        {},
+        config,
+        options || {}
+      );
 
     _.getAll(opts.post)
       .forEach(function (post) {
@@ -314,6 +459,9 @@ const PixieFields = PixieKit("Fields", function (_) {
       });
   }
 
+  /**
+   * Recupera un campo concreto previamente procesado.
+   */
   function get(post, slug) {
     const fields =
       fieldStore.get(post);
@@ -323,6 +471,9 @@ const PixieFields = PixieKit("Fields", function (_) {
     return fields[slug] || null;
   }
 
+  /**
+   * Recupera todos los campos procesados de un post.
+   */
   function getAll(post) {
     return fieldStore.get(post) || {};
   }
