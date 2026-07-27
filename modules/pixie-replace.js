@@ -24,6 +24,14 @@ const PixieReplace = PixieKit("Replace", function (_) {
     },
 
     {
+      selector: "img[src='https://2img.net/i/fa/awesomebb/icon_topic_latest.png']",
+      target: "a",
+      icon: "move-right",
+      tooltip: "Última respuesta",
+      classes: ["button", "button-icon"]
+    },
+
+    {
       selector: "img.i_msg_newpost",
       target: "a",
       text: "Nuevo Mensaje Privado"
