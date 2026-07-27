@@ -1,13 +1,12 @@
 const COMPONENTS = {
-
   // UI
-  "pix-audio": "components/ui/pix-audio.js",
-  "pix-spoiler": "components/ui/pix-spoiler.js",
-  "pix-tabs": "components/ui/pix-tabs.js",
-  "pix-tab": "components/ui/pix-tab.js",
-  "pix-carousel": "components/ui/pix-carousel.js",
-  "pix-copy": "components/ui/pix-copy.js",
-  "pix-accordion": "components/ui/pix-accordion.js"
+  "pix-audio": "ui/pix-audio.js",
+  "pix-spoiler": "ui/pix-spoiler.js",
+  "pix-tabs": "ui/pix-tabs.js",
+  "pix-tab": "ui/pix-tab.js",
+  "pix-carousel": "ui/pix-carousel.js",
+  "pix-copy": "ui/pix-copy.js",
+  "pix-accordion": "ui/pix-accordion.js"
 };
 
 const loadingComponents = new Set();
@@ -21,17 +20,18 @@ function loadComponent(tag) {
 
   loadingComponents.add(tag);
 
-  const base = import.meta.url.replace("/loader.js", "");
+  // Resuelve la ruta tomando como referencia components/loader.js
+  const componentUrl = new URL(file, import.meta.url);
 
-  import(`${base}/components/${file}`)
+  import(componentUrl.href)
     .then(module => {
       if (customElements.get(tag)) return;
 
-      const comp = module.default || module;
-      customElements.define(tag, comp);
+      const component = module.default || module;
+      customElements.define(tag, component);
     })
-    .catch(err => {
-      console.error(`Error cargando ${tag}`, err);
+    .catch(error => {
+      console.error(`Error cargando ${tag}`, error);
     })
     .finally(() => {
       loadingComponents.delete(tag);
@@ -39,15 +39,22 @@ function loadComponent(tag) {
 }
 
 function scan(root = document) {
-  if (root.nodeType !== 1 && root.nodeType !== 9) return;
+  if (root.nodeType !== Node.ELEMENT_NODE &&
+      root.nodeType !== Node.DOCUMENT_NODE &&
+      root.nodeType !== Node.DOCUMENT_FRAGMENT_NODE) {
+    return;
+  }
 
-  if (root.nodeType === 1 && root.tagName.includes("-")) {
+  if (
+    root.nodeType === Node.ELEMENT_NODE &&
+    root.tagName.includes("-")
+  ) {
     loadComponent(root.tagName.toLowerCase());
   }
 
-  root.querySelectorAll("*").forEach(el => {
-    if (el.tagName.includes("-")) {
-      loadComponent(el.tagName.toLowerCase());
+  root.querySelectorAll?.("*").forEach(element => {
+    if (element.tagName.includes("-")) {
+      loadComponent(element.tagName.toLowerCase());
     }
   });
 }
@@ -55,8 +62,8 @@ function scan(root = document) {
 scan();
 
 new MutationObserver(mutations => {
-  mutations.forEach(m => {
-    m.addedNodes.forEach(node => {
+  mutations.forEach(mutation => {
+    mutation.addedNodes.forEach(node => {
       scan(node);
     });
   });
