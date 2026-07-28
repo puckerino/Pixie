@@ -32,9 +32,8 @@
     }
 
   &.blog {
-    display: flex;
-    align-items: center;
-    gap: 0 var(--spacing-s);
+    grid-template-columns: 60px 1fr;
+    grid-template-areas: "icon title";
   }
 
     .icon {
