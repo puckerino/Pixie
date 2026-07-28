@@ -31,6 +31,12 @@
         grid-template-areas: "icon title data lastpost" "icon author data lastpost" "icon description data lastpost" "icon pagination data lastpost";
     }
 
+  &.blog {
+    display: flex;
+    align-items: center;
+    gap: 0 var(--spacing-s);
+  }
+
     .icon {
         grid-area: icon;
         position: relative;
