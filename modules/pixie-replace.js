@@ -18,17 +18,13 @@ const PixieReplace = PixieKit("Replace", function (_) {
     {
       selector: "img.sprite-icon_topic_latest",
       target: "a",
-      icon: "move-right",
-      tooltip: "Última Respuesta",
-      classes: ["button", "button-icon"]
+      remove: true
     },
 
     {
       selector: "img[src='https://2img.net/i/fa/awesomebb/icon_topic_latest.png']",
       target: "a",
-      icon: "move-right",
-      tooltip: "Última respuesta",
-      classes: ["button", "button-icon"]
+      remove: true
     },
 
     {
