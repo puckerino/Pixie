@@ -3,7 +3,7 @@
  * Generador de temas para ForoActivo
  * Requiere: PixieKit y jQuery
  * Autor: Puck
- * Versión: 1.0.0
+ * Versión: 1.1.0
  */
 
 (function (window, document, $) {
@@ -68,6 +68,13 @@
         }
       }
 
+      function parseHTML(html) {
+        return new DOMParser().parseFromString(
+          String(html || ""),
+          "text/html"
+        );
+      }
+
       function capitalizeWords(value) {
         return String(value || "")
           .toLowerCase()
@@ -80,8 +87,8 @@
       }
 
       /*
-       * Escapa contenido que se insertará dentro
-       * de un atributo HTML generado.
+       * Escapa contenido insertado dentro
+       * de atributos HTML generados.
        */
 
       function escapeAttr(value) {
@@ -93,17 +100,17 @@
       }
 
       /*
-       * Escapa un identificador utilizado en un selector CSS.
-       *
-       * Ejemplo:
-       * #nombre-personaje
+       * Escapa un identificador utilizado
+       * dentro de un selector CSS.
        */
 
       function escapeCssIdentifier(value) {
         const stringValue = String(value || "");
 
         if ($.escapeSelector) {
-          return $.escapeSelector(stringValue);
+          return $.escapeSelector(
+            stringValue
+          );
         }
 
         return stringValue.replace(
@@ -113,11 +120,8 @@
       }
 
       /*
-       * Escapa un valor situado dentro de un selector
-       * de atributo entre comillas.
-       *
-       * Ejemplo:
-       * [name="grupo"]
+       * Escapa valores utilizados dentro
+       * de selectores de atributo.
        */
 
       function escapeCssString(value) {
@@ -125,10 +129,6 @@
           .replace(/\\/g, "\\\\")
           .replace(/"/g, '\\"');
       }
-
-      /*
-       * Obtiene un campo por ID dentro del formulario.
-       */
 
       function getFieldById($form, id) {
         return $form.find(
@@ -145,7 +145,7 @@
         const forms = [];
 
         /*
-         * Si el propio contexto es un formulario,
+         * Si el contexto es el propio formulario,
          * también debe inicializarse.
          */
 
@@ -157,21 +157,23 @@
           forms.push(root);
         }
 
-        /*
-         * Busca formularios dentro del contexto.
-         */
-
-        Pixie.getAll(FORM_SELECTOR, root)
-          .forEach(function (form) {
-            if (!forms.includes(form)) {
-              forms.push(form);
-            }
-          });
+        Pixie.getAll(
+          FORM_SELECTOR,
+          root
+        ).forEach(function (form) {
+          if (!forms.includes(form)) {
+            forms.push(form);
+          }
+        });
 
         forms.forEach(initForm);
 
         return module;
       }
+
+      /*
+       * Inicialización de un formulario
+       */
 
       function initForm(formElement) {
         if (!formElement) {
@@ -181,7 +183,8 @@
         const $form = $(formElement);
 
         /*
-         * Evita registrar los eventos más de una vez.
+         * Evita registrar los eventos
+         * más de una vez.
          */
 
         if (
@@ -219,11 +222,14 @@
         }
 
         /*
-         * Solo se marca después de comprobar
-         * que el formulario es válido.
+         * Solo se marca cuando el formulario
+         * es válido y tiene plantilla.
          */
 
-        $form.attr(READY_ATTRIBUTE, "true");
+        $form.attr(
+          READY_ATTRIBUTE,
+          "true"
+        );
 
         let enviando = false;
 
@@ -333,7 +339,8 @@
             escapeCssString(id) +
             '"]';
 
-          const $repeat = $form.find(selector);
+          const $repeat =
+            $form.find(selector);
 
           if (!$repeat.length) {
             return null;
@@ -402,23 +409,27 @@
          * Lectura de campos
          */
 
-        function getFieldData(id, useLabel) {
+        function getFieldData(
+          id,
+          useLabel
+        ) {
           const repeatEntries =
             getRepeatEntries(id);
 
           /*
-           * Es importante comprobar contra null.
            * Un repetidor vacío devuelve [].
+           * Por eso se comprueba contra null.
            */
 
           if (repeatEntries !== null) {
             return repeatEntries;
           }
 
-          const $field = getFieldById(
-            $form,
-            id
-          );
+          const $field =
+            getFieldById(
+              $form,
+              id
+            );
 
           if (!$field.length) {
             return "";
@@ -445,11 +456,12 @@
               return "";
             }
 
-            const $checked = $form.find(
-              '[name="' +
-              escapeCssString(name) +
-              '"]:checked'
-            );
+            const $checked =
+              $form.find(
+                '[name="' +
+                escapeCssString(name) +
+                '"]:checked'
+              );
 
             if (!$checked.length) {
               return "";
@@ -466,7 +478,9 @@
               return $form
                 .find(
                   'label[for="' +
-                  escapeCssString(checkedId) +
+                  escapeCssString(
+                    checkedId
+                  ) +
                   '"]'
                 )
                 .first()
@@ -559,6 +573,10 @@
           let result = value;
 
           filters.forEach(function (filter) {
+            /*
+             * label se procesa al leer el campo.
+             */
+
             if (filter === "label") {
               return;
             }
@@ -649,7 +667,7 @@
         }
 
         /*
-         * Renderizado de atributos y componentes
+         * Componentes y wrappers
          */
 
         function buildAttrs(
@@ -693,8 +711,8 @@
           attrs
         ) {
           /*
-           * Solo admite nombres razonables de etiquetas
-           * o custom elements.
+           * Evita generar nombres
+           * de etiqueta inválidos.
            */
 
           if (
@@ -717,8 +735,8 @@
                 );
 
               /*
-               * attrs: vacío indica que el contenido
-               * debe ir entre las etiquetas.
+               * attrs: vacío introduce el label
+               * como contenido.
                */
 
               if (
@@ -774,14 +792,10 @@
         }
 
         /*
-         * Plantilla final
+         * Lectura de la plantilla
          */
 
         function getTemplateValue() {
-          /*
-           * Para textarea.
-           */
-
           if (
             $template.is(
               "textarea, input"
@@ -792,10 +806,6 @@
             );
           }
 
-          /*
-           * Para template HTML.
-           */
-
           if (
             $template.is("template")
           ) {
@@ -804,14 +814,14 @@
             );
           }
 
-          /*
-           * Para cualquier otro contenedor.
-           */
-
           return String(
             $template.text() || ""
           );
         }
+
+        /*
+         * Renderizado final
+         */
 
         function renderTemplate() {
           const templateValue =
@@ -833,13 +843,14 @@
                     "label"
                   );
 
-                let value = getFieldData(
-                  parsedTag.id,
-                  useLabel
-                );
+                let value =
+                  getFieldData(
+                    parsedTag.id,
+                    useLabel
+                  );
 
                 /*
-                 * Repetidores y grupos de checkbox.
+                 * Repetidores o grupos de checkbox.
                  */
 
                 if (
@@ -912,8 +923,7 @@
 
             const subjectValue =
               String(
-                $subjectInput.val() ||
-                ""
+                $subjectInput.val() || ""
               ).trim();
 
             if (subjectValue) {
@@ -923,10 +933,60 @@
 
           return (
             String(
-              $form.data("titulo") ||
-              ""
+              $form.data("titulo") || ""
             ).trim() ||
             "Nuevo tema"
+          );
+        }
+
+        /*
+         * ID del foro
+         */
+
+        function getForumId() {
+          const forumField =
+            String(
+              $form.data(
+                "forum-field"
+              ) || ""
+            ).trim();
+
+          /*
+           * Permite obtener el ID desde
+           * un campo rellenable.
+           */
+
+          if (forumField) {
+            const $forumInput =
+              getFieldById(
+                $form,
+                forumField
+              );
+
+            const forumValue =
+              String(
+                $forumInput.val() || ""
+              ).trim();
+
+            if (forumValue) {
+              return (
+                parseInt(
+                  forumValue,
+                  10
+                ) || 0
+              );
+            }
+          }
+
+          /*
+           * Si no hay campo, utiliza data-foro.
+           */
+
+          return (
+            parseInt(
+              $form.data("foro"),
+              10
+            ) || 0
           );
         }
 
@@ -1023,11 +1083,381 @@
         }
 
         /*
+         * Formulario oficial de Foroactivo
+         */
+
+        function getOfficialTopicForm(
+          forumId
+        ) {
+          return $.ajax({
+            url: "/post",
+            method: "GET",
+
+            data: {
+              f: forumId,
+              mode: "newtopic"
+            }
+          }).then(function (html) {
+            const parsedDocument =
+              parseHTML(html);
+
+            const officialForm =
+              parsedDocument.querySelector(
+                [
+                  'form[name="post"]',
+                  'form[action*="/post"]'
+                ].join(",")
+              );
+
+            if (!officialForm) {
+              const forumError =
+                getForumError(html);
+
+              throw new Error(
+                forumError ||
+                "No se ha encontrado el formulario oficial para crear el tema."
+              );
+            }
+
+            return officialForm;
+          });
+        }
+
+        /*
+         * Prepara los campos oficiales
+         * para la publicación.
+         */
+
+        function getOfficialFormData(
+          officialForm,
+          forumId,
+          subject,
+          message
+        ) {
+          const formData =
+            $(officialForm)
+              .serializeArray();
+
+          /*
+           * Se eliminan los valores que
+           * sustituiremos manualmente.
+           */
+
+          const filteredData =
+            formData.filter(
+              function (field) {
+                return ![
+                  "f",
+                  "subject",
+                  "message",
+                  "mode",
+                  "post",
+                  "preview"
+                ].includes(
+                  field.name
+                );
+              }
+            );
+
+          filteredData.push(
+            {
+              name: "f",
+              value: String(forumId)
+            },
+            {
+              name: "subject",
+              value: subject
+            },
+            {
+              name: "message",
+              value: message
+            },
+            {
+              name: "mode",
+              value: "newtopic"
+            },
+            {
+              name: "post",
+              value: "1"
+            }
+          );
+
+          return filteredData;
+        }
+
+        /*
+         * Extrae posibles mensajes de error
+         * devueltos por Foroactivo.
+         */
+
+        function getForumError(html) {
+          const parsedDocument =
+            parseHTML(html);
+
+          const errorSelectors = [
+            ".message_die",
+            ".block-error",
+            ".panel.error",
+            ".errorbox",
+            ".error",
+            ".main-content.error"
+          ];
+
+          for (
+            let index = 0;
+            index <
+            errorSelectors.length;
+            index += 1
+          ) {
+            const errorElement =
+              parsedDocument.querySelector(
+                errorSelectors[index]
+              );
+
+            if (!errorElement) {
+              continue;
+            }
+
+            const errorText =
+              String(
+                errorElement.textContent ||
+                ""
+              )
+                .replace(/\s+/g, " ")
+                .trim();
+
+            if (errorText) {
+              return errorText;
+            }
+          }
+
+          return "";
+        }
+
+        /*
+         * Obtiene la URL del tema creado.
+         */
+
+        function getCreatedTopicUrl(
+          xhr,
+          html
+        ) {
+          const responseUrl =
+            String(
+              xhr.responseURL || ""
+            );
+
+          /*
+           * La propia petición terminó
+           * en el nuevo tema.
+           */
+
+          if (
+            /\/t\d+(?:-|\/|$)/i.test(
+              responseUrl
+            )
+          ) {
+            return responseUrl;
+          }
+
+          const parsedDocument =
+            parseHTML(html);
+
+          /*
+           * URL canónica del tema.
+           */
+
+          const canonicalElement =
+            parsedDocument.querySelector(
+              'link[rel="canonical"]'
+            );
+
+          const canonicalUrl =
+            canonicalElement
+              ? String(
+                  canonicalElement.getAttribute(
+                    "href"
+                  ) ||
+                  canonicalElement.href ||
+                  ""
+                )
+              : "";
+
+          if (
+            /\/t\d+(?:-|\/|$)/i.test(
+              canonicalUrl
+            )
+          ) {
+            return canonicalUrl;
+          }
+
+          /*
+           * Redirección mediante meta refresh.
+           */
+
+          const refreshElement =
+            parsedDocument.querySelector(
+              'meta[http-equiv="refresh" i]'
+            );
+
+          const refreshContent =
+            refreshElement
+              ? String(
+                  refreshElement.getAttribute(
+                    "content"
+                  ) || ""
+                )
+              : "";
+
+          const refreshMatch =
+            refreshContent.match(
+              /(?:url\s*=\s*)?([^;]*\/t\d+(?:-[^"'\s]*)?)/i
+            );
+
+          if (refreshMatch) {
+            return refreshMatch[1]
+              .trim()
+              .replace(/^['"]|['"]$/g, "");
+          }
+
+          /*
+           * Busca enlaces que parezcan apuntar
+           * a un tema.
+           */
+
+          const topicLinks =
+            parsedDocument.querySelectorAll(
+              'a[href*="/t"]'
+            );
+
+          for (
+            let index = 0;
+            index <
+            topicLinks.length;
+            index += 1
+          ) {
+            const href = String(
+              topicLinks[index].getAttribute(
+                "href"
+              ) || ""
+            );
+
+            if (
+              /\/t\d+(?:-|\/|$)/i.test(
+                href
+              )
+            ) {
+              return href;
+            }
+          }
+
+          return "";
+        }
+
+        /*
+         * Comprueba si Foroactivo parece
+         * haber aceptado la publicación.
+         */
+
+        function isSuccessfulTopicCreation(
+          xhr,
+          html
+        ) {
+          const createdTopicUrl =
+            getCreatedTopicUrl(
+              xhr,
+              html
+            );
+
+          if (createdTopicUrl) {
+            return true;
+          }
+
+          const parsedDocument =
+            parseHTML(html);
+
+          /*
+           * Si el formulario de creación sigue
+           * presente, normalmente hubo un error.
+           */
+
+          const topicForm =
+            parsedDocument.querySelector(
+              [
+                'form[name="post"]',
+                'form[action*="/post"]'
+              ].join(",")
+            );
+
+          if (topicForm) {
+            return false;
+          }
+
+          return false;
+        }
+
+        /*
+         * Publicación utilizando
+         * el formulario oficial.
+         */
+
+        async function publishTopic(
+          forumId,
+          subject,
+          message
+        ) {
+          const officialForm =
+            await getOfficialTopicForm(
+              forumId
+            );
+
+          const requestData =
+            getOfficialFormData(
+              officialForm,
+              forumId,
+              subject,
+              message
+            );
+
+          const action =
+            officialForm.getAttribute(
+              "action"
+            ) || "/post";
+
+          return new Promise(
+            function (
+              resolve,
+              reject
+            ) {
+              $.ajax({
+                url: action,
+                method: "POST",
+                data: requestData
+              })
+                .done(function (
+                  html,
+                  textStatus,
+                  xhr
+                ) {
+                  resolve({
+                    html,
+                    xhr
+                  });
+                })
+                .fail(function (xhr) {
+                  reject(xhr);
+                });
+            }
+          );
+        }
+
+        /*
          * Redirección
          */
 
         function redirectAfterPublish(
-          forumId
+          forumId,
+          createdTopicUrl
         ) {
           const redirectUrl =
             String(
@@ -1035,6 +1465,11 @@
                 "redirect"
               ) || ""
             ).trim();
+
+          /*
+           * Si está dentro de un iframe,
+           * recarga la ventana principal.
+           */
 
           if (
             window.self !==
@@ -1044,6 +1479,10 @@
             return;
           }
 
+          /*
+           * Redirección personalizada.
+           */
+
           if (redirectUrl) {
             window.location.href =
               redirectUrl;
@@ -1051,12 +1490,28 @@
             return;
           }
 
+          /*
+           * Si Foroactivo devolvió la URL
+           * del tema, se utiliza.
+           */
+
+          if (createdTopicUrl) {
+            window.location.href =
+              createdTopicUrl;
+
+            return;
+          }
+
+          /*
+           * Último recurso: vuelve al foro.
+           */
+
           window.location.href =
             "/f" + forumId + "-";
         }
 
         /*
-         * Añadir entrada
+         * Añadir entrada repetible
          */
 
         $form.on(
@@ -1107,11 +1562,12 @@
               return;
             }
 
-            const $list = $repeat
-              .find(
-                ".fa-repeat-list"
-              )
-              .first();
+            const $list =
+              $repeat
+                .find(
+                  ".fa-repeat-list"
+                )
+                .first();
 
             if (!$list.length) {
               warn(
@@ -1122,17 +1578,24 @@
               return;
             }
 
-            $list.append($newEntry);
+            $list.append(
+              $newEntry
+            );
 
             /*
-             * Actualiza los iconos Lucide
-             * que pueda contener la entrada.
+             * Actualiza posibles iconos Lucide.
              */
 
-            Pixie.icons();
+            if (
+              typeof Pixie.icons ===
+              "function"
+            ) {
+              Pixie.icons();
+            }
 
             /*
-             * Evento para otros módulos.
+             * Permite que otros módulos procesen
+             * el contenido añadido.
              */
 
             $(document).trigger(
@@ -1143,7 +1606,7 @@
         );
 
         /*
-         * Eliminar entrada
+         * Eliminar entrada repetible
          */
 
         $form.on(
@@ -1152,7 +1615,8 @@
           function (event) {
             event.preventDefault();
 
-            const $button = $(this);
+            const $button =
+              $(this);
 
             const $entry =
               $button.closest(
@@ -1188,12 +1652,12 @@
         );
 
         /*
-         * Publicación
+         * Envío
          */
 
         $form.on(
           "submit.PixieForm",
-          function (event) {
+          async function (event) {
             event.preventDefault();
 
             if (enviando) {
@@ -1207,10 +1671,7 @@
               getSubject();
 
             const forumId =
-              parseInt(
-                $form.data("foro"),
-                10
-              ) || 1;
+              getForumId();
 
             if (!message) {
               window.alert(
@@ -1228,46 +1689,102 @@
               return;
             }
 
+            if (!forumId) {
+              window.alert(
+                "Falta el ID del foro."
+              );
+
+              return;
+            }
+
             setSendingState(true);
 
-            $.ajax({
-              url: "/post",
-              method: "POST",
+            try {
+              /*
+               * Recupera el formulario oficial,
+               * copia sus tokens y publica.
+               */
 
-              data: {
-                f: forumId,
-                subject,
-                message,
-                mode: "newtopic",
-                post: 1
+              const result =
+                await publishTopic(
+                  forumId,
+                  subject,
+                  message
+                );
+
+              /*
+               * Un estado HTTP 200 no confirma
+               * por sí solo que el tema se creara.
+               */
+
+              if (
+                !isSuccessfulTopicCreation(
+                  result.xhr,
+                  result.html
+                )
+              ) {
+                const forumError =
+                  getForumError(
+                    result.html
+                  );
+
+                throw new Error(
+                  forumError ||
+                  "Foroactivo no ha confirmado la creación del tema."
+                );
               }
-            })
-              .done(function () {
-                window.alert(
-                  "Tema publicado."
+
+              const createdTopicUrl =
+                getCreatedTopicUrl(
+                  result.xhr,
+                  result.html
                 );
 
-                redirectAfterPublish(
-                  forumId
-                );
-              })
-              .fail(function (xhr) {
-                setSendingState(false);
+              window.alert(
+                "Tema publicado."
+              );
 
-                warn(
-                  "No se ha podido publicar el tema.",
-                  xhr
-                );
+              redirectAfterPublish(
+                forumId,
+                createdTopicUrl
+              );
+            } catch (error) {
+              setSendingState(false);
 
-                window.alert(
-                  "No se ha podido publicar el tema."
-                );
-              });
+              warn(
+                "No se ha podido publicar el tema.",
+                error
+              );
+
+              /*
+               * Una petición AJAX fallida puede
+               * no ser un Error convencional.
+               */
+
+              const responseHtml =
+                error &&
+                error.responseText
+                  ? error.responseText
+                  : "";
+
+              const forumError =
+                responseHtml
+                  ? getForumError(
+                      responseHtml
+                    )
+                  : "";
+
+              window.alert(
+                forumError ||
+                error?.message ||
+                "No se ha podido publicar el tema."
+              );
+            }
           }
         );
 
         /*
-         * Evento al terminar la inicialización.
+         * Evento al completar la inicialización
          */
 
         $form.trigger(
