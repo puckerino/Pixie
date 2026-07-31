@@ -1044,42 +1044,48 @@
          * Formulario oficial de Foroactivo
          */
 
-        function getOfficialReplyForm(
-          topicId
-        ) {
-          return $.ajax({
-            url: "/post",
-            method: "GET",
+function getOfficialReplyForm(topicId) {
+  return $.ajax({
+    url: "/post",
+    method: "GET",
 
-            data: {
-              t: topicId,
-              mode: "reply"
-            }
-          }).then(function (html) {
-            const parsedDocument =
-              Pixie.parseHTML(html);
+    data: {
+      t: topicId,
+      mode: "reply"
+    }
+  }).then(function (html) {
+    const parsedDocument =
+      Pixie.parseHTML(html);
 
-            const officialForm =
-              parsedDocument.querySelector(
-                [
-                  'form[name="post"]',
-                  'form[action*="/post"]'
-                ].join(",")
-              );
+    const officialForm =
+      parsedDocument.querySelector(
+        [
+          'form[name="post"]',
+          'form[action*="/post"]'
+        ].join(",")
+      );
 
-            if (!officialForm) {
-              const error =
-                getForumError(html);
+    if (!officialForm) {
+      const error =
+        getForumError(html);
 
-              throw new Error(
-                error ||
-                "No se ha encontrado el formulario oficial de respuesta."
-              );
-            }
+      throw new Error(
+        error ||
+        "No se ha encontrado el formulario oficial de respuesta."
+      );
+    }
 
-            return officialForm;
-          });
-        }
+    /*
+     * Se devuelve dentro de un objeto para evitar
+     * que jQuery altere el valor al resolver la promesa.
+     */
+
+    return {
+      form: officialForm,
+      html: html
+    };
+  });
+}
 
         /*
          * Prepara los campos oficiales para enviar.
@@ -1325,53 +1331,80 @@
          * el formulario oficial.
          */
 
-        async function publishReply(
-          topicId,
-          message
+async function publishReply(
+  topicId,
+  message
+) {
+  const officialResult =
+    await getOfficialReplyForm(
+      topicId
+    );
+
+  const officialForm =
+    officialResult.form;
+
+  /*
+   * Comprobación defensiva para asegurarnos
+   * de que realmente hemos recibido un formulario.
+   */
+
+  if (
+    !officialForm ||
+    officialForm.nodeType !== 1 ||
+    String(
+      officialForm.tagName || ""
+    ).toLowerCase() !== "form"
+  ) {
+    throw new Error(
+      "El formulario oficial recibido no es válido."
+    );
+  }
+
+  const requestData =
+    getOfficialFormData(
+      officialForm,
+      topicId,
+      message
+    );
+
+  /*
+   * Se usa jQuery para leer action.
+   * Es más resistente a posibles propiedades
+   * internas del formulario que sobrescriban métodos.
+   */
+
+  const action =
+    String(
+      $(officialForm).attr("action") ||
+      "/post"
+    ).trim();
+
+  return new Promise(
+    function (
+      resolve,
+      reject
+    ) {
+      $.ajax({
+        url: action,
+        method: "POST",
+        data: requestData
+      })
+        .done(function (
+          html,
+          textStatus,
+          xhr
         ) {
-          const officialForm =
-            await getOfficialReplyForm(
-              topicId
-            );
-
-          const requestData =
-            getOfficialFormData(
-              officialForm,
-              topicId,
-              message
-            );
-
-          const action =
-            officialForm.getAttribute(
-              "action"
-            ) || "/post";
-
-          return new Promise(
-            function (
-              resolve,
-              reject
-            ) {
-              $.ajax({
-                url: action,
-                method: "POST",
-                data: requestData
-              })
-                .done(function (
-                  html,
-                  textStatus,
-                  xhr
-                ) {
-                  resolve({
-                    html,
-                    xhr
-                  });
-                })
-                .fail(function (xhr) {
-                  reject(xhr);
-                });
-            }
-          );
-        }
+          resolve({
+            html,
+            xhr
+          });
+        })
+        .fail(function (xhr) {
+          reject(xhr);
+        });
+    }
+  );
+}
 
         /*
          * Redirección después de publicar
