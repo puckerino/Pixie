@@ -3,7 +3,7 @@
  * Generador de respuestas para temas de ForoActivo
  * Requiere: PixieKit y jQuery
  * Autor: Puck
- * Versión: 1.0.0
+ * Versión: 1.1.0
  */
 
 (function (window, document, $) {
@@ -80,7 +80,8 @@
       }
 
       /*
-       * Escapa texto insertado dentro de atributos HTML.
+       * Escapa texto que se insertará
+       * dentro de un atributo HTML.
        */
 
       function escapeAttr(value) {
@@ -92,7 +93,7 @@
       }
 
       /*
-       * Escapa identificadores utilizados en selectores CSS.
+       * Escapa identificadores CSS.
        */
 
       function escapeCssIdentifier(value) {
@@ -109,8 +110,8 @@
       }
 
       /*
-       * Escapa valores utilizados dentro de selectores
-       * de atributo entre comillas.
+       * Escapa valores utilizados dentro
+       * de selectores de atributo.
        */
 
       function escapeCssString(value) {
@@ -120,7 +121,8 @@
       }
 
       /*
-       * Obtiene un campo por ID dentro del formulario.
+       * Obtiene un campo por ID
+       * dentro del formulario.
        */
 
       function getFieldById($form, id) {
@@ -138,8 +140,8 @@
         const forms = [];
 
         /*
-         * Si el propio contexto es un formulario,
-         * también debe inicializarse.
+         * Si el contexto es el propio formulario,
+         * también se inicializa.
          */
 
         if (
@@ -150,16 +152,14 @@
           forms.push(root);
         }
 
-        /*
-         * Busca formularios dentro del contexto.
-         */
-
-        Pixie.getAll(FORM_SELECTOR, root)
-          .forEach(function (form) {
-            if (!forms.includes(form)) {
-              forms.push(form);
-            }
-          });
+        Pixie.getAll(
+          FORM_SELECTOR,
+          root
+        ).forEach(function (form) {
+          if (!forms.includes(form)) {
+            forms.push(form);
+          }
+        });
 
         forms.forEach(initForm);
 
@@ -167,7 +167,7 @@
       }
 
       /*
-       * Inicializa un formulario concreto.
+       * Inicialización de un formulario
        */
 
       function initForm(formElement) {
@@ -178,7 +178,8 @@
         const $form = $(formElement);
 
         /*
-         * Evita registrar los eventos dos veces.
+         * Evita inicializar el mismo formulario
+         * más de una vez.
          */
 
         if (
@@ -216,11 +217,14 @@
         }
 
         /*
-         * Solo se marca después de comprobar
-         * que el formulario es válido.
+         * El formulario solo se marca cuando
+         * todas las comprobaciones han pasado.
          */
 
-        $form.attr(READY_ATTRIBUTE, "true");
+        $form.attr(
+          READY_ATTRIBUTE,
+          "true"
+        );
 
         let enviando = false;
 
@@ -330,7 +334,8 @@
             escapeCssString(id) +
             '"]';
 
-          const $repeat = $form.find(selector);
+          const $repeat =
+            $form.find(selector);
 
           if (!$repeat.length) {
             return null;
@@ -399,7 +404,10 @@
          * Lectura de campos
          */
 
-        function getFieldData(id, useLabel) {
+        function getFieldData(
+          id,
+          useLabel
+        ) {
           const repeatEntries =
             getRepeatEntries(id);
 
@@ -412,10 +420,11 @@
             return repeatEntries;
           }
 
-          const $field = getFieldById(
-            $form,
-            id
-          );
+          const $field =
+            getFieldById(
+              $form,
+              id
+            );
 
           if (!$field.length) {
             return "";
@@ -442,11 +451,12 @@
               return "";
             }
 
-            const $checked = $form.find(
-              '[name="' +
-              escapeCssString(name) +
-              '"]:checked'
-            );
+            const $checked =
+              $form.find(
+                '[name="' +
+                escapeCssString(name) +
+                '"]:checked'
+              );
 
             if (!$checked.length) {
               return "";
@@ -463,7 +473,9 @@
               return $form
                 .find(
                   'label[for="' +
-                  escapeCssString(checkedId) +
+                  escapeCssString(
+                    checkedId
+                  ) +
                   '"]'
                 )
                 .first()
@@ -694,7 +706,8 @@
           attrs
         ) {
           /*
-           * Impide generar nombres de etiqueta inválidos.
+           * Evita generar nombres
+           * de etiqueta inválidos.
            */
 
           if (
@@ -717,7 +730,7 @@
                 );
 
               /*
-               * attrs: vacío introduce el label
+               * attrs: vacío usa el label
                * como contenido del componente.
                */
 
@@ -778,10 +791,6 @@
          */
 
         function getTemplateValue() {
-          /*
-           * Textarea o input.
-           */
-
           if (
             $template.is(
               "textarea, input"
@@ -792,10 +801,6 @@
             );
           }
 
-          /*
-           * Elemento template.
-           */
-
           if (
             $template.is("template")
           ) {
@@ -804,17 +809,13 @@
             );
           }
 
-          /*
-           * Otro contenedor.
-           */
-
           return String(
             $template.text() || ""
           );
         }
 
         /*
-         * Renderizado final de la respuesta.
+         * Renderizado final
          */
 
         function renderTemplate() {
@@ -837,13 +838,14 @@
                     "label"
                   );
 
-                let value = getFieldData(
-                  parsedTag.id,
-                  useLabel
-                );
+                let value =
+                  getFieldData(
+                    parsedTag.id,
+                    useLabel
+                  );
 
                 /*
-                 * Repetidores o grupos de checkbox.
+                 * Repetidores o checkboxes.
                  */
 
                 if (
@@ -908,7 +910,8 @@
             ).trim();
 
           /*
-           * Permite obtener el ID de un campo.
+           * Permite obtener el ID
+           * desde un campo del formulario.
            */
 
           if (topicField) {
@@ -920,8 +923,7 @@
 
             const topicValue =
               String(
-                $topicInput.val() ||
-                ""
+                $topicInput.val() || ""
               ).trim();
 
             if (topicValue) {
@@ -1039,7 +1041,340 @@
         }
 
         /*
-         * Redirección después de responder
+         * Formulario oficial de Foroactivo
+         */
+
+        function getOfficialReplyForm(
+          topicId
+        ) {
+          return $.ajax({
+            url: "/post",
+            method: "GET",
+
+            data: {
+              t: topicId,
+              mode: "reply"
+            }
+          }).then(function (html) {
+            const parsedDocument =
+              Pixie.parseHTML(html);
+
+            const officialForm =
+              parsedDocument.querySelector(
+                [
+                  'form[name="post"]',
+                  'form[action*="/post"]'
+                ].join(",")
+              );
+
+            if (!officialForm) {
+              const error =
+                getForumError(html);
+
+              throw new Error(
+                error ||
+                "No se ha encontrado el formulario oficial de respuesta."
+              );
+            }
+
+            return officialForm;
+          });
+        }
+
+        /*
+         * Prepara los campos oficiales para enviar.
+         */
+
+        function getOfficialFormData(
+          officialForm,
+          topicId,
+          message
+        ) {
+          const formData =
+            $(officialForm)
+              .serializeArray();
+
+          /*
+           * Se eliminan los campos que
+           * sustituiremos manualmente.
+           */
+
+          const filteredData =
+            formData.filter(
+              function (field) {
+                return ![
+                  "t",
+                  "message",
+                  "mode",
+                  "post",
+                  "preview"
+                ].includes(
+                  field.name
+                );
+              }
+            );
+
+          filteredData.push(
+            {
+              name: "t",
+              value: String(topicId)
+            },
+            {
+              name: "message",
+              value: message
+            },
+            {
+              name: "mode",
+              value: "reply"
+            },
+            {
+              name: "post",
+              value: "1"
+            }
+          );
+
+          return filteredData;
+        }
+
+        /*
+         * Extrae posibles errores devueltos
+         * por Foroactivo.
+         */
+
+        function getForumError(html) {
+          const parsedDocument =
+            Pixie.parseHTML(html);
+
+          const errorSelectors = [
+            ".message_die",
+            ".block-error",
+            ".panel.error",
+            ".errorbox",
+            ".error",
+            ".main-content.error"
+          ];
+
+          for (
+            let index = 0;
+            index <
+            errorSelectors.length;
+            index += 1
+          ) {
+            const errorElement =
+              parsedDocument.querySelector(
+                errorSelectors[index]
+              );
+
+            if (!errorElement) {
+              continue;
+            }
+
+            const errorText =
+              String(
+                errorElement.textContent ||
+                ""
+              )
+                .replace(/\s+/g, " ")
+                .trim();
+
+            if (errorText) {
+              return errorText;
+            }
+          }
+
+          return "";
+        }
+
+        /*
+         * Comprueba si la respuesta se publicó.
+         */
+
+        function isSuccessfulReply(
+          xhr,
+          html,
+          topicId
+        ) {
+          const responseUrl = String(
+            xhr.responseURL || ""
+          );
+
+          const topicPattern =
+            new RegExp(
+              "/t" +
+              topicId +
+              "(?:-|/|$)",
+              "i"
+            );
+
+          /*
+           * La petición terminó en la URL
+           * del tema.
+           */
+
+          if (
+            topicPattern.test(
+              responseUrl
+            )
+          ) {
+            return true;
+          }
+
+          const parsedDocument =
+            Pixie.parseHTML(html);
+
+          /*
+           * Comprueba la URL canónica.
+           */
+
+          const canonicalElement =
+            parsedDocument.querySelector(
+              'link[rel="canonical"]'
+            );
+
+          const canonicalUrl =
+            canonicalElement
+              ? String(
+                  canonicalElement.href ||
+                  canonicalElement.getAttribute(
+                    "href"
+                  ) ||
+                  ""
+                )
+              : "";
+
+          if (
+            topicPattern.test(
+              canonicalUrl
+            )
+          ) {
+            return true;
+          }
+
+          /*
+           * Comprueba posibles redirecciones
+           * introducidas en el HTML.
+           */
+
+          const refreshElement =
+            parsedDocument.querySelector(
+              'meta[http-equiv="refresh" i]'
+            );
+
+          const refreshContent =
+            refreshElement
+              ? String(
+                  refreshElement.getAttribute(
+                    "content"
+                  ) || ""
+                )
+              : "";
+
+          if (
+            topicPattern.test(
+              refreshContent
+            )
+          ) {
+            return true;
+          }
+
+          /*
+           * Comprueba si sigue mostrando
+           * el formulario de respuesta.
+           *
+           * Si sigue presente, normalmente
+           * la publicación no fue aceptada.
+           */
+
+          const replyForm =
+            parsedDocument.querySelector(
+              [
+                'form[name="post"]',
+                'form[action*="/post"]'
+              ].join(",")
+            );
+
+          if (replyForm) {
+            return false;
+          }
+
+          /*
+           * Como última comprobación,
+           * busca enlaces al tema.
+           */
+
+          const topicLink =
+            parsedDocument.querySelector(
+              [
+                'a[href^="/t' +
+                  topicId +
+                  '-"]',
+                'a[href^="/t' +
+                  topicId +
+                  '/"]',
+                'a[href*="/t' +
+                  topicId +
+                  '-"]'
+              ].join(",")
+            );
+
+          return Boolean(topicLink);
+        }
+
+        /*
+         * Publica la respuesta utilizando
+         * el formulario oficial.
+         */
+
+        async function publishReply(
+          topicId,
+          message
+        ) {
+          const officialForm =
+            await getOfficialReplyForm(
+              topicId
+            );
+
+          const requestData =
+            getOfficialFormData(
+              officialForm,
+              topicId,
+              message
+            );
+
+          const action =
+            officialForm.getAttribute(
+              "action"
+            ) || "/post";
+
+          return new Promise(
+            function (
+              resolve,
+              reject
+            ) {
+              $.ajax({
+                url: action,
+                method: "POST",
+                data: requestData
+              })
+                .done(function (
+                  html,
+                  textStatus,
+                  xhr
+                ) {
+                  resolve({
+                    html,
+                    xhr
+                  });
+                })
+                .fail(function (xhr) {
+                  reject(xhr);
+                });
+            }
+          );
+        }
+
+        /*
+         * Redirección después de publicar
          */
 
         function redirectAfterPublish(
@@ -1053,8 +1388,7 @@
             ).trim();
 
           /*
-           * Si el formulario está dentro de un iframe,
-           * recarga la página principal.
+           * Formulario dentro de iframe.
            */
 
           if (
@@ -1077,7 +1411,7 @@
           }
 
           /*
-           * Redirección predeterminada al tema.
+           * Tema publicado.
            */
 
           window.location.href =
@@ -1136,11 +1470,12 @@
               return;
             }
 
-            const $list = $repeat
-              .find(
-                ".fa-repeat-list"
-              )
-              .first();
+            const $list =
+              $repeat
+                .find(
+                  ".fa-repeat-list"
+                )
+                .first();
 
             if (!$list.length) {
               warn(
@@ -1151,7 +1486,9 @@
               return;
             }
 
-            $list.append($newEntry);
+            $list.append(
+              $newEntry
+            );
 
             /*
              * Inicializa posibles iconos Lucide.
@@ -1161,7 +1498,7 @@
 
             /*
              * Permite que otros módulos procesen
-             * el contenido creado.
+             * el contenido añadido.
              */
 
             $(document).trigger(
@@ -1181,7 +1518,8 @@
           function (event) {
             event.preventDefault();
 
-            const $button = $(this);
+            const $button =
+              $(this);
 
             const $entry =
               $button.closest(
@@ -1217,12 +1555,12 @@
         );
 
         /*
-         * Envío de la respuesta
+         * Envío
          */
 
         $form.on(
           "submit.PixieReplyForm",
-          function (event) {
+          async function (event) {
             event.preventDefault();
 
             if (enviando) {
@@ -1253,43 +1591,85 @@
 
             setSendingState(true);
 
-            $.ajax({
-              url: "/post",
-              method: "POST",
+            try {
+              /*
+               * Recupera el formulario oficial,
+               * obtiene sus tokens y publica.
+               */
 
-              data: {
-                t: topicId,
-                message,
-                mode: "reply",
-                post: 1
-              }
-            })
-              .done(function () {
-                window.alert(
-                  "Respuesta publicada."
+              const result =
+                await publishReply(
+                  topicId,
+                  message
                 );
 
-                redirectAfterPublish(
+              /*
+               * Un estado HTTP 200 no confirma
+               * por sí solo la publicación.
+               */
+
+              if (
+                !isSuccessfulReply(
+                  result.xhr,
+                  result.html,
                   topicId
-                );
-              })
-              .fail(function (xhr) {
-                setSendingState(false);
+                )
+              ) {
+                const forumError =
+                  getForumError(
+                    result.html
+                  );
 
-                warn(
-                  "No se ha podido publicar la respuesta.",
-                  xhr
+                throw new Error(
+                  forumError ||
+                  "Foroactivo no ha confirmado la publicación."
                 );
+              }
 
-                window.alert(
-                  "No se ha podido publicar la respuesta."
-                );
-              });
+              window.alert(
+                "Respuesta publicada."
+              );
+
+              redirectAfterPublish(
+                topicId
+              );
+            } catch (error) {
+              setSendingState(false);
+
+              warn(
+                "No se ha podido publicar la respuesta.",
+                error
+              );
+
+              /*
+               * Una petición AJAX fallida puede
+               * no ser un Error convencional.
+               */
+
+              const responseHtml =
+                error &&
+                error.responseText
+                  ? error.responseText
+                  : "";
+
+              const forumError =
+                responseHtml
+                  ? getForumError(
+                      responseHtml
+                    )
+                  : "";
+
+              window.alert(
+                forumError ||
+                error?.message ||
+                "No se ha podido publicar la respuesta."
+              );
+            }
           }
         );
 
         /*
-         * Evento al terminar la inicialización.
+         * Evento al terminar la inicialización
          */
 
         $form.trigger(
