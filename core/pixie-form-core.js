@@ -5,7 +5,7 @@
  * Requiere:
  * - PixieKit
  *
- * Versión: 2.0.0
+ * Versión: 2.1.0
  */
 
 (function (window, document) {
@@ -599,7 +599,7 @@
     }
 
     /**
-     * Obtiene el texto asociado a un input
+     * Obtiene el texto asociado a un control
      * mediante su label[for].
      */
     function getLabelForControl(control) {
@@ -679,6 +679,18 @@
 
       /*
        * Checkbox.
+       *
+       * Devuelve un array de objetos:
+       *
+       * {
+       *   label: "Texto visible",
+       *   value: "valor"
+       * }
+       *
+       * Esto permite utilizar:
+       *
+       * {{checkbox|wrap:<li>{label}</li>}}
+       * {{checkbox|component:s-tag}}
        */
 
       if (type === "checkbox") {
@@ -695,8 +707,9 @@
               label:
                 getLabelForControl(control),
 
-              value:
+              value: String(
                 control.value || ""
+              )
             };
           });
       }
@@ -709,27 +722,37 @@
         field instanceof
         HTMLSelectElement
       ) {
+        /*
+         * Select múltiple.
+         *
+         * Devuelve la misma estructura que
+         * los checkboxes y los repetidores:
+         *
+         * {
+         *   label: "Texto visible",
+         *   value: "valor"
+         * }
+         */
+
         if (field.multiple) {
-          const selected = toArray(
+          return toArray(
             field.selectedOptions
-          );
+          ).map(function (option) {
+            return {
+              label: String(
+                option.textContent || ""
+              ).trim(),
 
-          if (useLabel) {
-            return selected.map(
-              function (option) {
-                return String(
-                  option.textContent || ""
-                ).trim();
-              }
-            );
-          }
-
-          return selected.map(
-            function (option) {
-              return option.value;
-            }
-          );
+              value: String(
+                option.value || ""
+              )
+            };
+          });
         }
+
+        /*
+         * Select simple.
+         */
 
         if (useLabel) {
           return String(
@@ -953,9 +976,15 @@
     /**
      * Envuelve entradas usando una plantilla.
      *
+     * Compatible con:
+     *
+     * - Repetidores
+     * - Checkboxes
+     * - Select multiple
+     *
      * Ejemplo:
      *
-     * wrap:<li>{label}</li>
+     * {{campo|wrap:<li>{label}</li>}}
      */
     function renderWrap(
       items,
@@ -1002,7 +1031,13 @@
               );
 
             /*
-             * Repetidores y checkbox.
+             * Arrays de objetos.
+             *
+             * Incluye:
+             *
+             * - Repetidores
+             * - Checkboxes
+             * - Select multiple
              */
 
             if (
@@ -1010,6 +1045,10 @@
               value.length &&
               typeof value[0] === "object"
             ) {
+              /*
+               * Generar componentes.
+               */
+
               if (
                 parsedTag.component
               ) {
@@ -1020,12 +1059,22 @@
                 );
               }
 
+              /*
+               * Aplicar wrap: a cada elemento.
+               */
+
               if (parsedTag.wrap) {
                 return renderWrap(
                   value,
                   parsedTag.wrap
                 );
               }
+
+              /*
+               * Convertir el array de objetos
+               * en un array de textos para los
+               * filtros normales.
+               */
 
               value = value.map(
                 function (item) {
