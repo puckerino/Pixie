@@ -74,6 +74,11 @@
   grid-template-areas: "smiley editor" "status editor" ". buttons";
   padding: var(--spacing);
 
+  &:not(:has(#smiley-box)) {
+    grid-template-columns: 1fr;
+    grid-template-areas: "status" "editor" "buttons";
+  }
+
   @media (max-width: 700px) {
     grid-template-columns: 1fr;
     grid-template-rows: max-content 1fr max-content;
@@ -87,6 +92,12 @@
       display: flex;
       flex-direction: row;
       align-items: center; 
+    }
+
+    .sceditor-wrap:not(:has(#smiley-box)) & {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
     }
   }
 
