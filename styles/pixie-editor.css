@@ -6,7 +6,7 @@
 .pixie-editor-icon svg {
   width: 1rem;
   height: 1rem;
-  color: contrast-color(var(--toolbar));
+  color: var(--text-toolbar);
 }
 
 #textarea_content {
