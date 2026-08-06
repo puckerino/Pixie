@@ -1,26 +1,71 @@
 /*!
  * PixieShop.js
- * Núcleo genérico de tiendas para Pixie.
+ * Núcleo modular y declarativo de tiendas para Pixie.
  *
- * PixieShop no conoce recompensas, items, niveles ni ecos.
- * Las reglas concretas se registran desde scripts externos:
+ * @version 1.0.0
  *
- * PixieShop.register("nombre", config);
+ * RESPONSABILIDADES DEL NÚCLEO
+ * ----------------------------
+ * - Registrar configuraciones de tiendas.
+ * - Registrar y resolver módulos reutilizables.
+ * - Inicializar instancias desde [data-pixie-shop].
+ * - Mantener el estado y el carrito.
+ * - Gestionar cantidades, duplicados y secciones.
+ * - Guardar el carrito en localStorage.
+ * - Conectar filtros, acciones y envío del formulario.
+ * - Ejecutar renderers, validadores, cálculos y outputs externos.
+ *
+ * NO CONTIENE
+ * -----------
+ * - Renderizado concreto.
+ * - Reglas de compras o retiradas.
+ * - Cálculos específicos.
+ * - Formatos de publicación concretos.
+ * - Reglas sobre recompensas, items, niveles o ecos.
  */
+
 (function (window, document) {
   "use strict";
 
+  const MODULE_NAME = "PixieShop";
   const VERSION = "1.0.0";
-  const registry = new Map();
+  const STORAGE_VERSION = 1;
+
+  /*
+   * Registro de configuraciones de tiendas.
+   *
+   * PixieShop.register("items", {...});
+   */
+  const shopRegistry = new Map();
+
+  /*
+   * Registro de módulos reutilizables.
+   *
+   * PixieShop.module("renderers", {...});
+   */
+  const moduleRegistry = new Map();
+
+  /*
+   * Relación entre elementos HTML e instancias.
+   */
   const instances = new WeakMap();
+
+  /*
+   * Lista iterable de instancias activas.
+   */
   const activeInstances = new Set();
 
-  const DEFAULTS = {
+  const DEFAULT_CONFIG = {
     items: [],
+
     currency: "",
+
     storageKey: "",
+
     persist: true,
+
     requireLogin: false,
+
     itemsPerPage: 24,
 
     features: {
@@ -34,7 +79,8 @@
       id: "id",
       title: "titulo",
       category: "categoria",
-      tags: "tags"
+      tags: "tags",
+      value: "coste"
     },
 
     quantity: {
@@ -47,96 +93,187 @@
     cart: {
       defaultSection: "default",
       mergeDuplicates: true,
-      uniqueItems: false
+      uniqueItems: false,
+
+      sectionResolver: null
     },
 
     sections: {
       default: {
         label: "CARRITO",
         emptyText: "No hay elementos.",
+
         fields: [],
-        total: null
+
+        total: {
+          type: "none"
+        }
+      }
+    },
+
+    renderer: {
+      item: null,
+      cart: null
+    },
+
+    validation: {
+      rules: []
+    },
+
+    output: {
+      codeBlock: true,
+      sections: {},
+      totals: [],
+
+      outsideFields: {
+        enabled: true,
+        title: "JUSTIFICANTES"
       }
     },
 
     selectors: {
       searchWrap: "[data-shop-search-wrap]",
       search: "[data-shop-search]",
+
       sort: "[data-shop-sort]",
+
       categoriesWrap: "[data-shop-categories-wrap]",
       categories: "[data-shop-categories]",
+
       tagsWrap: "[data-shop-tags-wrap]",
       tags: "[data-shop-tags]",
+
       items: "[data-shop-items]",
       loadMore: "[data-shop-load-more]",
+
       cart: "[data-shop-cart]",
       cartClear: "[data-shop-cart-clear]",
-      message: "[data-shop-message], textarea[name='message']",
+
+      message: [
+        "[data-shop-message]",
+        "textarea[name='message']"
+      ].join(", "),
+
       itemTemplate: "[data-shop-item-template]",
-      cartItemTemplate: "[data-shop-cart-item-template]"
+
+      cartItemTemplate:
+        "[data-shop-cart-item-template]"
     },
 
     messages: {
       allCategories: "Todas",
       noTags: "Sin etiquetas",
       noResults: "No hay elementos para mostrar.",
-      required: "{item}: falta “{field}”.",
-      invalidUrl: "{item}: “{field}” no contiene una URL válida.",
-      unique: "{item} ya está en el carrito.",
-      login: "Debes iniciar sesión para utilizar esta tienda.",
-      remove: "Quitar {item}",
-      increase: "Sumar una unidad de {item}",
-      decrease: "Restar una unidad de {item}",
-      quantity: "Cantidad de {item}",
-      addField: "Añadir otro campo",
-      removeField: "Eliminar campo"
+
+      uniqueItem:
+        "{item} ya está en el carrito.",
+
+      loginRequired:
+        "Debes iniciar sesión para utilizar esta tienda.",
+
+      missingRenderer:
+        "No se ha configurado un renderer para {target}.",
+
+      missingOutput:
+        "No se ha configurado la generación del mensaje.",
+
+      missingMessage:
+        "No se encontró el campo del mensaje.",
+
+      quantity:
+        "Cantidad de {item}",
+
+      remove:
+        "Quitar {item}",
+
+      increase:
+        "Sumar una unidad de {item}",
+
+      decrease:
+        "Restar una unidad de {item}"
     },
 
+    /*
+     * Escape hatch para comportamientos especiales.
+     *
+     * Los módulos declarativos se usan primero.
+     * Estos hooks pueden sustituir o extender su comportamiento.
+     */
     hooks: {
       normalizeItem: null,
+
       getTitle: null,
+
       getSearchText: null,
+
       getSection: null,
+
       renderItem: null,
+
       renderCartItem: null,
-      getTotalValue: null,
+
       validateEntry: null,
+
       buildMessage: null,
-      afterCartChange: null
+
+      afterCartChange: null,
+
+      beforeSubmit: null,
+
+      afterSubmitPreparation: null
     }
   };
 
-  function isObject(value) {
-    return Object.prototype.toString.call(value) === "[object Object]";
+  /*
+   * Utilidades
+   */
+
+  function isPlainObject(value) {
+    return (
+      Object.prototype.toString.call(value) ===
+      "[object Object]"
+    );
   }
 
-  function merge(target, ...sources) {
-    const output = isObject(target) ? { ...target } : {};
+  function deepMerge(target, ...sources) {
+    const output = isPlainObject(target)
+      ? { ...target }
+      : {};
 
     sources.forEach((source) => {
-      if (!isObject(source)) return;
+      if (!isPlainObject(source)) return;
 
-      Object.entries(source).forEach(([key, value]) => {
-        if (Array.isArray(value)) {
-          output[key] = value.slice();
-        } else if (isObject(value)) {
-          output[key] = merge(
-            isObject(output[key]) ? output[key] : {},
-            value
-          );
-        } else {
+      Object.entries(source).forEach(
+        ([key, value]) => {
+          if (Array.isArray(value)) {
+            output[key] = value.slice();
+            return;
+          }
+
+          if (isPlainObject(value)) {
+            output[key] = deepMerge(
+              isPlainObject(output[key])
+                ? output[key]
+                : {},
+              value
+            );
+
+            return;
+          }
+
           output[key] = value;
         }
-      });
+      );
     });
 
     return output;
   }
 
   function format(template, values = {}) {
-    return String(template || "").replace(/\{([^}]+)\}/g, (_, key) => {
-      return values[key] ?? "";
-    });
+    return String(template ?? "").replace(
+      /\{([^}]+)\}/g,
+      (_, key) => values[key] ?? ""
+    );
   }
 
   function normalizeText(value) {
@@ -153,45 +290,72 @@
       .replace(/[^a-zA-Z0-9_-]/g, "");
   }
 
-  function number(value, fallback = 0) {
+  function toNumber(value, fallback = 0) {
     const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : fallback;
+
+    return Number.isFinite(parsed)
+      ? parsed
+      : fallback;
   }
 
-  function uid(prefix = "entry") {
+  function toArray(value) {
+    if (Array.isArray(value)) {
+      return value;
+    }
+
+    if (
+      value === undefined ||
+      value === null ||
+      value === ""
+    ) {
+      return [];
+    }
+
+    return [value];
+  }
+
+  function createUid(prefix = "entry") {
     if (window.crypto?.randomUUID) {
-      return `${prefix}-${crypto.randomUUID()}`;
+      return `${prefix}-${window.crypto.randomUUID()}`;
     }
 
-    return `${prefix}-${Date.now()}-${Math.random()
-      .toString(36)
-      .slice(2, 9)}`;
-  }
-
-  function isValidUrl(value) {
-    if (!String(value || "").trim()) return false;
-
-    try {
-      const url = new URL(value, window.location.href);
-
-      return (
-        url.protocol === "http:" ||
-        url.protocol === "https:"
-      );
-    } catch {
-      return false;
-    }
+    return [
+      prefix,
+      Date.now(),
+      Math.random()
+        .toString(36)
+        .slice(2, 10)
+    ].join("-");
   }
 
   function currentUserId() {
-    return String(window._userdata?.user_id || "guest");
+    return String(
+      window._userdata?.user_id || "guest"
+    );
   }
 
-  function loggedIn() {
-    return Boolean(window._userdata?.session_logged_in);
+  function isLoggedIn() {
+    return Boolean(
+      window._userdata?.session_logged_in
+    );
   }
 
-  class Shop {
+  function clone(value) {
+    if (
+      typeof window.structuredClone ===
+      "function"
+    ) {
+      return window.structuredClone(value);
+    }
+
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  /*
+   * Instancia de una tienda.
+   */
+
+  class PixieShopInstance {
     constructor(root, name, config) {
       this.root = root;
 
@@ -201,51 +365,78 @@
           : root.closest("form");
 
       this.name = name;
-      this.config = merge({}, DEFAULTS, config);
-      this.abort = new AbortController();
 
-      this.items = this.prepareItems(this.config.items);
-
-      this.itemMap = new Map(
-        this.items.map((item) => [item.id, item])
+      this.config = deepMerge(
+        {},
+        DEFAULT_CONFIG,
+        config
       );
 
+      this.abortController =
+        new AbortController();
+
       this.elements = {};
+
+      this.items = this.prepareItems(
+        this.config.items
+      );
+
+      this.itemMap = new Map(
+        this.items.map((item) => {
+          return [item.id, item];
+        })
+      );
 
       this.state = {
         search: "",
         category: "",
         tags: [],
         sort: "name-asc",
-        visible: this.config.itemsPerPage,
+
+        visibleCount:
+          this.config.itemsPerPage,
 
         cart: {
+          version: STORAGE_VERSION,
           sections: {}
         }
       };
 
-      this.storageKey = this.makeStorageKey();
+      this.storageKey =
+        this.createStorageKey();
+
+      this.ready = false;
     }
 
     init() {
+      if (this.ready) {
+        return this;
+      }
+
       if (
         this.config.requireLogin &&
-        !loggedIn()
+        !isLoggedIn()
       ) {
-        this.disable(this.config.messages.login);
+        this.disable(
+          this.config.messages.loginRequired
+        );
+
         return this;
       }
 
       this.cacheElements();
       this.ensureSections();
-      this.load();
-      this.setupUI();
+      this.loadCart();
+      this.setupOptionalUI();
       this.renderFilters();
       this.renderItems(true);
       this.renderCart();
-      this.bind();
+      this.bindEvents();
 
-      this.root.dataset.pixieShopReady = "true";
+      this.ready = true;
+
+      this.root.dataset.pixieShopReady =
+        "true";
 
       this.emit("pixie-shop:ready", {
         name: this.name
@@ -255,70 +446,52 @@
     }
 
     destroy() {
-      this.abort.abort();
+      this.abortController.abort();
 
-      delete this.root.dataset.pixieShopReady;
+      delete this.root.dataset
+        .pixieShopReady;
 
       instances.delete(this.root);
       activeInstances.delete(this);
 
+      this.ready = false;
+
       this.emit("pixie-shop:destroy");
     }
 
-    cacheElements() {
-      const selectors = this.config.selectors;
-
-      const query = (selector) => {
-        return selector
-          ? this.root.querySelector(selector)
-          : null;
-      };
-
-      this.elements = {
-        searchWrap: query(selectors.searchWrap),
-        search: query(selectors.search),
-        sort: query(selectors.sort),
-
-        categoriesWrap: query(
-          selectors.categoriesWrap
-        ),
-
-        categories: query(selectors.categories),
-
-        tagsWrap: query(selectors.tagsWrap),
-        tags: query(selectors.tags),
-
-        items: query(selectors.items),
-        loadMore: query(selectors.loadMore),
-
-        cart: query(selectors.cart),
-        cartClear: query(selectors.cartClear),
-
-        message: query(selectors.message),
-
-        itemTemplate: query(
-          selectors.itemTemplate
-        ),
-
-        cartItemTemplate: query(
-          selectors.cartItemTemplate
-        )
-      };
-    }
+    /*
+     * Preparación de artículos
+     */
 
     prepareItems(items) {
+      const source = Array.isArray(items)
+        ? items
+        : [];
+
       const seen = new Set();
 
-      return (
-        Array.isArray(items)
-          ? items
-          : []
-      )
-        .map((raw, index) => {
-          return this.normalizeItem(raw, index);
+      return source
+        .map((rawItem, index) => {
+          return this.normalizeItem(
+            rawItem,
+            index
+          );
         })
         .filter((item) => {
-          if (!item.id || seen.has(item.id)) {
+          if (!item.id) {
+            console.warn(
+              `[PixieShop:${this.name}] Artículo sin ID.`,
+              item
+            );
+
+            return false;
+          }
+
+          if (seen.has(item.id)) {
+            console.warn(
+              `[PixieShop:${this.name}] ID duplicado: ${item.id}`
+            );
+
             return false;
           }
 
@@ -328,40 +501,45 @@
         });
     }
 
-    normalizeItem(raw, index) {
+    normalizeItem(rawItem, index) {
       const fields = this.config.fields;
 
       let item = {
-        ...raw,
+        ...rawItem,
 
         id: String(
-          raw?.[fields.id] ??
-            raw?.id ??
+          rawItem?.[fields.id] ??
+            rawItem?.id ??
             `item-${index + 1}`
         ).trim(),
 
         title: String(
-          raw?.[fields.title] ??
-            raw?.titulo ??
-            raw?.nombre ??
+          rawItem?.[fields.title] ??
+            rawItem?.titulo ??
+            rawItem?.nombre ??
             ""
         ).trim(),
 
         category: String(
-          raw?.[fields.category] ??
-            raw?.categoria ??
+          rawItem?.[fields.category] ??
+            rawItem?.categoria ??
             ""
         ).trim(),
 
         tags: Array.isArray(
-          raw?.[fields.tags]
+          rawItem?.[fields.tags]
         )
-          ? raw[fields.tags]
+          ? rawItem[fields.tags]
               .filter(Boolean)
               .map(String)
           : [],
 
-        raw
+        value: toNumber(
+          rawItem?.[fields.value],
+          0
+        ),
+
+        raw: rawItem
       };
 
       if (
@@ -371,13 +549,21 @@
         item =
           this.config.hooks.normalizeItem({
             item,
-            raw,
+            rawItem,
             index,
             shop: this
           }) || item;
       }
 
       return item;
+    }
+
+    getItem(itemId) {
+      return (
+        this.itemMap.get(
+          String(itemId)
+        ) || null
+      );
     }
 
     getTitle(item) {
@@ -396,29 +582,138 @@
       return item.title;
     }
 
-    ensureSections() {
-      Object.keys(
-        this.config.sections
-      ).forEach((name) => {
-        this.state.cart.sections[name] ||= [];
-      });
+    /*
+     * Elementos HTML
+     */
+
+    cacheElements() {
+      const selectors =
+        this.config.selectors;
+
+      const query = (selector) => {
+        if (!selector) return null;
+
+        return this.root.querySelector(
+          selector
+        );
+      };
+
+      this.elements = {
+        searchWrap: query(
+          selectors.searchWrap
+        ),
+
+        search: query(
+          selectors.search
+        ),
+
+        sort: query(
+          selectors.sort
+        ),
+
+        categoriesWrap: query(
+          selectors.categoriesWrap
+        ),
+
+        categories: query(
+          selectors.categories
+        ),
+
+        tagsWrap: query(
+          selectors.tagsWrap
+        ),
+
+        tags: query(
+          selectors.tags
+        ),
+
+        items: query(
+          selectors.items
+        ),
+
+        loadMore: query(
+          selectors.loadMore
+        ),
+
+        cart: query(
+          selectors.cart
+        ),
+
+        cartClear: query(
+          selectors.cartClear
+        ),
+
+        message: query(
+          selectors.message
+        ),
+
+        itemTemplate: query(
+          selectors.itemTemplate
+        ),
+
+        cartItemTemplate: query(
+          selectors.cartItemTemplate
+        )
+      };
     }
 
-    makeStorageKey() {
+    cloneTemplate(template) {
+      if (
+        !(
+          template instanceof
+          HTMLTemplateElement
+        )
+      ) {
+        return null;
+      }
+
+      return (
+        template.content
+          .firstElementChild
+          ?.cloneNode(true) || null
+      );
+    }
+
+    /*
+     * Módulos y resolutores
+     */
+
+    resolve(moduleName, definition, context = {}) {
+      return PixieShop.resolve(
+        moduleName,
+        definition,
+        {
+          ...context,
+          shop: this
+        }
+      );
+    }
+
+    /*
+     * Persistencia
+     */
+
+    createStorageKey() {
       const base =
         this.config.storageKey ||
         `pixie_shop_${this.name}`;
 
-      return `${base}_${currentUserId()}_v1`;
+      return [
+        base,
+        currentUserId(),
+        `v${STORAGE_VERSION}`
+      ].join("_");
     }
 
-    save() {
+    saveCart() {
       if (!this.config.persist) return;
 
       try {
         localStorage.setItem(
           this.storageKey,
-          JSON.stringify(this.state.cart)
+          JSON.stringify(
+            this.state.cart
+          )
         );
       } catch (error) {
         console.warn(
@@ -428,49 +723,73 @@
       }
     }
 
-    load() {
-      if (!this.config.persist) return;
+    loadCart() {
+      if (!this.config.persist) {
+        return;
+      }
 
       try {
-        const saved = JSON.parse(
-          localStorage.getItem(
-            this.storageKey
-          )
+        const raw = localStorage.getItem(
+          this.storageKey
         );
 
-        if (!saved?.sections) return;
+        if (!raw) return;
+
+        const saved = JSON.parse(raw);
+
+        if (
+          !saved ||
+          !isPlainObject(saved.sections)
+        ) {
+          return;
+        }
 
         Object.keys(
           this.config.sections
-        ).forEach((section) => {
-          this.state.cart.sections[section] = (
-            saved.sections[section] || []
-          )
+        ).forEach((sectionName) => {
+          const savedEntries =
+            Array.isArray(
+              saved.sections[sectionName]
+            )
+              ? saved.sections[
+                  sectionName
+                ]
+              : [];
+
+          this.state.cart.sections[
+            sectionName
+          ] = savedEntries
             .filter((entry) => {
               return this.itemMap.has(
                 String(entry.itemId)
               );
             })
             .map((entry) => {
-              const item = this.itemMap.get(
-                String(entry.itemId)
+              const item = this.getItem(
+                entry.itemId
               );
 
               return {
                 uid: String(
-                  entry.uid || uid("cart")
+                  entry.uid ||
+                    createUid("cart")
                 ),
 
-                itemId: String(entry.itemId),
-
-                section,
-
-                quantity: this.normalizeQuantity(
-                  entry.quantity,
-                  item
+                itemId: String(
+                  entry.itemId
                 ),
 
-                fields: isObject(entry.fields)
+                section: sectionName,
+
+                quantity:
+                  this.normalizeQuantity(
+                    entry.quantity,
+                    item
+                  ),
+
+                fields: isPlainObject(
+                  entry.fields
+                )
                   ? entry.fields
                   : {}
               };
@@ -484,42 +803,659 @@
       }
     }
 
-    setupUI() {
-      const features = this.config.features;
+    /*
+     * Secciones y carrito
+     */
 
-      const hide = (
-        element,
-        condition
-      ) => {
-        if (element) {
-          element.hidden = condition;
+    ensureSections() {
+      Object.keys(
+        this.config.sections
+      ).forEach((sectionName) => {
+        if (
+          !Array.isArray(
+            this.state.cart.sections[
+              sectionName
+            ]
+          )
+        ) {
+          this.state.cart.sections[
+            sectionName
+          ] = [];
         }
+      });
+    }
+
+    getSectionEntries(sectionName) {
+      return (
+        this.state.cart.sections[
+          sectionName
+        ] || []
+      );
+    }
+
+    getSectionConfig(sectionName) {
+      return (
+        this.config.sections[
+          sectionName
+        ] || null
+      );
+    }
+
+    resolveSection(
+      action,
+      item,
+      itemNode
+    ) {
+      if (
+        typeof this.config.hooks
+          .getSection === "function"
+      ) {
+        const hookResult =
+          this.config.hooks.getSection({
+            action,
+            item,
+            itemNode,
+            shop: this
+          });
+
+        if (
+          hookResult &&
+          this.config.sections[
+            hookResult
+          ]
+        ) {
+          return hookResult;
+        }
+      }
+
+      const resolver =
+        this.config.cart
+          .sectionResolver;
+
+      if (resolver) {
+        const result = this.resolve(
+          "sections",
+          resolver,
+          {
+            action,
+            item,
+            itemNode
+          }
+        );
+
+        if (
+          result &&
+          this.config.sections[result]
+        ) {
+          return result;
+        }
+      }
+
+      if (
+        action &&
+        this.config.sections[action]
+      ) {
+        return action;
+      }
+
+      return (
+        this.config.cart
+          .defaultSection ||
+        Object.keys(
+          this.config.sections
+        )[0]
+      );
+    }
+
+    /*
+     * Cantidades
+     */
+
+    getQuantityConfig(item) {
+      return deepMerge(
+        {},
+        this.config.quantity,
+        item?.quantity || {}
+      );
+    }
+
+    normalizeQuantity(value, item) {
+      const config =
+        this.getQuantityConfig(item);
+
+      if (!config.enabled) {
+        return 1;
+      }
+
+      const min = toNumber(
+        config.min,
+        1
+      );
+
+      const max = toNumber(
+        config.max,
+        99
+      );
+
+      const parsed = Math.floor(
+        toNumber(value, min)
+      );
+
+      return Math.max(
+        min,
+        Math.min(max, parsed)
+      );
+    }
+
+    /*
+     * Campos iniciales del carrito
+     */
+
+    createInitialFields(sectionName) {
+      const fields =
+        this.getSectionConfig(
+          sectionName
+        )?.fields || [];
+
+      const values = {};
+
+      fields.forEach((field) => {
+        const name = normalizeName(
+          field.name
+        );
+
+        if (!name) return;
+
+        if (field.repeatable) {
+          const initial = Array.isArray(
+            field.defaultValue
+          )
+            ? field.defaultValue.slice()
+            : [];
+
+          const minimum = toNumber(
+            field.min,
+            0
+          );
+
+          while (
+            initial.length < minimum
+          ) {
+            initial.push("");
+          }
+
+          values[name] = initial;
+          return;
+        }
+
+        values[name] = String(
+          field.defaultValue ?? ""
+        );
+      });
+
+      return values;
+    }
+
+    /*
+     * Operaciones del carrito
+     */
+
+    add(
+      itemId,
+      sectionName,
+      quantity = 1
+    ) {
+      const item = this.getItem(itemId);
+
+      const entries =
+        this.getSectionEntries(
+          sectionName
+        );
+
+      if (
+        !item ||
+        !this.config.sections[
+          sectionName
+        ]
+      ) {
+        return null;
+      }
+
+      const unique =
+        item.unique ??
+        this.config.cart.uniqueItems;
+
+      const mergeDuplicates =
+        item.mergeDuplicates ??
+        this.config.cart
+          .mergeDuplicates;
+
+      const existing = entries.find(
+        (entry) => {
+          return entry.itemId === item.id;
+        }
+      );
+
+      if (unique && existing) {
+        this.notice(
+          format(
+            this.config.messages
+              .uniqueItem,
+            {
+              item: this.getTitle(item)
+            }
+          ),
+          "warning"
+        );
+
+        return existing;
+      }
+
+      if (
+        mergeDuplicates &&
+        existing
+      ) {
+        existing.quantity =
+          this.normalizeQuantity(
+            existing.quantity +
+              toNumber(quantity, 1),
+            item
+          );
+
+        this.cartChanged();
+
+        return existing;
+      }
+
+      const entry = {
+        uid: createUid("cart"),
+
+        itemId: item.id,
+
+        section: sectionName,
+
+        quantity:
+          this.normalizeQuantity(
+            quantity,
+            item
+          ),
+
+        fields:
+          this.createInitialFields(
+            sectionName
+          )
       };
 
-      hide(
+      entries.push(entry);
+
+      this.cartChanged();
+
+      this.emit(
+        "pixie-shop:item-added",
+        {
+          item,
+          entry,
+          sectionName
+        }
+      );
+
+      return entry;
+    }
+
+    findEntry(entryUid) {
+      for (
+        const [
+          sectionName,
+          entries
+        ] of Object.entries(
+          this.state.cart.sections
+        )
+      ) {
+        const index =
+          entries.findIndex(
+            (entry) => {
+              return (
+                entry.uid === entryUid
+              );
+            }
+          );
+
+        if (index >= 0) {
+          return {
+            sectionName,
+            entries,
+            index,
+            entry: entries[index]
+          };
+        }
+      }
+
+      return null;
+    }
+
+    remove(entryUid) {
+      const found =
+        this.findEntry(entryUid);
+
+      if (!found) return;
+
+      const [entry] =
+        found.entries.splice(
+          found.index,
+          1
+        );
+
+      this.cartChanged();
+
+      this.emit(
+        "pixie-shop:item-removed",
+        {
+          entry,
+          sectionName:
+            found.sectionName
+        }
+      );
+    }
+
+    clear() {
+      Object.keys(
+        this.state.cart.sections
+      ).forEach((sectionName) => {
+        this.state.cart.sections[
+          sectionName
+        ] = [];
+      });
+
+      this.cartChanged();
+
+      this.emit(
+        "pixie-shop:cart-cleared"
+      );
+    }
+
+    updateQuantity(
+      entryUid,
+      value
+    ) {
+      const found =
+        this.findEntry(entryUid);
+
+      if (!found) return;
+
+      const item = this.getItem(
+        found.entry.itemId
+      );
+
+      found.entry.quantity =
+        this.normalizeQuantity(
+          value,
+          item
+        );
+
+      this.cartChanged(false);
+    }
+
+    changeQuantity(
+      entryUid,
+      amount
+    ) {
+      const found =
+        this.findEntry(entryUid);
+
+      if (!found) return;
+
+      const next =
+        found.entry.quantity +
+        amount;
+
+      if (next <= 0) {
+        this.remove(entryUid);
+        return;
+      }
+
+      this.updateQuantity(
+        entryUid,
+        next
+      );
+
+      this.renderCart();
+    }
+
+    updateField(
+      entryUid,
+      fieldName,
+      value,
+      index = null
+    ) {
+      const found =
+        this.findEntry(entryUid);
+
+      if (!found) return;
+
+      const name =
+        normalizeName(fieldName);
+
+      if (!name) return;
+
+      if (index === null) {
+        found.entry.fields[name] =
+          String(value ?? "");
+      } else {
+        const values =
+          Array.isArray(
+            found.entry.fields[name]
+          )
+            ? found.entry.fields[name]
+            : [];
+
+        values[index] = String(
+          value ?? ""
+        );
+
+        found.entry.fields[name] =
+          values;
+      }
+
+      this.saveCart();
+
+      this.emit(
+        "pixie-shop:field-change",
+        {
+          entry: found.entry,
+          fieldName: name,
+          index,
+          value
+        }
+      );
+    }
+
+    addRepeatableField(
+      entryUid,
+      fieldName
+    ) {
+      const found =
+        this.findEntry(entryUid);
+
+      if (!found) return;
+
+      const field = this.getFieldConfig(
+        found.sectionName,
+        fieldName
+      );
+
+      if (!field?.repeatable) {
+        return;
+      }
+
+      const name =
+        normalizeName(field.name);
+
+      const values =
+        Array.isArray(
+          found.entry.fields[name]
+        )
+          ? found.entry.fields[name]
+          : [];
+
+      const maximum =
+        field.max === null ||
+        field.max === undefined
+          ? Infinity
+          : toNumber(field.max, Infinity);
+
+      if (
+        values.length >= maximum
+      ) {
+        return;
+      }
+
+      values.push("");
+
+      found.entry.fields[name] =
+        values;
+
+      this.cartChanged();
+    }
+
+    removeRepeatableField(
+      entryUid,
+      fieldName,
+      index
+    ) {
+      const found =
+        this.findEntry(entryUid);
+
+      if (!found) return;
+
+      const field = this.getFieldConfig(
+        found.sectionName,
+        fieldName
+      );
+
+      if (!field?.repeatable) {
+        return;
+      }
+
+      const name =
+        normalizeName(field.name);
+
+      const values =
+        Array.isArray(
+          found.entry.fields[name]
+        )
+          ? found.entry.fields[name]
+          : [];
+
+      const minimum = toNumber(
+        field.min,
+        0
+      );
+
+      if (
+        values.length <= minimum
+      ) {
+        return;
+      }
+
+      values.splice(index, 1);
+
+      found.entry.fields[name] =
+        values;
+
+      this.cartChanged();
+    }
+
+    getFieldConfig(
+      sectionName,
+      fieldName
+    ) {
+      const fields =
+        this.getSectionConfig(
+          sectionName
+        )?.fields || [];
+
+      const normalized =
+        normalizeName(fieldName);
+
+      return (
+        fields.find((field) => {
+          return (
+            normalizeName(field.name) ===
+            normalized
+          );
+        }) || null
+      );
+    }
+
+    cartChanged(render = true) {
+      this.saveCart();
+
+      if (render) {
+        this.renderCart();
+      }
+
+      if (
+        typeof this.config.hooks
+          .afterCartChange === "function"
+      ) {
+        this.config.hooks
+          .afterCartChange({
+            cart: this.state.cart,
+            shop: this
+          });
+      }
+
+      this.emit(
+        "pixie-shop:cart-change",
+        {
+          cart: clone(
+            this.state.cart
+          )
+        }
+      );
+    }
+
+    /*
+     * Filtros
+     */
+
+    setupOptionalUI() {
+      const features =
+        this.config.features;
+
+      const toggle = (
+        element,
+        enabled
+      ) => {
+        if (!element) return;
+
+        element.hidden = !enabled;
+      };
+
+      toggle(
         this.elements.search,
-        !features.search
+        features.search
       );
 
-      hide(
+      toggle(
         this.elements.sort,
-        !features.sort
+        features.sort
       );
 
-      hide(
+      toggle(
         this.elements.searchWrap,
-        !features.search &&
-          !features.sort
+        features.search ||
+          features.sort
       );
 
-      hide(
+      toggle(
         this.elements.categoriesWrap,
-        !features.categories
+        features.categories
       );
 
-      hide(
+      toggle(
         this.elements.tagsWrap,
-        !features.tags
+        features.tags
       );
 
       this.root
@@ -548,7 +1484,9 @@
       const categories = [
         ...new Set(
           this.items
-            .map((item) => item.category)
+            .map((item) => {
+              return item.category;
+            })
             .filter(Boolean)
         )
       ].sort((a, b) => {
@@ -559,7 +1497,7 @@
         document.createDocumentFragment();
 
       fragment.appendChild(
-        this.makeCategory(
+        this.createCategoryButton(
           "",
           this.config.messages
             .allCategories,
@@ -567,37 +1505,44 @@
         )
       );
 
-      categories.forEach((category) => {
-        fragment.appendChild(
-          this.makeCategory(
-            category,
-            category
-          )
-        );
-      });
-
-      this.elements.categories.replaceChildren(
-        fragment
+      categories.forEach(
+        (category) => {
+          fragment.appendChild(
+            this.createCategoryButton(
+              category,
+              category,
+              false
+            )
+          );
+        }
       );
+
+      this.elements.categories
+        .replaceChildren(fragment);
     }
 
-    makeCategory(
+    createCategoryButton(
       value,
       label,
-      active = false
+      active
     ) {
       const item =
         document.createElement("li");
 
       const button =
-        document.createElement("button");
+        document.createElement(
+          "button"
+        );
 
       button.type = "button";
-      button.dataset.shopCategory = value;
 
-      button.className = active
-        ? "is-active"
-        : "";
+      button.dataset.shopCategory =
+        value;
+
+      button.classList.toggle(
+        "is-active",
+        active
+      );
 
       button.setAttribute(
         "aria-pressed",
@@ -644,23 +1589,35 @@
           document.createElement("li");
 
         const label =
-          document.createElement("label");
+          document.createElement(
+            "label"
+          );
 
         const input =
-          document.createElement("input");
+          document.createElement(
+            "input"
+          );
 
         const text =
-          document.createElement("span");
+          document.createElement(
+            "span"
+          );
 
-        const id =
-          `pixie-shop-${this.name}-tag-${index}`;
+        const id = [
+          "pixie-shop",
+          this.name,
+          "tag",
+          index
+        ].join("-");
 
         input.id = id;
         input.type = "checkbox";
         input.value = tag;
+
         input.dataset.shopTag = "";
 
         label.htmlFor = id;
+
         text.textContent = tag;
 
         label.append(input, text);
@@ -673,26 +1630,25 @@
       );
     }
 
-    filteredItems() {
-      const result = this.items.filter(
+    getFilteredItems() {
+      const filtered = this.items.filter(
         (item) => {
-          const extra =
+          const extraSearchText =
             typeof this.config.hooks
               .getSearchText === "function"
-              ? this.config.hooks.getSearchText(
-                  {
+              ? this.config.hooks
+                  .getSearchText({
                     item,
                     shop: this
-                  }
-                )
+                  })
               : "";
 
           const haystack = normalizeText(
             [
-              item.title,
+              this.getTitle(item),
               item.category,
               item.tags.join(" "),
-              extra
+              extraSearchText
             ].join(" ")
           );
 
@@ -730,71 +1686,83 @@
       );
 
       if (!this.config.features.sort) {
-        return result;
+        return filtered;
       }
 
-      return result.sort((a, b) => {
-        if (
-          this.state.sort ===
-          "name-desc"
-        ) {
-          return this.getTitle(
-            b
-          ).localeCompare(
-            this.getTitle(a),
-            "es"
-          );
-        }
-
-        if (
-          typeof this.config.sort ===
-          "function"
-        ) {
+      if (
+        typeof this.config.sort ===
+        "function"
+      ) {
+        return filtered.sort((a, b) => {
           return this.config.sort(
             a,
             b,
             this.state.sort,
             this
           );
+        });
+      }
+
+      return filtered.sort((a, b) => {
+        const titleA =
+          this.getTitle(a);
+
+        const titleB =
+          this.getTitle(b);
+
+        if (
+          this.state.sort ===
+          "name-desc"
+        ) {
+          return titleB.localeCompare(
+            titleA,
+            "es"
+          );
         }
 
-        return this.getTitle(
-          a
-        ).localeCompare(
-          this.getTitle(b),
+        return titleA.localeCompare(
+          titleB,
           "es"
         );
       });
     }
 
+    /*
+     * Renderizado
+     */
+
     renderItems(reset = false) {
-      if (!this.elements.items) return;
+      if (!this.elements.items) {
+        return;
+      }
 
       if (reset) {
-        this.state.visible =
+        this.state.visibleCount =
           this.config.itemsPerPage;
       }
 
       const filtered =
-        this.filteredItems();
+        this.getFilteredItems();
 
       const visible = filtered.slice(
         0,
-        this.state.visible
+        this.state.visibleCount
       );
 
       const fragment =
         document.createDocumentFragment();
 
       visible.forEach((item) => {
-        const node = this.renderItem(item);
+        const node =
+          this.renderItem(item);
 
         if (node) {
           fragment.appendChild(node);
         }
       });
 
-      this.elements.items.replaceChildren();
+      this.elements.items
+        .replaceChildren();
 
       if (!visible.length) {
         const empty =
@@ -806,75 +1774,83 @@
         empty.textContent =
           this.config.messages.noResults;
 
-        this.elements.items.appendChild(
-          empty
-        );
+        this.elements.items
+          .appendChild(empty);
       } else {
-        this.elements.items.appendChild(
-          fragment
-        );
+        this.elements.items
+          .appendChild(fragment);
       }
 
       if (this.elements.loadMore) {
         this.elements.loadMore.hidden =
-          this.state.visible >=
+          this.state.visibleCount >=
           filtered.length;
       }
     }
 
     renderItem(item) {
+      let node = null;
+
       if (
         typeof this.config.hooks
-          .renderItem !== "function"
+          .renderItem === "function"
       ) {
+        node =
+          this.config.hooks.renderItem({
+            item,
+            shop: this,
+
+            template: () => {
+              return this.cloneTemplate(
+                this.elements.itemTemplate
+              );
+            }
+          });
+      } else if (
+        this.config.renderer.item
+      ) {
+        node = this.resolve(
+          "renderers",
+          this.config.renderer.item,
+          {
+            target: "item",
+            item,
+
+            template: () => {
+              return this.cloneTemplate(
+                this.elements.itemTemplate
+              );
+            }
+          }
+        );
+      }
+
+      if (!(node instanceof Element)) {
         console.warn(
-          `[PixieShop:${this.name}] Falta hooks.renderItem().`
+          `[PixieShop:${this.name}] ${format(
+            this.config.messages
+              .missingRenderer,
+            {
+              target: "los artículos"
+            }
+          )}`
         );
 
         return null;
       }
 
-      const node =
-        this.config.hooks.renderItem({
-          item,
-          shop: this,
+      node.dataset.shopItemId =
+        item.id;
 
-          template: () => {
-            return this.cloneTemplate(
-              this.elements.itemTemplate
-            );
-          }
-        });
-
-      if (!(node instanceof Element)) {
-        return null;
-      }
-
-      node.dataset.shopItemId = item.id;
-
-      this.prepareQuantity(node, item);
+      this.prepareItemQuantity(
+        node,
+        item
+      );
 
       return node;
     }
 
-    cloneTemplate(template) {
-      if (
-        !(
-          template instanceof
-          HTMLTemplateElement
-        )
-      ) {
-        return null;
-      }
-
-      return (
-        template.content
-          .firstElementChild
-          ?.cloneNode(true) || null
-      );
-    }
-
-    prepareQuantity(node, item) {
+    prepareItemQuantity(node, item) {
       const input =
         node.querySelector(
           "[data-shop-quantity]"
@@ -885,29 +1861,41 @@
           "[data-shop-quantity-label]"
         );
 
-      const config = merge(
-        {},
-        this.config.quantity,
-        item.quantity || {}
-      );
-
       if (!input) return;
 
-      if (!config.enabled) {
+      const quantity =
+        this.getQuantityConfig(item);
+
+      if (!quantity.enabled) {
         input.remove();
         label?.remove();
-
         return;
       }
 
-      const id =
-        `pixie-shop-${this.name}-${item.id}-quantity`;
+      const id = [
+        "pixie-shop",
+        this.name,
+        item.id,
+        "quantity"
+      ].join("-");
 
       input.id = id;
-      input.min = String(config.min);
-      input.max = String(config.max);
-      input.step = String(config.step);
-      input.value = String(config.min);
+
+      input.min = String(
+        quantity.min
+      );
+
+      input.max = String(
+        quantity.max
+      );
+
+      input.step = String(
+        quantity.step
+      );
+
+      input.value = String(
+        quantity.min
+      );
 
       const text = format(
         this.config.messages.quantity,
@@ -927,496 +1915,37 @@
       }
     }
 
-    resolveSection(
-      action,
-      item,
-      node
-    ) {
-      if (
-        typeof this.config.hooks
-          .getSection === "function"
-      ) {
-        const section =
-          this.config.hooks.getSection({
-            action,
-            item,
-            node,
-            shop: this
-          });
-
-        if (
-          section &&
-          this.config.sections[section]
-        ) {
-          return section;
-        }
-      }
-
-      if (
-        this.config.sections[action]
-      ) {
-        return action;
-      }
-
-      return (
-        this.config.cart.defaultSection ||
-        Object.keys(
-          this.config.sections
-        )[0]
-      );
-    }
-
-    normalizeQuantity(value, item) {
-      const config = merge(
-        {},
-        this.config.quantity,
-        item?.quantity || {}
-      );
-
-      if (!config.enabled) {
-        return 1;
-      }
-
-      return Math.max(
-        config.min,
-        Math.min(
-          config.max,
-          Math.floor(
-            number(value, config.min)
-          )
-        )
-      );
-    }
-
-    add(
-      itemId,
-      sectionName,
-      quantity = 1
-    ) {
-      const item = this.itemMap.get(
-        String(itemId)
-      );
-
-      const section =
-        this.state.cart.sections[
-          sectionName
-        ];
-
-      if (!item || !section) {
-        return null;
-      }
-
-      const unique =
-        item.unique ??
-        this.config.cart.uniqueItems;
-
-      const mergeDuplicates =
-        item.mergeDuplicates ??
-        this.config.cart
-          .mergeDuplicates;
-
-      const existing = section.find(
-        (entry) => {
-          return entry.itemId === item.id;
-        }
-      );
-
-      if (unique && existing) {
-        this.notice(
-          format(
-            this.config.messages.unique,
-            {
-              item: this.getTitle(item)
-            }
-          ),
-          "warning"
-        );
-
-        return existing;
-      }
-
-      if (
-        mergeDuplicates &&
-        existing
-      ) {
-        existing.quantity =
-          this.normalizeQuantity(
-            existing.quantity +
-              number(quantity, 1),
-            item
-          );
-
-        this.changed();
-
-        return existing;
-      }
-
-      const entry = {
-        uid: uid("cart"),
-        itemId: item.id,
-        section: sectionName,
-
-        quantity:
-          this.normalizeQuantity(
-            quantity,
-            item
-          ),
-
-        fields:
-          this.initialFields(
-            sectionName
-          )
-      };
-
-      section.push(entry);
-
-      this.changed();
-
-      this.emit(
-        "pixie-shop:item-added",
-        {
-          entry,
-          item,
-          section: sectionName
-        }
-      );
-
-      return entry;
-    }
-
-    initialFields(sectionName) {
-      const fields =
-        this.config.sections[
-          sectionName
-        ]?.fields || [];
-
-      const values = {};
-
-      fields.forEach((field) => {
-        const name =
-          normalizeName(field.name);
-
-        if (!name) return;
-
-        values[name] =
-          field.repeatable
-            ? Array.isArray(
-                field.defaultValue
-              )
-              ? field.defaultValue.slice()
-              : []
-            : String(
-                field.defaultValue ??
-                  ""
-              );
-      });
-
-      return values;
-    }
-
-    findEntry(entryId) {
-      for (
-        const [
-          sectionName,
-          entries
-        ] of Object.entries(
-          this.state.cart.sections
-        )
-      ) {
-        const index =
-          entries.findIndex(
-            (entry) => {
-              return entry.uid === entryId;
-            }
-          );
-
-        if (index >= 0) {
-          return {
-            sectionName,
-            entries,
-            index,
-            entry: entries[index]
-          };
-        }
-      }
-
-      return null;
-    }
-
-    remove(entryId) {
-      const found =
-        this.findEntry(entryId);
-
-      if (!found) return;
-
-      const [entry] =
-        found.entries.splice(
-          found.index,
-          1
-        );
-
-      this.changed();
-
-      this.emit(
-        "pixie-shop:item-removed",
-        {
-          entry,
-          section: found.sectionName
-        }
-      );
-    }
-
-    clear() {
-      Object.keys(
-        this.state.cart.sections
-      ).forEach((section) => {
-        this.state.cart.sections[
-          section
-        ] = [];
-      });
-
-      this.changed();
-    }
-
-    updateQuantity(
-      entryId,
-      value
-    ) {
-      const found =
-        this.findEntry(entryId);
-
-      if (!found) return;
-
-      const item = this.itemMap.get(
-        found.entry.itemId
-      );
-
-      found.entry.quantity =
-        this.normalizeQuantity(
-          value,
-          item
-        );
-
-      this.changed(false);
-    }
-
-    changeQuantity(
-      entryId,
-      amount
-    ) {
-      const found =
-        this.findEntry(entryId);
-
-      if (!found) return;
-
-      const next =
-        found.entry.quantity +
-        amount;
-
-      if (next <= 0) {
-        this.remove(entryId);
-
-        return;
-      }
-
-      this.updateQuantity(
-        entryId,
-        next
-      );
-
-      this.renderCart();
-    }
-
-    updateField(
-      entryId,
-      fieldName,
-      value,
-      index = null
-    ) {
-      const found =
-        this.findEntry(entryId);
-
-      if (!found) return;
-
-      const name =
-        normalizeName(fieldName);
-
-      if (index === null) {
-        found.entry.fields[name] =
-          String(value ?? "");
-      } else {
-        const list = Array.isArray(
-          found.entry.fields[name]
-        )
-          ? found.entry.fields[name]
-          : [];
-
-        list[index] =
-          String(value ?? "");
-
-        found.entry.fields[name] =
-          list;
-      }
-
-      this.save();
-    }
-
-    addField(
-      entryId,
-      fieldName
-    ) {
-      const found =
-        this.findEntry(entryId);
-
-      if (!found) return;
-
-      const field =
-        this.fieldConfig(
-          found.sectionName,
-          fieldName
-        );
-
-      if (!field?.repeatable) {
-        return;
-      }
-
-      const name =
-        normalizeName(fieldName);
-
-      const list = Array.isArray(
-        found.entry.fields[name]
-      )
-        ? found.entry.fields[name]
-        : [];
-
-      const max = Number.isFinite(
-        Number(field.max)
-      )
-        ? Number(field.max)
-        : Infinity;
-
-      if (list.length >= max) {
-        return;
-      }
-
-      list.push("");
-
-      found.entry.fields[name] =
-        list;
-
-      this.changed();
-    }
-
-    removeField(
-      entryId,
-      fieldName,
-      index
-    ) {
-      const found =
-        this.findEntry(entryId);
-
-      if (!found) return;
-
-      const field =
-        this.fieldConfig(
-          found.sectionName,
-          fieldName
-        );
-
-      const name =
-        normalizeName(fieldName);
-
-      const list = Array.isArray(
-        found.entry.fields[name]
-      )
-        ? found.entry.fields[name]
-        : [];
-
-      const min = number(
-        field?.min,
-        0
-      );
-
-      if (list.length <= min) {
-        return;
-      }
-
-      list.splice(index, 1);
-
-      this.changed();
-    }
-
-    fieldConfig(
-      sectionName,
-      fieldName
-    ) {
-      return (
-        this.config.sections[
-          sectionName
-        ]?.fields || []
-      ).find((field) => {
-        return (
-          normalizeName(field.name) ===
-          normalizeName(fieldName)
-        );
-      }) || null;
-    }
-
-    changed(render = true) {
-      this.save();
-
-      if (render) {
-        this.renderCart();
-      }
-
-      if (
-        typeof this.config.hooks
-          .afterCartChange === "function"
-      ) {
-        this.config.hooks
-          .afterCartChange({
-            cart: this.state.cart,
-            shop: this
-          });
-      }
-
-      this.emit(
-        "pixie-shop:cart-change",
-        {
-          cart: this.state.cart
-        }
-      );
-    }
-
     renderCart() {
       Object.keys(
         this.config.sections
-      ).forEach((section) => {
-        this.renderSection(section);
+      ).forEach((sectionName) => {
+        this.renderCartSection(
+          sectionName
+        );
       });
 
       this.renderTotals();
     }
 
-    renderSection(sectionName) {
-      const root =
+    renderCartSection(sectionName) {
+      const sectionRoot =
         this.root.querySelector(
           `[data-shop-section="${CSS.escape(
             sectionName
           )}"]`
         );
 
-      if (!root) return;
+      if (!sectionRoot) return;
 
       const list =
-        root.querySelector(
+        sectionRoot.querySelector(
           "[data-shop-section-list]"
-        ) || root;
+        ) || sectionRoot;
 
       const entries =
-        this.state.cart.sections[
+        this.getSectionEntries(
           sectionName
-        ] || [];
+        );
 
       list.replaceChildren();
 
@@ -1428,9 +1957,10 @@
           "shop-cart-empty";
 
         empty.textContent =
-          this.config.sections[
+          this.getSectionConfig(
             sectionName
-          ].emptyText;
+          )?.emptyText ||
+          "No hay elementos.";
 
         list.appendChild(empty);
 
@@ -1459,26 +1989,44 @@
       entry,
       sectionName
     ) {
-      const item = this.itemMap.get(
+      const item = this.getItem(
         entry.itemId
       );
 
-      if (
-        !item ||
-        typeof this.config.hooks
-          .renderCartItem !==
-          "function"
-      ) {
-        return null;
-      }
+      if (!item) return null;
 
-      const node =
-        this.config.hooks
-          .renderCartItem({
+      let node = null;
+
+      if (
+        typeof this.config.hooks
+          .renderCartItem === "function"
+      ) {
+        node =
+          this.config.hooks
+            .renderCartItem({
+              entry,
+              item,
+              sectionName,
+              shop: this,
+
+              template: () => {
+                return this.cloneTemplate(
+                  this.elements
+                    .cartItemTemplate
+                );
+              }
+            });
+      } else if (
+        this.config.renderer.cart
+      ) {
+        node = this.resolve(
+          "renderers",
+          this.config.renderer.cart,
+          {
+            target: "cart",
             entry,
             item,
             sectionName,
-            shop: this,
 
             template: () => {
               return this.cloneTemplate(
@@ -1486,9 +2034,22 @@
                   .cartItemTemplate
               );
             }
-          });
+          }
+        );
+      }
 
       if (!(node instanceof Element)) {
+        console.warn(
+          `[PixieShop:${this.name}] ${format(
+            this.config.messages
+              .missingRenderer,
+            {
+              target:
+                "las entradas del carrito"
+            }
+          )}`
+        );
+
         return null;
       }
 
@@ -1498,456 +2059,60 @@
       node.dataset.shopSection =
         sectionName;
 
-      this.prepareCartControls(
-        node,
-        entry,
-        item
-      );
-
-      this.renderFields(
-        node,
-        entry,
-        item,
-        sectionName
-      );
-
       return node;
     }
 
-    prepareCartControls(
-      node,
-      entry,
-      item
-    ) {
-      const quantity =
-        node.querySelector(
-          "[data-cart-quantity]"
-        );
+    /*
+     * Totales
+     */
 
-      const label =
-        node.querySelector(
-          "[data-cart-quantity-label]"
-        );
+    calculateSectionTotal(sectionName) {
+      const definition =
+        this.getSectionConfig(
+          sectionName
+        )?.total;
 
-      const config = merge(
-        {},
-        this.config.quantity,
-        item.quantity || {}
-      );
-
-      const title =
-        this.getTitle(item);
-
-      if (quantity) {
-        if (!config.enabled) {
-          quantity.remove();
-          label?.remove();
-
-          node
-            .querySelector(
-              "[data-cart-action='increase']"
-            )
-            ?.remove();
-
-          node
-            .querySelector(
-              "[data-cart-action='decrease']"
-            )
-            ?.remove();
-        } else {
-          const id =
-            `pixie-cart-${this.name}-${entry.uid}-quantity`;
-
-          quantity.id = id;
-          quantity.value =
-            String(entry.quantity);
-
-          quantity.min =
-            String(config.min);
-
-          quantity.max =
-            String(config.max);
-
-          quantity.step =
-            String(config.step);
-
-          if (label) {
-            label.htmlFor = id;
-
-            label.textContent =
-              format(
-                this.config.messages
-                  .quantity,
-                {
-                  item: title
-                }
-              );
-          }
-        }
+      if (!definition) {
+        return null;
       }
 
-      const labels = {
-        remove:
-          this.config.messages.remove,
+      return this.resolve(
+        "totals",
+        definition,
+        {
+          sectionName,
 
-        increase:
-          this.config.messages
-            .increase,
+          entries:
+            this.getSectionEntries(
+              sectionName
+            ),
 
-        decrease:
-          this.config.messages
-            .decrease
-      };
-
-      Object.entries(
-        labels
-      ).forEach(
-        ([action, template]) => {
-          const button =
-            node.querySelector(
-              `[data-cart-action="${action}"]`
-            );
-
-          if (button) {
-            button.setAttribute(
-              "aria-label",
-              format(template, {
-                item: title
-              })
-            );
+          getItem: (itemId) => {
+            return this.getItem(itemId);
           }
         }
       );
     }
 
-    renderFields(
-      node,
-      entry,
-      item,
-      sectionName
-    ) {
-      const container =
-        node.querySelector(
-          "[data-cart-fields]"
-        );
-
-      if (!container) return;
-
-      const fields =
-        this.config.sections[
-          sectionName
-        ]?.fields || [];
-
-      if (!fields.length) {
-        container.remove();
-
-        return;
-      }
-
-      const fragment =
-        document.createDocumentFragment();
-
-      fields.forEach((field) => {
-        fragment.appendChild(
-          field.repeatable
-            ? this.repeatableField(
-                entry,
-                field
-              )
-            : this.singleField(
-                entry,
-                field
-              )
-        );
-      });
-
-      container.replaceChildren(
-        fragment
-      );
-    }
-
-    singleField(entry, field) {
-      const name =
-        normalizeName(field.name);
-
-      const label =
-        document.createElement(
-          "label"
-        );
-
-      const text =
-        document.createElement(
-          "span"
-        );
-
-      const input =
-        this.makeInput(field);
-
-      const id =
-        `pixie-field-${entry.uid}-${name}`;
-
-      label.className =
-        "cart-item-field";
-
-      label.htmlFor = id;
-
-      text.textContent =
-        field.label || name;
-
-      input.id = id;
-
-      input.dataset.cartField =
-        name;
-
-      input.value =
-        String(
-          entry.fields[name] ?? ""
-        );
-
-      label.append(text, input);
-
-      return label;
-    }
-
-    repeatableField(
-      entry,
-      field
-    ) {
-      const name =
-        normalizeName(field.name);
-
-      const fieldset =
-        document.createElement(
-          "fieldset"
-        );
-
-      const legend =
-        document.createElement(
-          "legend"
-        );
-
-      const list =
-        document.createElement(
-          "div"
-        );
-
-      const add =
-        document.createElement(
-          "button"
-        );
-
-      const values = Array.isArray(
-        entry.fields[name]
-      )
-        ? entry.fields[name]
-        : [];
-
-      const min = number(
-        field.min,
-        0
-      );
-
-      while (
-        values.length < min
-      ) {
-        values.push("");
-      }
-
-      entry.fields[name] = values;
-
-      legend.textContent =
-        field.label || name;
-
-      values.forEach(
-        (value, index) => {
-          list.appendChild(
-            this.repeatableRow(
-              entry,
-              field,
-              value,
-              index
+    getTotals() {
+      return Object.fromEntries(
+        Object.keys(
+          this.config.sections
+        ).map((sectionName) => {
+          return [
+            sectionName,
+            this.calculateSectionTotal(
+              sectionName
             )
-          );
-        }
+          ];
+        })
       );
-
-      add.type = "button";
-
-      add.dataset.cartAction =
-        "add-field";
-
-      add.dataset.fieldName =
-        name;
-
-      add.textContent =
-        field.addLabel ||
-        this.config.messages
-          .addField;
-
-      const max = Number.isFinite(
-        Number(field.max)
-      )
-        ? Number(field.max)
-        : Infinity;
-
-      add.disabled =
-        values.length >= max;
-
-      fieldset.className =
-        "cart-item-repeatable-field";
-
-      fieldset.append(
-        legend,
-        list,
-        add
-      );
-
-      return fieldset;
-    }
-
-    repeatableRow(
-      entry,
-      field,
-      value,
-      index
-    ) {
-      const name =
-        normalizeName(field.name);
-
-      const row =
-        document.createElement(
-          "div"
-        );
-
-      const input =
-        this.makeInput(field);
-
-      const remove =
-        document.createElement(
-          "button"
-        );
-
-      input.dataset.cartField =
-        name;
-
-      input.dataset.fieldIndex =
-        String(index);
-
-      input.value =
-        String(value ?? "");
-
-      remove.type = "button";
-
-      remove.dataset.cartAction =
-        "remove-field";
-
-      remove.dataset.fieldName =
-        name;
-
-      remove.dataset.fieldIndex =
-        String(index);
-
-      remove.textContent =
-        field.removeLabel ||
-        this.config.messages
-          .removeField;
-
-      row.className =
-        "cart-item-repeatable-row";
-
-      row.append(input, remove);
-
-      return row;
-    }
-
-    makeInput(field) {
-      const input =
-        field.type === "textarea"
-          ? document.createElement(
-              "textarea"
-            )
-          : document.createElement(
-              "input"
-            );
-
-      if (
-        input instanceof
-        HTMLInputElement
-      ) {
-        input.type =
-          field.type || "text";
-      }
-
-      input.placeholder =
-        field.placeholder || "";
-
-      input.required =
-        Boolean(field.required);
-
-      input.className =
-        "cart-item-field-input";
-
-      return input;
-    }
-
-    sectionTotal(sectionName) {
-      const total =
-        this.config.sections[
-          sectionName
-        ]?.total;
-
-      if (!total) return null;
-
-      return (
-        this.state.cart.sections[
-          sectionName
-        ] || []
-      ).reduce((sum, entry) => {
-        const item =
-          this.itemMap.get(
-            entry.itemId
-          );
-
-        if (!item) return sum;
-
-        const value =
-          typeof total ===
-          "function"
-            ? total({
-                item,
-                entry,
-                sectionName,
-                shop: this
-              })
-            : typeof this.config
-                .hooks
-                .getTotalValue ===
-              "function"
-            ? this.config.hooks
-                .getTotalValue({
-                  item,
-                  entry,
-                  sectionName,
-                  shop: this
-                })
-            : 0;
-
-        return (
-          sum +
-          number(value, 0)
-        );
-      }, 0);
     }
 
     renderTotals() {
       Object.keys(
         this.config.sections
       ).forEach((sectionName) => {
-        const total =
-          this.sectionTotal(
-            sectionName
-          );
-
         const root =
           this.root.querySelector(
             `[data-shop-section="${CSS.escape(
@@ -1960,17 +2125,27 @@
             "[data-shop-section-total]"
           );
 
-        if (output) {
-          output.hidden =
-            total === null;
+        if (!output) return;
 
-          output.textContent =
-            total === null
-              ? ""
-              : String(total);
-        }
+        const total =
+          this.calculateSectionTotal(
+            sectionName
+          );
+
+        output.hidden =
+          total === null ||
+          total === undefined;
+
+        output.textContent =
+          output.hidden
+            ? ""
+            : String(total);
       });
     }
+
+    /*
+     * Validación y mensaje
+     */
 
     validate() {
       const errors = [];
@@ -1979,180 +2154,122 @@
         this.state.cart.sections
       ).forEach(
         ([sectionName, entries]) => {
-          const fields =
-            this.config.sections[
-              sectionName
-            ]?.fields || [];
-
           entries.forEach((entry) => {
-            const item =
-              this.itemMap.get(
-                entry.itemId
-              );
+            const item = this.getItem(
+              entry.itemId
+            );
 
             if (!item) return;
 
-            const title =
-              this.getTitle(item);
+            const context = {
+              item,
+              entry,
+              sectionName,
 
-            fields.forEach((field) => {
-              const name =
-                normalizeName(
-                  field.name
-                );
+              section:
+                this.getSectionConfig(
+                  sectionName
+                ),
 
-              const values =
-                field.repeatable
-                  ? (
-                      entry.fields[
-                        name
-                      ] || []
-                    )
-                      .map((value) => {
-                        return String(
-                          value
-                        ).trim();
-                      })
-                      .filter(Boolean)
-                  : [
-                      String(
-                        entry.fields[
-                          name
-                        ] ?? ""
-                      ).trim()
-                    ].filter(Boolean);
-
-              if (
-                field.required &&
-                !values.length
-              ) {
-                errors.push(
-                  format(
-                    this.config
-                      .messages.required,
-                    {
-                      item: title,
-
-                      field:
-                        field.label ||
-                        name
-                    }
-                  )
-                );
-              }
-
-              if (
-                field.type === "url"
-              ) {
-                values.forEach(
-                  (value) => {
-                    if (
-                      !isValidUrl(
-                        value
-                      )
-                    ) {
-                      errors.push(
-                        format(
-                          this.config
-                            .messages
-                            .invalidUrl,
-                          {
-                            item:
-                              title,
-
-                            field:
-                              field.label ||
-                              name
-                          }
-                        )
-                      );
-                    }
-                  }
-                );
-              }
-            });
+              shop: this
+            };
 
             if (
-              typeof this.config
-                .hooks
+              typeof this.config.hooks
                 .validateEntry ===
               "function"
             ) {
-              const custom =
+              const result =
                 this.config.hooks
-                  .validateEntry({
-                    entry,
-                    item,
-                    sectionName,
-                    shop: this
-                  });
+                  .validateEntry(context);
 
-              if (
-                Array.isArray(custom)
-              ) {
-                errors.push(
-                  ...custom.filter(Boolean)
-                );
-              } else if (custom) {
-                errors.push(custom);
-              }
+              errors.push(
+                ...toArray(result)
+                  .filter(Boolean)
+              );
             }
+
+            const validationResult =
+              this.resolve(
+                "validators",
+                {
+                  type: "compose",
+
+                  rules: [
+                    ...(this.config
+                      .validation.rules ||
+                      []),
+
+                    ...(this.getSectionConfig(
+                      sectionName
+                    )?.validation
+                      ?.rules || [])
+                  ]
+                },
+                context
+              );
+
+            errors.push(
+              ...toArray(
+                validationResult
+              ).filter(Boolean)
+            );
           });
         }
       );
 
-      return [...new Set(errors)];
+      return [
+        ...new Set(errors)
+      ];
     }
 
     buildMessage() {
+      const context = {
+        cart: this.state.cart,
+
+        sections:
+          this.state.cart.sections,
+
+        items: this.itemMap,
+
+        totals: this.getTotals(),
+
+        config: this.config,
+
+        shop: this,
+
+        utils: PixieShop.utils
+      };
+
       if (
         typeof this.config.hooks
-          .buildMessage !==
-        "function"
+          .buildMessage === "function"
       ) {
-        console.warn(
-          `[PixieShop:${this.name}] Falta hooks.buildMessage().`
+        return String(
+          this.config.hooks
+            .buildMessage(context) ?? ""
         );
-
-        return "";
       }
 
-      return String(
-        this.config.hooks
-          .buildMessage({
-            cart: this.state.cart,
+      if (this.config.output) {
+        const message = this.resolve(
+          "output",
+          this.config.output,
+          context
+        );
 
-            sections:
-              this.state.cart
-                .sections,
+        return String(message ?? "");
+      }
 
-            items: this.itemMap,
-
-            shop: this,
-
-            totals:
-              Object.fromEntries(
-                Object.keys(
-                  this.config.sections
-                ).map((section) => {
-                  return [
-                    section,
-                    this.sectionTotal(
-                      section
-                    )
-                  ];
-                })
-              ),
-
-            utils:
-              PixieShop.utils
-          }) ?? ""
+      console.warn(
+        `[PixieShop:${this.name}] ${this.config.messages.missingOutput}`
       );
+
+      return "";
     }
 
     prepareSubmit() {
-      const errors =
-        this.validate();
+      const errors = this.validate();
 
       if (errors.length) {
         this.notice(
@@ -2164,22 +2281,67 @@
       }
 
       if (!this.elements.message) {
-        console.warn(
-          `[PixieShop:${this.name}] No se encontró el textarea del mensaje.`
+        this.notice(
+          this.config.messages
+            .missingMessage,
+          "error"
         );
 
         return false;
       }
 
-      this.elements.message.value =
+      if (
+        typeof this.config.hooks
+          .beforeSubmit === "function"
+      ) {
+        const result =
+          this.config.hooks
+            .beforeSubmit({
+              cart: this.state.cart,
+              shop: this
+            });
+
+        if (result === false) {
+          return false;
+        }
+      }
+
+      const message =
         this.buildMessage();
+
+      this.elements.message.value =
+        message;
+
+      if (
+        typeof this.config.hooks
+          .afterSubmitPreparation ===
+        "function"
+      ) {
+        this.config.hooks
+          .afterSubmitPreparation({
+            message,
+            cart: this.state.cart,
+            shop: this
+          });
+      }
+
+      this.emit(
+        "pixie-shop:message-created",
+        {
+          message
+        }
+      );
 
       return true;
     }
 
-    bind() {
+    /*
+     * Eventos
+     */
+
+    bindEvents() {
       const signal =
-        this.abort.signal;
+        this.abortController.signal;
 
       this.elements.search
         ?.addEventListener(
@@ -2271,7 +2433,7 @@
         ?.addEventListener(
           "click",
           () => {
-            this.state.visible +=
+            this.state.visibleCount +=
               this.config
                 .itemsPerPage;
 
@@ -2289,41 +2451,46 @@
                 "[data-shop-action]"
               );
 
-            const node =
-              button?.closest(
+            if (!button) return;
+
+            const itemNode =
+              button.closest(
                 "[data-shop-item-id]"
               );
 
-            const item = node
-              ? this.itemMap.get(
-                  node.dataset
-                    .shopItemId
-                )
-              : null;
+            if (!itemNode) return;
 
-            if (!button || !item) {
-              return;
-            }
+            const item = this.getItem(
+              itemNode.dataset
+                .shopItemId
+            );
+
+            if (!item) return;
 
             const action =
               button.dataset
                 .shopAction || "add";
 
-            const section =
+            const sectionName =
               this.resolveSection(
                 action,
                 item,
-                node
+                itemNode
+              );
+
+            const quantityInput =
+              itemNode.querySelector(
+                "[data-shop-quantity]"
               );
 
             const quantity =
-              node.querySelector(
-                "[data-shop-quantity]"
-              )?.value || 1;
+              quantityInput
+                ? quantityInput.value
+                : 1;
 
             this.add(
               item.id,
-              section,
+              sectionName,
               quantity
             );
           },
@@ -2339,73 +2506,61 @@
                 "[data-cart-action]"
               );
 
-            const node =
-              button?.closest(
+            if (!button) return;
+
+            const entryNode =
+              button.closest(
                 "[data-shop-entry-id]"
               );
 
-            const entryId =
-              node?.dataset
+            const entryUid =
+              entryNode?.dataset
                 .shopEntryId;
 
-            if (
-              !button ||
-              !entryId
-            ) {
-              return;
-            }
+            if (!entryUid) return;
 
             const action =
               button.dataset
                 .cartAction;
 
-            if (
-              action === "remove"
-            ) {
-              this.remove(entryId);
-            }
+            switch (action) {
+              case "remove":
+                this.remove(entryUid);
+                break;
 
-            if (
-              action === "increase"
-            ) {
-              this.changeQuantity(
-                entryId,
-                1
-              );
-            }
+              case "increase":
+                this.changeQuantity(
+                  entryUid,
+                  1
+                );
+                break;
 
-            if (
-              action === "decrease"
-            ) {
-              this.changeQuantity(
-                entryId,
-                -1
-              );
-            }
+              case "decrease":
+                this.changeQuantity(
+                  entryUid,
+                  -1
+                );
+                break;
 
-            if (
-              action === "add-field"
-            ) {
-              this.addField(
-                entryId,
-                button.dataset
-                  .fieldName
-              );
-            }
-
-            if (
-              action ===
-              "remove-field"
-            ) {
-              this.removeField(
-                entryId,
-                button.dataset
-                  .fieldName,
-                Number(
+              case "add-field":
+                this.addRepeatableField(
+                  entryUid,
                   button.dataset
-                    .fieldIndex
-                )
-              );
+                    .fieldName
+                );
+                break;
+
+              case "remove-field":
+                this.removeRepeatableField(
+                  entryUid,
+                  button.dataset
+                    .fieldName,
+                  Number(
+                    button.dataset
+                      .fieldIndex
+                  )
+                );
+                break;
             }
           },
           { signal }
@@ -2415,16 +2570,16 @@
         ?.addEventListener(
           "input",
           (event) => {
-            const node =
+            const entryNode =
               event.target.closest(
                 "[data-shop-entry-id]"
               );
 
-            const entryId =
-              node?.dataset
+            const entryUid =
+              entryNode?.dataset
                 .shopEntryId;
 
-            if (!entryId) return;
+            if (!entryUid) return;
 
             if (
               event.target.matches(
@@ -2432,9 +2587,11 @@
               )
             ) {
               this.updateQuantity(
-                entryId,
+                entryUid,
                 event.target.value
               );
+
+              return;
             }
 
             if (
@@ -2454,7 +2611,7 @@
                     );
 
               this.updateField(
-                entryId,
+                entryUid,
                 event.target.dataset
                   .cartField,
                 event.target.value,
@@ -2487,7 +2644,14 @@
       );
     }
 
+    /*
+     * Avisos y eventos públicos
+     */
+
     disable(message) {
+      this.root.dataset
+        .pixieShopDisabled = "true";
+
       this.root
         .querySelectorAll(
           "button, input, select, textarea"
@@ -2532,11 +2696,12 @@
         type === "warning"
       ) {
         window.alert(message);
-      } else {
-        console.info(
-          `[PixieShop:${this.name}] ${message}`
-        );
+        return;
       }
+
+      console.info(
+        `[PixieShop:${this.name}] ${message}`
+      );
     }
 
     emit(name, detail = {}) {
@@ -2553,35 +2718,175 @@
     }
   }
 
+  /*
+   * API pública
+   */
+
   const PixieShop = {
     version: VERSION,
 
-    register(name, config) {
-      const key =
-        String(name || "").trim();
+    /*
+     * Registrar un módulo reutilizable.
+     */
+    module(name, moduleValue) {
+      const key = String(
+        name ?? ""
+      ).trim();
 
       if (!key) {
         throw new TypeError(
-          "[PixieShop] El nombre es obligatorio."
+          "[PixieShop] El nombre del módulo es obligatorio."
         );
       }
 
-      if (!isObject(config)) {
+      if (
+        moduleValue === undefined
+      ) {
         throw new TypeError(
-          `[PixieShop] “${key}” debe recibir un objeto de configuración.`
+          `[PixieShop] El módulo “${key}” no puede ser undefined.`
         );
       }
 
-      registry.set(key, config);
+      moduleRegistry.set(
+        key,
+        moduleValue
+      );
 
-      PixieShop.init();
+      document.dispatchEvent(
+        new CustomEvent(
+          "pixie-shop:module",
+          {
+            detail: {
+              name: key,
+              module: moduleValue
+            }
+          }
+        )
+      );
+
+      return PixieShop;
+    },
+
+    use(name) {
+      const key = String(
+        name ?? ""
+      ).trim();
+
+      if (!moduleRegistry.has(key)) {
+        throw new Error(
+          `[PixieShop] No existe el módulo “${key}”.`
+        );
+      }
+
+      return moduleRegistry.get(key);
+    },
+
+    hasModule(name) {
+      return moduleRegistry.has(
+        String(name ?? "").trim()
+      );
+    },
+
+    removeModule(name) {
+      moduleRegistry.delete(
+        String(name ?? "").trim()
+      );
+
+      return PixieShop;
+    },
+
+    /*
+     * Resolver una definición declarativa.
+     *
+     * PixieShop.resolve(
+     *   "totals",
+     *   { type: "sum", field: "coste" },
+     *   context
+     * );
+     */
+    resolve(
+      moduleName,
+      definition,
+      context = {}
+    ) {
+      if (
+        definition === undefined ||
+        definition === null
+      ) {
+        return null;
+      }
+
+      if (
+        typeof definition ===
+        "function"
+      ) {
+        return definition(context);
+      }
+
+      const moduleValue =
+        PixieShop.use(moduleName);
+
+      if (
+        typeof moduleValue.resolve !==
+        "function"
+      ) {
+        throw new TypeError(
+          `[PixieShop] El módulo “${moduleName}” no dispone de resolve().`
+        );
+      }
+
+      return moduleValue.resolve(
+        definition,
+        context
+      );
+    },
+
+    /*
+     * Registrar una tienda.
+     */
+    register(name, config) {
+      const key = String(
+        name ?? ""
+      ).trim();
+
+      if (!key) {
+        throw new TypeError(
+          "[PixieShop] El nombre de la tienda es obligatorio."
+        );
+      }
+
+      if (!isPlainObject(config)) {
+        throw new TypeError(
+          `[PixieShop] La configuración “${key}” debe ser un objeto.`
+        );
+      }
+
+      shopRegistry.set(key, config);
+
+      document.dispatchEvent(
+        new CustomEvent(
+          "pixie-shop:registered",
+          {
+            detail: {
+              name: key,
+              config
+            }
+          }
+        )
+      );
+
+      /*
+       * Permite registrar la configuración
+       * después de que el DOM ya haya cargado.
+       */
+      PixieShop.init(document);
 
       return PixieShop;
     },
 
     unregister(name) {
-      registry.delete(
-        String(name || "").trim()
+      shopRegistry.delete(
+        String(name ?? "").trim()
       );
 
       return PixieShop;
@@ -2589,12 +2894,15 @@
 
     getConfig(name) {
       return (
-        registry.get(
-          String(name || "").trim()
+        shopRegistry.get(
+          String(name ?? "").trim()
         ) || null
       );
     },
 
+    /*
+     * Inicializar tiendas presentes en el DOM.
+     */
     init(root = document) {
       const candidates = [];
 
@@ -2615,45 +2923,54 @@
           candidates.push(element);
         });
 
-      candidates.forEach(
-        (element) => {
-          if (
-            instances.has(element)
-          ) {
-            return;
-          }
-
-          const name = String(
-            element.dataset
-              .shopConfig || ""
-          ).trim();
-
-          const config =
-            registry.get(name);
-
-          if (!name || !config) {
-            return;
-          }
-
-          const instance =
-            new Shop(
-              element,
-              name,
-              config
-            );
-
-          instances.set(
-            element,
-            instance
-          );
-
-          activeInstances.add(
-            instance
-          );
-
-          instance.init();
+      candidates.forEach((element) => {
+        if (instances.has(element)) {
+          return;
         }
-      );
+
+        const name = String(
+          element.dataset.shopConfig ||
+            ""
+        ).trim();
+
+        if (!name) {
+          console.warn(
+            "[PixieShop] Falta data-shop-config.",
+            element
+          );
+
+          return;
+        }
+
+        const config =
+          shopRegistry.get(name);
+
+        /*
+         * La configuración puede registrarse
+         * más adelante desde Spectra.
+         */
+        if (!config) {
+          return;
+        }
+
+        const instance =
+          new PixieShopInstance(
+            element,
+            name,
+            config
+          );
+
+        instances.set(
+          element,
+          instance
+        );
+
+        activeInstances.add(
+          instance
+        );
+
+        instance.init();
+      });
 
       return PixieShop;
     },
@@ -2666,10 +2983,14 @@
             )
           : target;
 
-      return element
-        ? instances.get(element) ||
-            null
-        : null;
+      if (!element) {
+        return null;
+      }
+
+      return (
+        instances.get(element) ||
+        null
+      );
     },
 
     getInstances() {
@@ -2687,22 +3008,32 @@
     },
 
     utils: {
-      merge,
+      isPlainObject,
+      deepMerge,
       format,
       normalizeText,
       normalizeName,
-      number,
-      uid,
-      isValidUrl
+      toNumber,
+      toArray,
+      createUid,
+      clone
     }
   };
 
-  window.PixieShop =
-    PixieShop;
+  /*
+   * Exposición global.
+   *
+   * Los módulos y configuraciones de Spectra
+   * utilizarán window.PixieShop.
+   */
+  window.PixieShop = PixieShop;
 
-  const boot = () => {
-    PixieShop.init();
-  };
+  /*
+   * Inicialización automática.
+   */
+  function boot() {
+    PixieShop.init(document);
+  }
 
   if (
     document.readyState ===
@@ -2719,13 +3050,19 @@
     boot();
   }
 
+  /*
+   * Integración opcional con PixieKit.
+   *
+   * El módulo sigue funcionando mediante
+   * window.PixieShop aunque PixieKit no esté presente.
+   */
   if (
     typeof window.PixieKit ===
     "function"
   ) {
     try {
       window.PixieKit(
-        "PixieShop",
+        MODULE_NAME,
         function () {
           return PixieShop;
         }
