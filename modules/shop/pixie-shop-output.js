@@ -1,12 +1,6 @@
 /*!
  * PixieShopOutput.js
  * Generación de mensajes para PixieShop.
- *
- * @version 1.0.0
- *
- * Requiere:
- * - pixie-shop.js
- *
  * Tipos disponibles:
  * - message
  * - collection
