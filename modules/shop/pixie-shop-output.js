@@ -989,81 +989,84 @@
    * Campos externos
    */
 
-  function buildOutsideFields(
-    definition,
-    context = {}
-  ) {
-    const config = utils.deepMerge(
-      {},
-      DEFAULT_MESSAGE.outsideFields,
-      definition || {}
-    );
+function buildOutsideFields(
+  definition,
+  context = {}
+) {
+  const config = utils.deepMerge(
+    {},
+    DEFAULT_MESSAGE.outsideFields,
+    definition || {}
+  );
 
-    if (!config.enabled) {
-      return "";
-    }
+  if (!config.enabled) {
+    return "";
+  }
 
-    const groups = [];
+  const groups = [];
 
-    Object.entries(
-      context.sections || {}
-    ).forEach(
-      ([sectionName, entries]) => {
-        const sectionConfig =
-          context.config
-            ?.sections?.[
-              sectionName
-            ] ||
-          context.shop
-            ?.getSectionConfig?.(
-              sectionName
-            );
-
-        const fields =
-          sectionConfig?.fields || [];
-
-        if (!fields.length) return;
-
-        entries.forEach((entry) => {
-          const item = getItem(
-            context,
-            entry
+  Object.entries(
+    context.sections || {}
+  ).forEach(
+    ([sectionName, entries]) => {
+      const sectionConfig =
+        context.config
+          ?.sections?.[sectionName] ||
+        context.shop
+          ?.getSectionConfig?.(
+            sectionName
           );
 
-          if (!item) return;
+      const definitions =
+        sectionConfig?.fields || [];
 
-          const lines = [];
+      if (!definitions.length) {
+        return;
+      }
 
-          fields.forEach((field) => {
-            if (
-              field.outsideOutput ===
+      entries.forEach((entry) => {
+        const item = getItem(
+          context,
+          entry
+        );
+
+        if (!item) {
+          return;
+        }
+
+        /*
+         * Normalizamos una sola vez todos
+         * los campos que deben publicarse.
+         */
+
+        const outputFields = definitions
+          .filter((field) => {
+            return (
+              field.outsideOutput !==
               false
-            ) {
-              return;
-            }
-
-            const fieldName =
+            );
+          })
+          .map((field) => {
+            const name =
               utils.normalizeName(
                 field.name
               );
 
-            const value =
-              entry.fields?.[
-                fieldName
-              ];
+            const storedValue =
+              entry.fields?.[name];
 
-            const values =
-              Array.isArray(value)
-                ? value
-                : [value];
+            const rawValues =
+              Array.isArray(storedValue)
+                ? storedValue
+                : [storedValue];
 
-            const filled = values
-              .map((entryValue) => {
+            const values = rawValues
+              .map((value) => {
                 if (
-                  typeof entryValue ===
+                  typeof value ===
                   "boolean"
                 ) {
-                  return entryValue
+                  return value
                     ? (
                         field.trueLabel ||
                         "Sí"
@@ -1072,139 +1075,126 @@
                 }
 
                 return String(
-                  entryValue ?? ""
+                  value ?? ""
                 ).trim();
               })
               .filter(Boolean);
 
-            filled.forEach(
-              (
-                entryValue,
-                valueIndex
-              ) => {
-                const repeatedSuffix =
-                  filled.length > 1
-                    ? ` ${valueIndex + 1}`
-                    : "";
+            return {
+              name,
 
-                const label =
-                  field.outputLabel ||
-                  field.label ||
-                  fieldName;
+              label:
+                field.outputLabel ||
+                field.label ||
+                name,
+
+              values,
+
+              definition: field
+            };
+          })
+          .filter((field) => {
+            return field.values.length;
+          });
+
+        if (!outputFields.length) {
+          return;
+        }
+
+        const title =
+          context.shop?.getTitle?.(
+            item
+          ) ||
+          item.title ||
+          item.raw?.titulo ||
+          item.raw?.nombre ||
+          "";
+
+        /*
+         * Salida personalizada.
+         */
+
+        if (
+          typeof config.renderItem ===
+          "function"
+        ) {
+          const rendered =
+            config.renderItem({
+              item,
+              entry,
+              sectionName,
+              title,
+
+              fields:
+                outputFields,
+
+              shop:
+                context.shop,
+
+              escapeAttribute,
+              escapeText,
+
+              utils
+            });
+
+          if (rendered) {
+            groups.push(
+              String(rendered)
+            );
+          }
+
+          return;
+        }
+
+        /*
+         * Fallback de texto plano.
+         */
+
+        const lines = [];
+
+        outputFields.forEach(
+          (field) => {
+            field.values.forEach(
+              (
+                value,
+                index
+              ) => {
+                const suffix =
+                  field.values.length > 1
+                    ? ` ${index + 1}`
+                    : "";
 
                 lines.push(
                   `${config.linePrefix}` +
-                  `${label}` +
-                  `${repeatedSuffix}: ` +
-                  `${entryValue}`
+                  `${field.label}` +
+                  `${suffix}: ` +
+                  `${value}`
                 );
               }
             );
-          });
-
-          if (!lines.length) return;
-
-          const title =
-            context.shop?.getTitle?.(
-              item
-            ) ||
-            item.title ||
-            item.raw?.titulo ||
-            item.raw?.nombre ||
-            "";
-
-          if (
-  typeof config.renderItem ===
-  "function"
-) {
-  const rendered = config.renderItem({
-    item,
-    entry,
-    sectionName,
-    title,
-
-    fields: fields
-      .map((field) => {
-        const fieldName =
-          utils.normalizeName(
-            field.name
-          );
-
-        const value =
-          entry.fields?.[
-            fieldName
-          ];
-
-        const values =
-          Array.isArray(value)
-            ? value
-            : [value];
-
-        return {
-          name: fieldName,
-
-          label:
-            field.outputLabel ||
-            field.label ||
-            fieldName,
-
-          values: values
-            .map((fieldValue) => {
-              return String(
-                fieldValue ?? ""
-              ).trim();
-            })
-            .filter(Boolean),
-
-          definition: field
-        };
-      })
-      .filter((field) => {
-        return (
-          field.definition
-            .outsideOutput !==
-            false &&
-          field.values.length
+          }
         );
-      }),
 
-    shop: context.shop,
-
-    escapeAttribute,
-
-    escapeText,
-
-    utils
-  });
-
-  if (rendered) {
-    groups.push(
-      String(rendered)
-    );
-  }
-
-  return;
-}
-
-groups.push(
-  `${title}\n${lines.join("\n")}`
-);
-        });
-      }
-    );
-
-    if (!groups.length) {
-      return "";
+        groups.push(
+          `${title}\n` +
+          `${lines.join("\n")}`
+        );
+      });
     }
+  );
 
-    const body = groups.join(
-      config.itemSeparator
-    );
-
-    return config.title
-      ? `${config.title}\n\n${body}`
-      : body;
+  if (!groups.length) {
+    return "";
   }
+
+  const body = groups.join(
+    config.itemSeparator
+  );
+
+  return config.title
+    ? `${config.title}\n\n${body}`
+    : body;
+}
 
   /*
    * Totales
