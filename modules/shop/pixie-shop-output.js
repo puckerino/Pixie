@@ -1113,9 +1113,82 @@
             item.raw?.nombre ||
             "";
 
-          groups.push(
-            `${title}\n${lines.join("\n")}`
+          if (
+  typeof config.renderItem ===
+  "function"
+) {
+  const rendered = config.renderItem({
+    item,
+    entry,
+    sectionName,
+    title,
+
+    fields: fields
+      .map((field) => {
+        const fieldName =
+          utils.normalizeName(
+            field.name
           );
+
+        const value =
+          entry.fields?.[
+            fieldName
+          ];
+
+        const values =
+          Array.isArray(value)
+            ? value
+            : [value];
+
+        return {
+          name: fieldName,
+
+          label:
+            field.outputLabel ||
+            field.label ||
+            fieldName,
+
+          values: values
+            .map((fieldValue) => {
+              return String(
+                fieldValue ?? ""
+              ).trim();
+            })
+            .filter(Boolean),
+
+          definition: field
+        };
+      })
+      .filter((field) => {
+        return (
+          field.definition
+            .outsideOutput !==
+            false &&
+          field.values.length
+        );
+      }),
+
+    shop: context.shop,
+
+    escapeAttribute,
+
+    escapeText,
+
+    utils
+  });
+
+  if (rendered) {
+    groups.push(
+      String(rendered)
+    );
+  }
+
+  return;
+}
+
+groups.push(
+  `${title}\n${lines.join("\n")}`
+);
         });
       }
     );
