@@ -1,7 +1,7 @@
 /*!
  * PixieShopOutput.js
  * Generación de mensajes para PixieShop.
- * Tipos disponibles:
+ * Tipos:
  * - message
  * - collection
  * - component
