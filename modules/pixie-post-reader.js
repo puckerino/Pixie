@@ -10,9 +10,6 @@
    * =========================================================
    * CONFIGURACIÓN BASE
    * =========================================================
-   *
-   * Son valores razonables por defecto, pero cada foro puede
-   * sustituirlos mediante PixiePostReader.configure().
    */
 
   const CONFIG = {
@@ -57,19 +54,6 @@
   }
 
 
-  /*
-   * Merge profundo sencillo.
-   *
-   * Nos permite hacer:
-   *
-   * PixiePostReader.configure({
-   *   profile: {
-   *     linkSelectors: [...]
-   *   }
-   * });
-   *
-   * sin borrar post/content.
-   */
   function mergeConfig(target, source) {
     Object.entries(source || {}).forEach(
       ([key, value]) => {
@@ -148,9 +132,6 @@
 
     /*
      * URL/ruta de tema.
-     *
-     * /t23-tema#69
-     * t23-tema#69
      */
     if (
       /^\/?t\d+/i.test(value) ||
@@ -249,15 +230,12 @@
       ) {
         return postParam;
       }
+
     } catch {
       // continuamos
     }
 
-    /*
-     * Si el usuario escribió:
-     *
-     * 69
-     */
+
     if (/^\d+$/.test(raw)) {
       return raw;
     }
@@ -273,15 +251,10 @@
     const postConfig =
       CONFIG.post || {};
 
+
     /*
      * Opción principal:
      *
-     * prefix + ID
-     *
-     * Ej:
-     *
-     * p + 69
-     * →
      * #p69
      */
     if (
@@ -309,6 +282,7 @@
       }
     }
 
+
     /*
      * Segundo sistema:
      * permalink con ID.
@@ -334,6 +308,7 @@
         );
       }
     }
+
 
     /*
      * Fallback.
@@ -375,6 +350,7 @@
       profileConfig.pattern ||
       /\/u\d+/i;
 
+
     for (
       const selector
       of selectors
@@ -408,6 +384,7 @@
         if (match) {
           return match[0];
         }
+
       } catch {
         // probamos siguiente selector
       }
@@ -445,11 +422,8 @@
         )
       );
 
+
     codes.forEach(code => {
-      /*
-       * Foroactivo suele escapar las etiquetas
-       * dentro del codebox.
-       */
       const source =
         code.innerHTML ||
         code.textContent ||
@@ -490,8 +464,10 @@
       );
     }
 
+
     const html =
       await fetchHTML(url);
+
 
     const doc =
       new DOMParser()
@@ -500,11 +476,13 @@
           "text/html"
         );
 
+
     const id =
       getRequestedPostId(
         raw,
         url
       );
+
 
     const post =
       findPost(
@@ -512,17 +490,21 @@
         id
       );
 
+
     if (!post) {
       throw new Error(
         "No se encontró el post."
       );
     }
 
+
     const profile =
       extractProfile(post);
 
+
     const content =
       collectCodeboxes(post);
+
 
     return {
       raw,
@@ -598,18 +580,6 @@
    * =========================================================
    * READER: FIELDS
    * =========================================================
-   *
-   * Para modificaciones directas de campos.
-   *
-   * Por defecto entiende:
-   *
-   * <x-profile
-   *   field="money"
-   *   operation="add"
-   *   value="100">
-   * </x-profile>
-   *
-   * Pero también es configurable.
    */
 
   registerReader(
@@ -636,6 +606,7 @@
           "value"
       };
 
+
       const aliases = {
         sumar: "add",
         restar: "subtract",
@@ -644,6 +615,7 @@
 
         ...(options.operationAliases || {})
       };
+
 
       return Array.from(
         content.querySelectorAll(
@@ -659,6 +631,7 @@
               ""
             ).trim();
 
+
           let operation =
             (
               node.getAttribute(
@@ -670,19 +643,23 @@
               .trim()
               .toLowerCase();
 
+
           operation =
             aliases[operation] ||
             operation;
+
 
           const attrValue =
             node.getAttribute(
               attributes.value
             );
 
+
           const value =
             attrValue !== null
               ? attrValue
               : node.textContent.trim();
+
 
           return {
             key,
@@ -706,15 +683,14 @@
    *
    * Reader genérico para listas de objetos.
    *
-   * Pixie no sabe si representan:
+   * El reader puede:
    *
-   * - inventario
-   * - premios
-   * - ingredientes
-   * - objetos
-   * - equipo
+   * - emitir una directiva por cada item
+   * - utilizar los items solamente para calcular totales
    *
-   * El panel decide qué son.
+   * Para esto último:
+   *
+   * emit: false
    */
 
   registerReader(
@@ -726,6 +702,7 @@
       const itemSelector =
         options.itemSelector;
 
+
       const groups =
         Array.isArray(
           options.groups
@@ -733,9 +710,11 @@
           ? options.groups
           : [];
 
+
       const attributes =
         options.attributes ||
         {};
+
 
       if (!itemSelector) {
         throw new Error(
@@ -743,28 +722,31 @@
         );
       }
 
+
       /*
        * Nombres reales de atributos
-       * utilizados por el foro.
+       * utilizados en el HTML.
        */
+
       const itemAttribute =
         attributes.item ||
         "item";
+
 
       const quantityAttribute =
         attributes.quantity ||
         "cantidad";
 
+
       const priceAttribute =
         attributes.price ||
         null;
 
+
       /*
-       * Nombre interno que tendrá cada dato.
-       *
-       * Podemos personalizar también esto si
-       * en algún caso lo necesitamos.
+       * Nombres internos normalizados.
        */
+
       const outputNames = {
         item:
           options.output?.item ||
@@ -779,30 +761,26 @@
           "precio"
       };
 
+
       /*
        * Atributos extra.
-       *
-       * Puede ser:
-       *
-       * ["bonus", "descripcion"]
-       *
-       * o:
-       *
-       * {
-       *   effect: "bonus",
-       *   description: "descripcion"
-       * }
        */
+
       const extra =
         attributes.extra ||
         [];
 
+
       const changes = [];
 
+
       /*
-       * Guardamos los elementos procesados
-       * para poder calcular totales después.
+       * Guardamos los items de cada grupo
+       * aunque group.emit sea false.
+       *
+       * Esto permite calcular totales después.
        */
+
       const parsedGroups =
         new Map();
 
@@ -812,10 +790,14 @@
         value
       ) {
         /*
-         * Array:
+         * Ejemplo:
          *
-         * ["bonus", "descripcion"]
+         * extra: [
+         *   "bonus",
+         *   "descripcion"
+         * ]
          */
+
         if (Array.isArray(extra)) {
           extra.forEach(
             attribute => {
@@ -832,19 +814,16 @@
           return;
         }
 
+
         /*
-         * Objeto:
+         * También puede ser:
          *
-         * {
-         *   effect: "bonus"
-         * }
-         *
-         * Produce:
-         *
-         * {
-         *   effect: "..."
+         * extra: {
+         *   effect: "bonus",
+         *   description: "descripcion"
          * }
          */
+
         if (isPlainObject(extra)) {
           Object.entries(
             extra
@@ -872,11 +851,12 @@
           return;
         }
 
+
         /*
-         * Puede haber más de un grupo con
-         * el mismo selector dentro del codebox,
-         * así que usamos querySelectorAll.
+         * Puede haber varios contenedores
+         * con el mismo selector.
          */
+
         const roots =
           Array.from(
             content.querySelectorAll(
@@ -884,7 +864,9 @@
             )
           );
 
+
         const items = [];
+
 
         roots.forEach(root => {
           Array.from(
@@ -900,6 +882,7 @@
                 ""
               ).trim();
 
+
             const quantity =
               parseFloat(
                 node.getAttribute(
@@ -907,12 +890,14 @@
                 ) || "0"
               ) || 0;
 
+
             if (
               !item ||
               quantity <= 0
             ) {
               return;
             }
+
 
             const value = {
               [outputNames.item]:
@@ -922,9 +907,11 @@
                 quantity
             };
 
+
             /*
              * Precio opcional.
              */
+
             if (priceAttribute) {
               value[
                 outputNames.price
@@ -936,10 +923,12 @@
                 ) || 0;
             }
 
+
             readExtraAttributes(
               node,
               value
             );
+
 
             const entry = {
               node,
@@ -947,20 +936,45 @@
               group
             };
 
-            items.push(entry);
 
-            changes.push({
-              key:
-                group.field,
+            items.push(
+              entry
+            );
 
-              operation:
-                group.operation,
 
-              value,
-              node
-            });
+            /*
+             * =================================================
+             * EMIT
+             * =================================================
+             *
+             * Por defecto emitimos una directiva por item.
+             *
+             * Si:
+             *
+             * emit: false
+             *
+             * el item solo se conserva en parsedGroups
+             * para cálculos posteriores.
+             */
+
+            if (
+              group.emit !== false
+            ) {
+              changes.push({
+                key:
+                  group.field,
+
+                operation:
+                  group.operation,
+
+                value,
+
+                node
+              });
+            }
           });
         });
+
 
         parsedGroups.set(
           group.selector,
@@ -974,16 +988,20 @@
        * TOTALES
        * =====================================================
        *
-       * Puede configurarse uno:
+       * Puede configurarse:
        *
        * total: {...}
        *
-       * o varios:
+       * o:
        *
-       * totals: [{...}, {...}]
+       * totals: [
+       *   {...},
+       *   {...}
+       * ]
        */
 
       let totals = [];
+
 
       if (
         Array.isArray(
@@ -992,6 +1010,7 @@
       ) {
         totals =
           options.totals;
+
       } else if (
         options.total
       ) {
@@ -1009,20 +1028,21 @@
           return;
         }
 
+
         const entries =
           parsedGroups.get(
             total.from
           ) || [];
 
+
         /*
          * Por defecto:
          *
          * cantidad × precio
-         *
-         * También puede proporcionarse
-         * total.calculate().
          */
+
         let value = 0;
+
 
         if (
           typeof total.calculate ===
@@ -1033,6 +1053,7 @@
               entries,
               options
             });
+
         } else {
           value =
             entries.reduce(
@@ -1044,12 +1065,14 @@
                     ]
                   ) || 0;
 
+
                 const price =
                   Number(
                     entry.value[
                       outputNames.price
                     ]
                   ) || 0;
+
 
                 return (
                   sum +
@@ -1060,18 +1083,27 @@
             );
         }
 
+
         /*
-         * Si quieres permitir total 0
-         * puede ponerse:
+         * Por defecto ignoramos totales 0.
+         *
+         * Para permitirlos:
          *
          * includeZero: true
          */
+
         if (
           value === 0 &&
           !total.includeZero
         ) {
           return;
         }
+
+
+        /*
+         * Esta es la única directiva que se genera
+         * para un grupo con emit: false.
+         */
 
         changes.push({
           key:
@@ -1110,4 +1142,5 @@
 
     readers
   };
+
 })();
