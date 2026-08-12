@@ -1,13 +1,6 @@
 /*!
  * PixieShopOutput.js
  * Generación de mensajes para PixieShop.
- * Tipos:
- * - message
- * - collection
- * - component
- * - group
- * - template
- * - custom
  */
 
 (function (window) {
