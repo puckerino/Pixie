@@ -283,30 +283,47 @@ function getDisplay(wrapper) {
     };
   }
 
-  function getIframe() {
-    let iframe = document.querySelector(
-      `iframe.${CONFIG.iframeClass}`
-    );
+function getIframe() {
+  let iframe = document.querySelector(
+    `iframe.${CONFIG.iframeClass}`
+  );
 
-    if (iframe) {
-      return iframe;
-    }
-
-    iframe =
-      document.createElement("iframe");
-
-    iframe.className =
-      CONFIG.iframeClass;
-
-    iframe.title =
-      "Pixie Profile";
-
-    iframe.hidden = true;
-
-    document.body.appendChild(iframe);
-
+  if (iframe) {
     return iframe;
   }
+
+  iframe =
+    document.createElement("iframe");
+
+  iframe.className =
+    CONFIG.iframeClass;
+
+  iframe.title =
+    "Pixie Profile";
+
+  /*
+   * IMPORTANTE:
+   *
+   * No usamos hidden/display:none.
+   * El perfil debe estar renderizado para que
+   * el JavaScript de Foroactivo pueda inicializar
+   * correctamente la edición AJAX.
+   */
+  iframe.style.position = "fixed";
+  iframe.style.left = "-10000px";
+  iframe.style.top = "0";
+  iframe.style.width = "1200px";
+  iframe.style.height = "900px";
+  iframe.style.opacity = "0";
+  iframe.style.pointerEvents = "none";
+  iframe.style.border = "0";
+
+  document.body.appendChild(
+    iframe
+  );
+
+  return iframe;
+}
 
   function loadIframe(iframe, url) {
     return new Promise(
