@@ -125,67 +125,63 @@
     return null;
   }
 
-  function getDisplay(wrapper) {
-    if (!wrapper) {
-      return {
-        html: "",
-        text: ""
-      };
-    }
-
-    /*
-     * 1. Foroactivo.
-     *
-     * Lo mantenemos como fuente preferente porque
-     * es el valor que participa en la edición AJAX.
-     */
-    const uneditable =
-      wrapper.querySelector(".field_uneditable");
-
-    if (uneditable) {
-      return {
-        html: uneditable.innerHTML.trim(),
-        text: uneditable.textContent.trim()
-      };
-    }
-
-    /*
-     * 2. Spectra.
-     *
-     * Si estamos leyendo una versión ya procesada
-     * por PixieFields/Spectra.
-     */
-    const valueElement =
-      wrapper.querySelector(".field-value");
-
-    if (valueElement) {
-      return {
-        html: valueElement.innerHTML.trim(),
-
-        text:
-          wrapper.getAttribute("data-value") ??
-          valueElement.textContent.trim()
-      };
-    }
-
-    /*
-     * 3. Último fallback: data-value.
-     */
-    if (wrapper.hasAttribute("data-value")) {
-      const value =
-        wrapper.getAttribute("data-value") || "";
-
-      return {
-        html: value,
-        text: value
-      };
-    }
-
+function getDisplay(wrapper) {
+  if (!wrapper) {
     return {
       html: "",
       text: ""
     };
   }
+
+  /*
+   * 1. Foroactivo.
+   */
+  const uneditable =
+    wrapper.matches?.(".field_uneditable")
+      ? wrapper
+      : wrapper.querySelector(".field_uneditable");
+
+  if (uneditable) {
+    return {
+      html: uneditable.innerHTML.trim(),
+      text: uneditable.textContent.trim()
+    };
+  }
+
+  /*
+   * 2. Foro.
+   */
+  const valueElement =
+    wrapper.querySelector(".field-value");
+
+  if (valueElement) {
+    return {
+      html: valueElement.innerHTML.trim(),
+
+      text:
+        wrapper.getAttribute("data-value") ??
+        valueElement.textContent.trim()
+    };
+  }
+
+  /*
+   * 3. data-value.
+   */
+  if (wrapper.hasAttribute("data-value")) {
+    const value =
+      wrapper.getAttribute("data-value") || "";
+
+    return {
+      html: value,
+      text: value
+    };
+  }
+
+  return {
+    html: "",
+    text: ""
+  };
+}
 
   function defaultRead(display, field) {
     if (field.type === "number") {
