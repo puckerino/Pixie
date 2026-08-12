@@ -14,7 +14,7 @@
   "use strict";
 
   const MODULE_NAME = "output";
-  const VERSION = "1.0.0";
+  const VERSION = "1.2.0";
 
   if (!window.PixieShop) {
     console.warn(
@@ -27,31 +27,37 @@
   const PixieShop = window.PixieShop;
   const { utils } = PixieShop;
 
-  const DEFAULT_MESSAGE = {
-    type: "message",
+const DEFAULT_MESSAGE = {
+  type: "message",
 
-    codeBlock: true,
-    codeOpen: "[code]",
-    codeClose: "[/code]",
+  codeBlock: true,
+  codeOpen: "[code]",
+  codeClose: "[/code]",
 
-    sections: {},
+  sections: {},
 
-    sectionJoiner: "\n",
-    entryJoiner: "\n",
+  sectionJoiner: "\n",
+  entryJoiner: "\n",
 
-    outsideFields: {
-      enabled: true,
-      title: "JUSTIFICANTES",
-      itemSeparator: "\n\n",
-      linePrefix: "— "
-    },
+  afterCode: {
+    enabled: false,
+    render: null
+  },
 
-    totals: [],
+  outsideFields: {
+    enabled: true,
+    title: "JUSTIFICANTES",
+    itemSeparator: "\n\n",
+    linePrefix: "— ",
+    renderItem: null
+  },
 
-    totalJoiner: "\n",
+  totals: [],
 
-    emptyMessage: ""
-  };
+  totalJoiner: "\n",
+
+  emptyMessage: ""
+};
 
   const DEFAULT_COLLECTION = {
     type: "collection",
@@ -979,6 +985,86 @@
       );
   }
 
+  function buildAfterCode(
+  definition,
+  context = {}
+) {
+  const config = utils.deepMerge(
+    {},
+    DEFAULT_MESSAGE.afterCode,
+    definition || {}
+  );
+
+  if (!config.enabled) {
+    return "";
+  }
+
+  if (
+    typeof config.render !==
+    "function"
+  ) {
+    return "";
+  }
+
+  const rendered =
+    config.render({
+      sections:
+        context.sections || {},
+
+      totals:
+        context.totals || {},
+
+      config:
+        context.config || {},
+
+      shop:
+        context.shop,
+
+      getItem: (entry) => {
+        return getItem(
+          context,
+          entry
+        );
+      },
+
+      escapeAttribute,
+
+      escapeText,
+
+      resolve: (
+        source,
+        local = {}
+      ) => {
+        return resolveValue(
+          source,
+          {
+            ...context,
+            ...local
+          }
+        );
+      },
+
+      component: (
+        definition,
+        local = {}
+      ) => {
+        return renderComponent(
+          definition,
+          {
+            ...context,
+            ...local
+          }
+        );
+      },
+
+      utils
+    });
+
+  return rendered
+    ? String(rendered)
+    : "";
+}
+
   /*
    * Campos externos
    */
@@ -1003,6 +1089,9 @@ function buildOutsideFields(
     context.sections || {}
   ).forEach(
     ([sectionName, entries]) => {
+    if (!Array.isArray(entries)) {
+      return;
+    }
       const sectionConfig =
         context.config
           ?.sections?.[sectionName] ||
@@ -1343,21 +1432,28 @@ function buildOutsideFields(
         : mainContent;
     }
 
-    const outsideFields =
-      buildOutsideFields(
-        config.outsideFields,
-        context
-      );
+const afterCode =
+  buildAfterCode(
+    config.afterCode,
+    context
+  );
 
-    const totals = buildTotals(
-      config.totals,
-      context
-    );
+const outsideFields =
+  buildOutsideFields(
+    config.outsideFields,
+    context
+  );
 
-    const externalBlocks = [
-      outsideFields,
-      totals
-    ].filter(Boolean);
+const totals = buildTotals(
+  config.totals,
+  context
+);
+
+const externalBlocks = [
+  afterCode,
+  outsideFields,
+  totals
+].filter(Boolean);
 
     if (externalBlocks.length) {
       message +=
@@ -1789,6 +1885,8 @@ function buildOutsideFields(
     renderTemplate,
 
     buildOutsideFields,
+
+    buildAfterCode,
 
     buildTotals,
 
