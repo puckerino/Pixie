@@ -799,10 +799,10 @@ const DEFAULT_MESSAGE = {
       ...(config.wrapperAttrs || {})
     };
 
-    if (config.wrapperClass) {
-      wrapperAttributes.class =
-        config.wrapperClass;
-    }
+if (config.wrapperClass) {
+  wrapperAttributes.class =
+    () => config.wrapperClass;
+}
 
     const attributes =
       buildAttributes(
