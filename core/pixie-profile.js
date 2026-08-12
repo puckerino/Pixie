@@ -419,178 +419,392 @@ function getDisplay(wrapper) {
     return true;
   }
 
-  function saveField(
-    doc,
-    field,
-    value
-  ) {
-    return new Promise(resolve => {
-      const wrapper =
-        findFieldWrapper(
-          doc,
-          field
-        );
+  function triggerEditDiscovery(wrapper) {
+  /*
+   * Foroactivo genera el control .ajax-profil_edit
+   * dinámicamente al interactuar con un campo
+   * .ajax-profil_parent.
+   *
+   * Simulamos esa interacción.
+   */
 
-      const label =
-        field.label ||
-        field.key;
+  const targets = [
+    wrapper,
+    wrapper.querySelector(".field_uneditable")
+  ].filter(Boolean);
 
-      if (!wrapper) {
-        resolve({
-          ok: false,
-          key: field.key,
-          message:
-            `${label}: campo no encontrado`
-        });
+  targets.forEach(target => {
+    target.dispatchEvent(
+      new MouseEvent("mouseover", {
+        bubbles: true,
+        cancelable: true,
+        view: window
+      })
+    );
 
-        return;
-      }
+    target.dispatchEvent(
+      new MouseEvent("mouseenter", {
+        bubbles: true,
+        cancelable: true,
+        view: window
+      })
+    );
 
-      const editButton =
-        wrapper.querySelector(
-          ".ajax-profil_edit"
-        );
+    target.dispatchEvent(
+      new MouseEvent("mousemove", {
+        bubbles: true,
+        cancelable: true,
+        view: window
+      })
+    );
+  });
+}
 
-      if (!editButton) {
-        resolve({
-          ok: false,
-          key: field.key,
-          message:
-            `${label}: botón de edición no encontrado`
-        });
+function saveField(
+  doc,
+  field,
+  value
+) {
+  return new Promise(resolve => {
+    const wrapper =
+      findFieldWrapper(
+        doc,
+        field
+      );
 
-        return;
-      }
+    const label =
+      field.label ||
+      field.key;
 
-      editButton.click();
 
-      let elapsed = 0;
+    /*
+     * ============================================
+     * CAMPO NO ENCONTRADO
+     * ============================================
+     */
 
-      const timer = setInterval(() => {
-        elapsed += CONFIG.pollMs;
+    if (!wrapper) {
+      resolve({
+        ok: false,
+        key: field.key,
+        message:
+          `${label}: campo no encontrado`
+      });
+
+      return;
+    }
+
+
+    /*
+     * ============================================
+     * ESPERAR AL MODO EDICIÓN
+     * ============================================
+     *
+     * Foroactivo no mantiene necesariamente
+     * .ajax-profil_edit dentro del HTML.
+     *
+     * Puede generarlo dinámicamente al interactuar
+     * con .ajax-profil_parent.
+     */
+
+    let elapsed = 0;
+    let editClicked = false;
+
+
+    const editTimer =
+      setInterval(() => {
+        elapsed +=
+          CONFIG.pollMs;
+
 
         const editable =
           wrapper.querySelector(
             ".field_editable"
           );
 
+
         const validButton =
           wrapper.querySelector(
             ".ajax-profil_valid"
           );
 
+
+        /*
+         * ========================================
+         * YA ESTAMOS EN MODO EDICIÓN
+         * ========================================
+         *
+         * Esto también cubre el caso en el que
+         * alguien hubiese pulsado editar antes.
+         */
+
         if (
           editable &&
-          validButton
+          validButton &&
+          !editable.classList.contains(
+            "invisible"
+          )
         ) {
-          clearInterval(timer);
-
-          const filled =
-            fillEditable(
-              editable,
-              value,
-              field
-            );
-
-          if (!filled) {
-            resolve({
-              ok: false,
-              key: field.key,
-              message:
-                `${label}: no se pudo rellenar`
-            });
-
-            return;
-          }
-
-          let finished = false;
-
-          const observer =
-            new MutationObserver(() => {
-              const valid =
-                wrapper.querySelector(
-                  ".ajax-profil_valid"
-                );
-
-              const visibleEditable =
-                wrapper.querySelector(
-                  ".field_editable:not(.invisible)"
-                );
-
-              if (
-                !valid ||
-                !visibleEditable
-              ) {
-                if (finished) return;
-
-                finished = true;
-
-                observer.disconnect();
-
-                resolve({
-                  ok: true,
-                  key: field.key,
-                  value,
-                  message:
-                    `${label}: guardado ✓`
-                });
-              }
-            });
-
-          observer.observe(
-            wrapper,
-            {
-              childList: true,
-              subtree: true,
-              attributes: true,
-              characterData: true
-            }
+          clearInterval(
+            editTimer
           );
 
-          validButton.click();
-
-          setTimeout(() => {
-            if (finished) return;
-
-            finished = true;
-
-            observer.disconnect();
-
-            const stillEditing =
-              wrapper.querySelector(
-                ".field_editable:not(.invisible)"
-              );
-
-            resolve({
-              ok: !stillEditing,
-              key: field.key,
-              value,
-
-              message: stillEditing
-                ? `${label}: no se confirmó el guardado`
-                : `${label}: guardado ✓`
-            });
-          }, CONFIG.saveTimeoutMs);
+          continueSave(
+            editable,
+            validButton
+          );
 
           return;
         }
+
+
+        /*
+         * ========================================
+         * BUSCAR BOTÓN EDITAR
+         * ========================================
+         */
+
+        const editButton =
+          wrapper.querySelector(
+            ".ajax-profil_edit"
+          );
+
+
+        if (
+          editButton &&
+          !editClicked
+        ) {
+          editClicked = true;
+
+          editButton.click();
+
+          return;
+        }
+
+
+        /*
+         * ========================================
+         * FORZAR DETECCIÓN POR FOROACTIVO
+         * ========================================
+         *
+         * Si todavía no existe .ajax-profil_edit,
+         * simulamos interacción con el campo.
+         */
+
+        if (!editButton) {
+          triggerEditDiscovery(
+            wrapper
+          );
+        }
+
+
+        /*
+         * ========================================
+         * TIMEOUT
+         * ========================================
+         */
 
         if (
           elapsed >=
           CONFIG.waitForEditableMs
         ) {
-          clearInterval(timer);
+          clearInterval(
+            editTimer
+          );
 
           resolve({
             ok: false,
             key: field.key,
             message:
-              `${label}: no apareció el editor`
+              `${label}: no se pudo activar la edición`
           });
         }
+
       }, CONFIG.pollMs);
-    });
-  }
+
+
+    /*
+     * ============================================
+     * RELLENAR Y GUARDAR
+     * ============================================
+     */
+
+    function continueSave(
+      editable,
+      validButton
+    ) {
+      const filled =
+        fillEditable(
+          editable,
+          value,
+          field
+        );
+
+
+      if (!filled) {
+        resolve({
+          ok: false,
+          key: field.key,
+          message:
+            `${label}: no se pudo rellenar`
+        });
+
+        return;
+      }
+
+
+      /*
+       * Guardamos el valor visible anterior
+       * para poder comprobar si cambió.
+       */
+
+      const oldDisplay =
+        getDisplay(
+          wrapper
+        );
+
+
+      let finished =
+        false;
+
+
+      /*
+       * ========================================
+       * OBSERVAR GUARDADO
+       * ========================================
+       */
+
+      const observer =
+        new MutationObserver(() => {
+          if (finished) {
+            return;
+          }
+
+
+          const validNow =
+            wrapper.querySelector(
+              ".ajax-profil_valid"
+            );
+
+
+          const editableNow =
+            wrapper.querySelector(
+              ".field_editable:not(.invisible)"
+            );
+
+
+          const newDisplay =
+            getDisplay(
+              wrapper
+            );
+
+
+          const changed =
+            newDisplay.html !==
+              oldDisplay.html ||
+            newDisplay.text !==
+              oldDisplay.text;
+
+
+          /*
+           * Foroactivo normalmente:
+           *
+           * - oculta .field_editable
+           * - vuelve a mostrar .field_uneditable
+           * - elimina .ajax-profil_valid
+           *
+           * Cualquiera de estas señales nos sirve.
+           */
+
+          if (
+            !validNow ||
+            !editableNow ||
+            changed
+          ) {
+            finished = true;
+
+            observer.disconnect();
+
+            resolve({
+              ok: true,
+              key: field.key,
+              value,
+              message:
+                `${label}: guardado ✓`
+            });
+          }
+        });
+
+
+      observer.observe(
+        wrapper,
+        {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          characterData: true
+        }
+      );
+
+
+      /*
+       * ========================================
+       * VALIDAR
+       * ========================================
+       */
+
+      validButton.click();
+
+
+      /*
+       * ========================================
+       * FALLBACK DE CONFIRMACIÓN
+       * ========================================
+       */
+
+      setTimeout(() => {
+        if (finished) {
+          return;
+        }
+
+
+        finished = true;
+
+        observer.disconnect();
+
+
+        const editableNow =
+          wrapper.querySelector(
+            ".field_editable:not(.invisible)"
+          );
+
+
+        const validNow =
+          wrapper.querySelector(
+            ".ajax-profil_valid"
+          );
+
+
+        const saved =
+          !editableNow ||
+          !validNow;
+
+
+        resolve({
+          ok: saved,
+          key: field.key,
+          value,
+
+          message:
+            saved
+              ? `${label}: guardado ✓`
+              : `${label}: no se confirmó el guardado`
+        });
+
+      }, CONFIG.saveTimeoutMs);
+    }
+  });
+}
 
   async function updateProfile(
     profile,
