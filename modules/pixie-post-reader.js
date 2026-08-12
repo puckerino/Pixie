@@ -1,67 +1,43 @@
 /*!
  * PixiePostReader.js
- * Carga posts de Foroactivo y extrae instrucciones.
+ * Lector genérico y configurable de posts para Foroactivo.
  */
 
 (function () {
   "use strict";
 
+  /*
+   * =========================================================
+   * CONFIGURACIÓN BASE
+   * =========================================================
+   *
+   * Son valores razonables por defecto, pero cada foro puede
+   * sustituirlos mediante PixiePostReader.configure().
+   */
+
   const CONFIG = {
-    /*
-     * POST
-     *
-     * Ejemplo:
-     * <article id="p69" class="post">
-     */
-    postRootSelector: "article.post",
-    postIdPrefix: "p",
+    post: {
+      rootSelector: "article.post",
+      idPrefix: "p",
+      permalinkSelector: ".permalink[id]"
+    },
 
-    /*
-     * Fallback para localizar el post mediante
-     * el permalink interno.
-     *
-     * Ejemplo:
-     * <a class="permalink" id="69">
-     */
-    postPermalinkSelector: ".permalink[id]",
+    content: {
+      codeSelector: ".content.message dl.codebox code"
+    },
 
-    /*
-     * CODEBOX
-     *
-     * En Spectra:
-     *
-     * <article class="content message">
-     *   <dl class="codebox">
-     *     <code>...</code>
-     *   </dl>
-     * </article>
-     */
-    postCodeSelector:
-      ".content.message dl.codebox code",
+    profile: {
+      linkSelectors: [
+        'a[href^="/u"]'
+      ],
 
-    /*
-     * PERFIL DEL AUTOR
-     *
-     * Todos estos selectores se buscan
-     * dentro del post concreto.
-     */
-    profileLinkSelectors: [
-      'aside.profile .username a[href^="/u"]',
-      'aside.profile .avatar-post a[href^="/u"]',
-      'aside.profile .avatar-post-mobile a[href^="/u"]',
-      'aside.profile .contact a[href^="/u"]',
-      'aside.profile a[href^="/u"]'
-    ],
-
-    profilePattern: /\/u\d+/i
+      pattern: /\/u\d+/i
+    }
   };
 
+
   /*
-   * Readers registrados.
-   *
-   * Esto permite que distintos paneles
-   * interpreten el contenido del post
-   * de formas diferentes.
+   * Readers disponibles.
    */
   const readers = new Map();
 
@@ -71,6 +47,66 @@
    * UTILIDADES
    * =========================================================
    */
+
+  function isPlainObject(value) {
+    return (
+      value !== null &&
+      typeof value === "object" &&
+      !Array.isArray(value)
+    );
+  }
+
+
+  /*
+   * Merge profundo sencillo.
+   *
+   * Nos permite hacer:
+   *
+   * PixiePostReader.configure({
+   *   profile: {
+   *     linkSelectors: [...]
+   *   }
+   * });
+   *
+   * sin borrar post/content.
+   */
+  function mergeConfig(target, source) {
+    Object.entries(source || {}).forEach(
+      ([key, value]) => {
+        if (
+          isPlainObject(value) &&
+          isPlainObject(target[key])
+        ) {
+          mergeConfig(
+            target[key],
+            value
+          );
+
+          return;
+        }
+
+        target[key] = value;
+      }
+    );
+
+    return target;
+  }
+
+
+  function configure(options = {}) {
+    mergeConfig(
+      CONFIG,
+      options
+    );
+
+    return CONFIG;
+  }
+
+
+  function getConfig() {
+    return CONFIG;
+  }
+
 
   function isFullURL(value) {
     try {
@@ -82,42 +118,39 @@
   }
 
 
-  /*
-   * Convierte:
-   *
-   * 69
-   *
-   * en:
-   *
-   * /viewtopic?p=69
-   *
-   * También acepta URLs completas o URLs de tema.
-   */
   function buildPostURL(value) {
-    value = String(value || "").trim();
+    value =
+      String(value || "").trim();
 
     if (!value) {
       return null;
     }
 
+    /*
+     * URL absoluta.
+     */
     if (isFullURL(value)) {
       return value;
     }
 
     /*
-     * Solo número.
+     * Número de post.
+     *
+     * 69
+     *
+     * →
+     *
+     * /viewtopic?p=69
      */
     if (/^\d+$/.test(value)) {
       return `/viewtopic?p=${encodeURIComponent(value)}`;
     }
 
     /*
-     * Ruta de tema o URL con hash.
+     * URL/ruta de tema.
      *
-     * Ejemplos:
-     *
-     * /t23-test#69
-     * t23-test#69
+     * /t23-tema#69
+     * t23-tema#69
      */
     if (
       /^\/?t\d+/i.test(value) ||
@@ -129,17 +162,17 @@
     }
 
     /*
-     * Último fallback:
-     * intentamos tratarlo como ID de post.
+     * Último fallback.
      */
     return `/viewtopic?p=${encodeURIComponent(value)}`;
   }
 
 
   async function fetchHTML(url) {
-    const response = await fetch(url, {
-      credentials: "include"
-    });
+    const response =
+      await fetch(url, {
+        credentials: "include"
+      });
 
     if (!response.ok) {
       throw new Error(
@@ -151,15 +184,6 @@
   }
 
 
-  /*
-   * Convierte HTML escapado:
-   *
-   * &lt;div&gt;
-   *
-   * en:
-   *
-   * <div>
-   */
   function decodeHTML(value) {
     const textarea =
       document.createElement("textarea");
@@ -171,10 +195,6 @@
   }
 
 
-  /*
-   * Convierte el contenido escapado de un
-   * codebox en nodos DOM reales.
-   */
   function escapedToDOM(value) {
     const container =
       document.createElement("div");
@@ -188,22 +208,22 @@
 
   /*
    * =========================================================
-   * IDENTIFICAR EL POST SOLICITADO
+   * IDENTIFICACIÓN DEL POST
    * =========================================================
    */
 
-  function getRequestedPostId(raw, url) {
-    /*
-     * Intentamos obtener primero el ID
-     * desde la URL resuelta.
-     */
+  function getRequestedPostId(
+    raw,
+    url
+  ) {
     try {
       const resolved =
-        new URL(url, location.href);
+        new URL(
+          url,
+          location.href
+        );
 
       /*
-       * Ejemplos:
-       *
        * #69
        * #p69
        */
@@ -230,11 +250,11 @@
         return postParam;
       }
     } catch {
-      // seguimos con los fallbacks
+      // continuamos
     }
 
     /*
-     * Si el usuario escribió directamente:
+     * Si el usuario escribió:
      *
      * 69
      */
@@ -246,59 +266,87 @@
   }
 
 
-  /*
-   * Busca el post exacto dentro del documento.
-   */
-  function findPost(doc, id) {
-    if (id) {
-      /*
-       * Opción principal:
-       *
-       * <article id="p69" class="post">
-       */
-      const byPostId =
+  function findPost(
+    doc,
+    id
+  ) {
+    const postConfig =
+      CONFIG.post || {};
+
+    /*
+     * Opción principal:
+     *
+     * prefix + ID
+     *
+     * Ej:
+     *
+     * p + 69
+     * →
+     * #p69
+     */
+    if (
+      id &&
+      postConfig.idPrefix
+    ) {
+      const byId =
         doc.getElementById(
-          CONFIG.postIdPrefix + id
+          postConfig.idPrefix + id
         );
 
-      if (byPostId) {
+      if (byId) {
         return (
-          byPostId.closest(
-            CONFIG.postRootSelector
-          ) ||
-          byPostId
-        );
-      }
-
-      /*
-       * Fallback Spectra:
-       *
-       * <a class="permalink" id="69">
-       */
-      const byPermalink =
-        doc.querySelector(
-          `${CONFIG.postPermalinkSelector}#${CSS.escape(id)}`
-        );
-
-      if (byPermalink) {
-        return (
-          byPermalink.closest(
-            CONFIG.postRootSelector
-          ) ||
-          byPermalink
+          byId.matches?.(
+            postConfig.rootSelector
+          )
+            ? byId
+            : (
+                byId.closest(
+                  postConfig.rootSelector
+                ) ||
+                byId
+              )
         );
       }
     }
 
     /*
-     * Último fallback.
-     *
-     * Esto solo debería utilizarse si no hemos
-     * podido determinar el ID solicitado.
+     * Segundo sistema:
+     * permalink con ID.
      */
-    return doc.querySelector(
-      CONFIG.postRootSelector
-    );
+    if (
+      id &&
+      postConfig.permalinkSelector
+    ) {
+      const selector =
+        `${postConfig.permalinkSelector}#${CSS.escape(id)}`;
+
+      const permalink =
+        doc.querySelector(
+          selector
+        );
+
+      if (permalink) {
+        return (
+          permalink.closest(
+            postConfig.rootSelector
+          ) ||
+          permalink
+        );
+      }
+    }
+
+    /*
+     * Fallback.
+     */
+    if (
+      postConfig.rootSelector
+    ) {
+      return doc.querySelector(
+        postConfig.rootSelector
+      );
+    }
+
+    return null;
   }
 
 
@@ -313,15 +361,33 @@
       return "";
     }
 
+    const profileConfig =
+      CONFIG.profile || {};
+
+    const selectors =
+      Array.isArray(
+        profileConfig.linkSelectors
+      )
+        ? profileConfig.linkSelectors
+        : [];
+
+    const pattern =
+      profileConfig.pattern ||
+      /\/u\d+/i;
+
     for (
       const selector
-      of CONFIG.profileLinkSelectors
+      of selectors
     ) {
       const anchor =
-        post.querySelector(selector);
+        post.querySelector(
+          selector
+        );
 
       const href =
-        anchor?.getAttribute("href");
+        anchor?.getAttribute(
+          "href"
+        );
 
       if (!href) {
         continue;
@@ -336,14 +402,14 @@
 
         const match =
           url.pathname.match(
-            CONFIG.profilePattern
+            pattern
           );
 
         if (match) {
           return match[0];
         }
       } catch {
-        // probamos el siguiente selector
+        // probamos siguiente selector
       }
     }
 
@@ -353,18 +419,10 @@
 
   /*
    * =========================================================
-   * CODEBOX
+   * CONTENIDO DEL POST
    * =========================================================
    */
 
-  /*
-   * Reúne todos los codebox del post en
-   * un único contenedor DOM.
-   *
-   * Esto mantiene el comportamiento del panel
-   * antiguo: si hay varios bloques de código,
-   * todos se interpretan juntos.
-   */
   function collectCodeboxes(post) {
     const container =
       document.createElement("div");
@@ -373,18 +431,24 @@
       return container;
     }
 
+    const selector =
+      CONFIG.content?.codeSelector;
+
+    if (!selector) {
+      return container;
+    }
+
     const codes =
       Array.from(
         post.querySelectorAll(
-          CONFIG.postCodeSelector
+          selector
         )
       );
 
     codes.forEach(code => {
       /*
-       * Usamos innerHTML porque Foroactivo
-       * suele devolver las etiquetas escapadas
-       * dentro del <code>.
+       * Foroactivo suele escapar las etiquetas
+       * dentro del codebox.
        */
       const source =
         code.innerHTML ||
@@ -394,7 +458,9 @@
       const fragment =
         escapedToDOM(source);
 
-      while (fragment.firstChild) {
+      while (
+        fragment.firstChild
+      ) {
         container.appendChild(
           fragment.firstChild
         );
@@ -476,7 +542,10 @@
    * =========================================================
    */
 
-  function registerReader(name, callback) {
+  function registerReader(
+    name,
+    callback
+  ) {
     if (!name) {
       throw new Error(
         "El reader necesita un nombre."
@@ -527,90 +596,93 @@
 
   /*
    * =========================================================
-   * READER GENÉRICO DE CAMPOS
+   * READER: FIELDS
    * =========================================================
    *
-   * Permite usar en un codebox:
+   * Para modificaciones directas de campos.
+   *
+   * Por defecto entiende:
    *
    * <x-profile
-   *   field="dinero"
+   *   field="money"
    *   operation="add"
    *   value="100">
    * </x-profile>
    *
-   *
-   * También acepta versión en español:
-   *
-   * <x-profile
-   *   campo="dinero"
-   *   operacion="sumar"
-   *   cantidad="100">
-   * </x-profile>
-   *
-   *
-   * Operaciones admitidas:
-   *
-   * add / sumar
-   * subtract / restar
-   * overwrite / sobreescribir
+   * Pero también es configurable.
    */
 
   registerReader(
     "fields",
-    ({ content }) => {
+    (
+      { content },
+      options = {}
+    ) => {
+      const selector =
+        options.selector ||
+        "x-profile";
+
+      const attributes = {
+        field:
+          options.attributes?.field ||
+          "field",
+
+        operation:
+          options.attributes?.operation ||
+          "operation",
+
+        value:
+          options.attributes?.value ||
+          "value"
+      };
+
+      const aliases = {
+        sumar: "add",
+        restar: "subtract",
+        sobreescribir:
+          "overwrite",
+
+        ...(options.operationAliases || {})
+      };
+
       return Array.from(
         content.querySelectorAll(
-          "x-profile"
+          selector
         )
       )
         .map(node => {
           const key =
             (
-              node.getAttribute("field") ||
-              node.getAttribute("campo") ||
+              node.getAttribute(
+                attributes.field
+              ) ||
               ""
             ).trim();
 
           let operation =
             (
               node.getAttribute(
-                "operation"
+                attributes.operation
               ) ||
-              node.getAttribute(
-                "operacion"
-              ) ||
+              options.defaultOperation ||
               "overwrite"
             )
               .trim()
               .toLowerCase();
 
-          /*
-           * Alias en español.
-           */
-          const aliases = {
-            sumar: "add",
-            restar: "subtract",
-            sobreescribir:
-              "overwrite"
-          };
-
           operation =
             aliases[operation] ||
             operation;
 
-          /*
-           * El valor puede venir de:
-           *
-           * value=""
-           * valor=""
-           * cantidad=""
-           * contenido del nodo
-           */
+          const attrValue =
+            node.getAttribute(
+              attributes.value
+            );
+
           const value =
-            node.getAttribute("value") ??
-            node.getAttribute("valor") ??
-            node.getAttribute("cantidad") ??
-            node.textContent.trim();
+            attrValue !== null
+              ? attrValue
+              : node.textContent.trim();
 
           return {
             key,
@@ -620,8 +692,8 @@
           };
         })
         .filter(
-          change =>
-            change.key
+          directive =>
+            directive.key
         );
     }
   );
@@ -629,155 +701,390 @@
 
   /*
    * =========================================================
-   * READER DE INVENTARIO
+   * READER: ITEMS
    * =========================================================
    *
-   * NOTA:
+   * Reader genérico para listas de objetos.
    *
-   * Este reader todavía conserva el formato
-   * legacy del panel antiguo:
+   * Pixie no sabe si representan:
    *
-   * .comprado
-   * .usado
-   * <x-inv>
+   * - inventario
+   * - premios
+   * - ingredientes
+   * - objetos
+   * - equipo
    *
-   * Lo adaptaremos después al formato actual
-   * de las Shops de Spectra:
-   *
-   * .compras
-   * .retiradas
-   * <s-item>
-   *
-   * El motor base no depende de ese cambio.
+   * El panel decide qué son.
    */
 
-
-  function parseInventoryNodes(root) {
-    if (!root) {
-      return [];
-    }
-
-    return Array.from(
-      root.querySelectorAll(
-        "x-inv"
-      )
-    )
-      .map(node => ({
-        item:
-          (
-            node.getAttribute("item") ||
-            ""
-          ).trim(),
-
-        cantidad:
-          parseInt(
-            node.getAttribute(
-              "cantidad"
-            ) || "0",
-            10
-          ) || 0,
-
-        precio:
-          parseInt(
-            node.getAttribute(
-              "precio"
-            ) || "0",
-            10
-          ) || 0,
-
-        descripcion:
-          (
-            node.getAttribute(
-              "descripcion"
-            ) || ""
-          ).trim()
-      }))
-      .filter(
-        item =>
-          item.item &&
-          item.cantidad
-      );
-  }
-
-
   registerReader(
-    "inventory",
+    "items",
     (
       { content },
       options = {}
     ) => {
-      const inventoryKey =
-        options.inventoryKey ||
-        "inventory";
+      const itemSelector =
+        options.itemSelector;
 
-      const spentKey =
-        options.spentKey ||
-        "spent";
+      const groups =
+        Array.isArray(
+          options.groups
+        )
+          ? options.groups
+          : [];
 
-      const bought =
-        parseInventoryNodes(
-          content.querySelector(
-            options.boughtSelector ||
-            ".comprado"
-          )
+      const attributes =
+        options.attributes ||
+        {};
+
+      if (!itemSelector) {
+        throw new Error(
+          'El reader "items" necesita options.itemSelector.'
         );
+      }
 
-      const used =
-        parseInventoryNodes(
-          content.querySelector(
-            options.usedSelector ||
-            ".usado"
-          )
-        );
+      /*
+       * Nombres reales de atributos
+       * utilizados por el foro.
+       */
+      const itemAttribute =
+        attributes.item ||
+        "item";
+
+      const quantityAttribute =
+        attributes.quantity ||
+        "cantidad";
+
+      const priceAttribute =
+        attributes.price ||
+        null;
+
+      /*
+       * Nombre interno que tendrá cada dato.
+       *
+       * Podemos personalizar también esto si
+       * en algún caso lo necesitamos.
+       */
+      const outputNames = {
+        item:
+          options.output?.item ||
+          "item",
+
+        quantity:
+          options.output?.quantity ||
+          "cantidad",
+
+        price:
+          options.output?.price ||
+          "precio"
+      };
+
+      /*
+       * Atributos extra.
+       *
+       * Puede ser:
+       *
+       * ["bonus", "descripcion"]
+       *
+       * o:
+       *
+       * {
+       *   effect: "bonus",
+       *   description: "descripcion"
+       * }
+       */
+      const extra =
+        attributes.extra ||
+        [];
 
       const changes = [];
 
       /*
-       * Compras → sumar inventario.
+       * Guardamos los elementos procesados
+       * para poder calcular totales después.
        */
-      bought.forEach(item => {
-        changes.push({
-          key: inventoryKey,
-          operation: "add",
-          value: item
-        });
-      });
+      const parsedGroups =
+        new Map();
 
-      /*
-       * Usados/retirados → restar inventario.
-       */
-      used.forEach(item => {
-        changes.push({
-          key: inventoryKey,
-          operation: "subtract",
-          value: item
-        });
-      });
 
-      /*
-       * Total gastado.
-       */
-      const total =
-        bought.reduce(
-          (sum, item) =>
-            sum +
-            (
-              item.cantidad *
-              item.precio
-            ),
-          0
+      function readExtraAttributes(
+        node,
+        value
+      ) {
+        /*
+         * Array:
+         *
+         * ["bonus", "descripcion"]
+         */
+        if (Array.isArray(extra)) {
+          extra.forEach(
+            attribute => {
+              value[attribute] =
+                (
+                  node.getAttribute(
+                    attribute
+                  ) ||
+                  ""
+                ).trim();
+            }
+          );
+
+          return;
+        }
+
+        /*
+         * Objeto:
+         *
+         * {
+         *   effect: "bonus"
+         * }
+         *
+         * Produce:
+         *
+         * {
+         *   effect: "..."
+         * }
+         */
+        if (isPlainObject(extra)) {
+          Object.entries(
+            extra
+          ).forEach(
+            ([output, attribute]) => {
+              value[output] =
+                (
+                  node.getAttribute(
+                    attribute
+                  ) ||
+                  ""
+                ).trim();
+            }
+          );
+        }
+      }
+
+
+      groups.forEach(group => {
+        if (
+          !group.selector ||
+          !group.field ||
+          !group.operation
+        ) {
+          return;
+        }
+
+        /*
+         * Puede haber más de un grupo con
+         * el mismo selector dentro del codebox,
+         * así que usamos querySelectorAll.
+         */
+        const roots =
+          Array.from(
+            content.querySelectorAll(
+              group.selector
+            )
+          );
+
+        const items = [];
+
+        roots.forEach(root => {
+          Array.from(
+            root.querySelectorAll(
+              itemSelector
+            )
+          ).forEach(node => {
+            const item =
+              (
+                node.getAttribute(
+                  itemAttribute
+                ) ||
+                ""
+              ).trim();
+
+            const quantity =
+              parseFloat(
+                node.getAttribute(
+                  quantityAttribute
+                ) || "0"
+              ) || 0;
+
+            if (
+              !item ||
+              quantity <= 0
+            ) {
+              return;
+            }
+
+            const value = {
+              [outputNames.item]:
+                item,
+
+              [outputNames.quantity]:
+                quantity
+            };
+
+            /*
+             * Precio opcional.
+             */
+            if (priceAttribute) {
+              value[
+                outputNames.price
+              ] =
+                parseFloat(
+                  node.getAttribute(
+                    priceAttribute
+                  ) || "0"
+                ) || 0;
+            }
+
+            readExtraAttributes(
+              node,
+              value
+            );
+
+            const entry = {
+              node,
+              value,
+              group
+            };
+
+            items.push(entry);
+
+            changes.push({
+              key:
+                group.field,
+
+              operation:
+                group.operation,
+
+              value,
+              node
+            });
+          });
+        });
+
+        parsedGroups.set(
+          group.selector,
+          items
         );
+      });
+
+
+      /*
+       * =====================================================
+       * TOTALES
+       * =====================================================
+       *
+       * Puede configurarse uno:
+       *
+       * total: {...}
+       *
+       * o varios:
+       *
+       * totals: [{...}, {...}]
+       */
+
+      let totals = [];
 
       if (
-        spentKey &&
-        total
+        Array.isArray(
+          options.totals
+        )
       ) {
-        changes.push({
-          key: spentKey,
-          operation: "add",
-          value: total
-        });
+        totals =
+          options.totals;
+      } else if (
+        options.total
+      ) {
+        totals = [
+          options.total
+        ];
       }
+
+
+      totals.forEach(total => {
+        if (
+          !total?.field ||
+          !total?.from
+        ) {
+          return;
+        }
+
+        const entries =
+          parsedGroups.get(
+            total.from
+          ) || [];
+
+        /*
+         * Por defecto:
+         *
+         * cantidad × precio
+         *
+         * También puede proporcionarse
+         * total.calculate().
+         */
+        let value = 0;
+
+        if (
+          typeof total.calculate ===
+          "function"
+        ) {
+          value =
+            total.calculate({
+              entries,
+              options
+            });
+        } else {
+          value =
+            entries.reduce(
+              (sum, entry) => {
+                const quantity =
+                  Number(
+                    entry.value[
+                      outputNames.quantity
+                    ]
+                  ) || 0;
+
+                const price =
+                  Number(
+                    entry.value[
+                      outputNames.price
+                    ]
+                  ) || 0;
+
+                return (
+                  sum +
+                  quantity * price
+                );
+              },
+              0
+            );
+        }
+
+        /*
+         * Si quieres permitir total 0
+         * puede ponerse:
+         *
+         * includeZero: true
+         */
+        if (
+          value === 0 &&
+          !total.includeZero
+        ) {
+          return;
+        }
+
+        changes.push({
+          key:
+            total.field,
+
+          operation:
+            total.operation ||
+            "add",
+
+          value
+        });
+      });
+
 
       return changes;
     }
@@ -791,10 +1098,16 @@
    */
 
   window.PixiePostReader = {
+    configure,
+    getConfig,
+
     load,
     read,
+
     registerReader,
+
     buildPostURL,
+
     readers
   };
 })();
