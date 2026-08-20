@@ -131,7 +131,7 @@ input[type="checkbox"] {
 
     &:checked {
         background: var(--accent);
-        outline: 2px solid var(--input-border-strong);
+        outline: 2px solid var(--input-border-focus);
         color: var(--text);
 
         &::before {
@@ -218,7 +218,7 @@ textarea {
 
     &:focus {
         transition: all .3s ease-in-out;
-        outline: 2px solid var(--input-border-strong);
+        outline: 2px solid var(--input-border-focus);
         border: 1px solid var(--accent);
     }
 
@@ -246,7 +246,7 @@ select {
     &::picker(select) {
         appearance: base-select;
 
-        border: 1px solid var(--car-border);
+        border: 1px solid var(--border);
         border-radius: .5rem;
         corner-shape: squircle;
 
