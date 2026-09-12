@@ -1,954 +1,526 @@
-(() => {
-    const SUPABASE_URL =
-        "https://udnotovrosokbdahlqaf.supabase.co";
+window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
 
-    const SUPABASE_KEY =
-        "sb_publishable_OQcJe7XcKx0jGCzvUVbALw_isdQEDfo";
+    const SUPABASE_URL = "https://udnotovrosokbdahlqaf.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_OQcJe7XcKx0jGCzvUVbALw_isdQEDfo";
 
+    const FORM_SELECTOR = ".fa-generated-shop-form";
+    const INITIALIZED_ATTRIBUTE = "data-pixie-shop-initialized";
 
-    const forms =
-        document.querySelectorAll(
-            ".fa-generated-shop-form"
+    const getRecords = async (source) => {
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/${encodeURIComponent(source)}?select=*`,
+            {
+                headers: {
+                    apikey: SUPABASE_KEY,
+                    Authorization: `Bearer ${SUPABASE_KEY}`
+                }
+            }
         );
 
-
-    if (!forms.length) return;
-
-
-    const getFieldValue = (
-        record,
-        field
-    ) => {
-        return record?.[field] ?? "";
-    };
-
-
-    const setTemplateField = (
-        element,
-        value
-    ) => {
-        const attribute =
-            element.dataset.shopAttribute;
-
-        if (attribute) {
-            element.setAttribute(
-                attribute,
-                value ?? ""
-            );
-        } else {
-            element.textContent =
-                value ?? "";
+        if (!response.ok) {
+            throw new Error(`Supabase respondió con ${response.status}.`);
         }
+
+        const records = await response.json();
+
+        return records.filter(record => record.visible !== false);
     };
 
+    const getLabel = (record, mode) => {
+        if (mode === "toggle" && record.nombre) {
+            return record.nombre;
+        }
 
-    const renderRecord = (
-        template,
-        record
-    ) => {
-        const fragment =
-            template.content.cloneNode(
-                true
-            );
-
-
-        fragment
-            .querySelectorAll(
-                "[data-shop-field]"
-            )
-            .forEach(element => {
-                const field =
-                    element.dataset.shopField;
-
-                const value =
-                    getFieldValue(
-                        record,
-                        field
-                    );
-
-                setTemplateField(
-                    element,
-                    value
-                );
-            });
-
-
-        fragment
-            .querySelectorAll(
-                "[data-shop-action]"
-            )
-            .forEach(button => {
-                button.dataset.shopItemId =
-                    record.id;
-            });
-
-
-        return fragment;
+        return record.titulo || record.nombre || `Registro ${record.id}`;
     };
-
 
     const createEntry = ({
         personajeId,
         id,
         label,
-        cantidad = 1
+        cantidad = 1,
+        extra = ""
     }) => {
-        const entry =
-            document.createElement("div");
+        const entry = document.createElement("div");
+        entry.className = "fa-entry";
 
+        const text = document.createElement("input");
+        text.type = "hidden";
+        text.className = "fa-text";
+        text.value = personajeId;
 
-        entry.className =
-            "fa-entry";
+        const value = document.createElement("input");
+        value.type = "hidden";
+        value.className = "fa-value";
+        value.value = id;
 
+        const labelElement = document.createElement("input");
+        labelElement.type = "hidden";
+        labelElement.className = "fa-label";
+        labelElement.value = label;
 
-        entry.dataset.shopEntryId =
-            id;
+        const cantidadElement = document.createElement("input");
+        cantidadElement.type = "hidden";
+        cantidadElement.className = "fa-cantidad";
+        cantidadElement.value = cantidad;
 
-
-        const text =
-            document.createElement("input");
-
-        text.className =
-            "fa-text";
-
-        text.type =
-            "hidden";
-
-        text.value =
-            personajeId;
-
-
-        const value =
-            document.createElement("input");
-
-        value.className =
-            "fa-value";
-
-        value.type =
-            "hidden";
-
-        value.value =
-            id;
-
-
-        const labelElement =
-            document.createElement("input");
-
-        labelElement.className =
-            "fa-label";
-
-        labelElement.type =
-            "hidden";
-
-        labelElement.value =
-            label;
-
-
-        const quantity =
-            document.createElement("input");
-
-        quantity.className =
-            "fa-cantidad";
-
-        quantity.type =
-            "hidden";
-
-        quantity.value =
-            cantidad;
-
+        const extraElement = document.createElement("input");
+        extraElement.type = "hidden";
+        extraElement.className = "fa-extra";
+        extraElement.value = extra;
 
         entry.append(
             text,
             value,
             labelElement,
-            quantity
+            cantidadElement,
+            extraElement
         );
-
 
         return entry;
     };
 
+    const initForm = async (form) => {
 
-    const initShop = async form => {
-
-        if (
-            form.dataset.pixieShopInitialized ===
-            "true"
-        ) {
+        if (!(form instanceof HTMLFormElement)) {
             return;
         }
 
-
-        form.dataset.pixieShopInitialized =
-            "true";
-
-
-        const source =
-            form.dataset.shopSource;
-
-
-        const mode =
-            form.dataset.shopMode;
-
-
-        const repeatId =
-            form.dataset.shopRepeat;
-
-
-        const formId =
-            form.dataset.id;
-
-
-        const recordsContainer =
-            form.querySelector(
-                ".fa-shop-records"
-            );
-
-
-        const repeat =
-            form.querySelector(
-                `.fa-repeat[data-repeat="${CSS.escape(
-                    repeatId
-                )}"]`
-            );
-
-
-        const repeatList =
-            repeat?.querySelector(
-                ".fa-repeat-list"
-            );
-
-
-        const error =
-            form.querySelector(
-                ".fa-shop-error"
-            );
-
-
-        const cart =
-            form.querySelector(
-                "[data-shop-cart]"
-            );
-
-
-        const cartList =
-            cart?.querySelector(
-                "[data-shop-cart-list]"
-            );
-
-
-        const cartTotal =
-            cart?.querySelector(
-                "[data-shop-cart-total]"
-            );
-
-
-        const cartEmpty =
-            cart?.querySelector(
-                "[data-shop-cart-empty]"
-            );
-
-
-        const cartTemplate =
-            document.querySelector(
-                `#fa-shop-cart-template-${CSS.escape(
-                    formId
-                )}`
-            );
-
-
-        const template =
-            document.querySelector(
-                `#fa-shop-template-${CSS.escape(
-                    formId
-                )}`
-            );
-
-
-        if (
-            !recordsContainer ||
-            !repeat ||
-            !repeatList ||
-            !template
-        ) {
-            console.warn(
-                `PixieShop: configuración incompleta en ${formId}`
-            );
-
+        if (form.hasAttribute(INITIALIZED_ATTRIBUTE)) {
             return;
         }
 
+        form.setAttribute(INITIALIZED_ATTRIBUTE, "true");
 
-        const state =
-            new Map();
+        const formId = form.dataset.id;
+        const source = form.dataset.shopSource;
+        const mode = form.dataset.shopMode || "toggle";
+        const repeatId = form.dataset.shopRepeat;
 
+        const recordsContainer = form.querySelector(".fa-shop-records");
+        const repeat = repeatId
+            ? form.querySelector(`.fa-repeat[data-repeat="${repeatId}"]`)
+            : null;
+
+        const repeatList = repeat
+            ? repeat.querySelector(".fa-repeat-list")
+            : null;
+
+        const errorElement = form.querySelector(".fa-shop-error");
+
+        const template = document.querySelector(
+            `#fa-shop-template-${CSS.escape(formId)}`
+        );
+
+        const cart = form.querySelector("[data-shop-cart]");
+        const cartList = cart
+            ? cart.querySelector("[data-shop-cart-list]")
+            : null;
+
+        const cartTotal = cart
+            ? cart.querySelector("[data-shop-cart-total]")
+            : null;
+
+        const cartEmpty = cart
+            ? cart.querySelector("[data-shop-cart-empty]")
+            : null;
+
+        const cartTemplate = document.querySelector(
+            `#fa-shop-cart-template-${CSS.escape(formId)}`
+        );
+
+        if (!source || !recordsContainer || !template) {
+            return;
+        }
 
         let records = [];
+        let selected = new Map();
 
-
-        const showError = message => {
-            if (!error) return;
-
-
-            error.textContent =
-                message;
-
-
-            error.hidden =
-                !message;
-        };
-
-
-        const getPersonajeId = () => {
-            const input =
-                form.elements.personaje_id;
-
-
-            if (!input) return "";
-
-
-            return input.value.trim();
-        };
-
-
-        const updateCartTotal = () => {
-            if (!cartTotal) return;
-
-
-            let total = 0;
-
-
-            state.forEach(selection => {
-                const price =
-                    Number(
-                        selection.record.precio
-                    );
-
-
-                if (
-                    Number.isFinite(price)
-                ) {
-                    total +=
-                        price *
-                        selection.cantidad;
-                }
-            });
-
-
-            cartTotal.textContent =
-                `${total} €`;
-        };
-
-
-        const updateCartVisibility = () => {
-            if (cartEmpty) {
-                cartEmpty.hidden =
-                    state.size !== 0;
-            }
-
-
-            if (cartList) {
-                cartList.hidden =
-                    state.size === 0;
-            }
-
-
-            if (cartTotal) {
-                const hasPrice =
-                    records.some(
-                        record =>
-                            Number.isFinite(
-                                Number(
-                                    record.precio
-                                )
-                            )
-                    );
-
-
-                cartTotal.closest(
-                    "[data-shop-cart-total-container]"
-                )?.toggleAttribute(
-                    "hidden",
-                    !hasPrice
-                );
-            }
-        };
-
-
-        const setCartField = (
-            element,
-            field,
-            value
-        ) => {
-            const attribute =
-                element.dataset
-                    .shopCartAttribute;
-
-
-            if (attribute) {
-                element.setAttribute(
-                    attribute,
-                    value ?? ""
-                );
-
+        const showError = (message) => {
+            if (!errorElement) {
                 return;
             }
 
-
-            element.textContent =
-                value ?? "";
+            errorElement.textContent = message;
+            errorElement.hidden = false;
         };
 
-
-        const renderCartItem = (
-            selection
-        ) => {
-            if (!cartTemplate) {
-                return null;
-            }
-
-
-            const fragment =
-                cartTemplate.content.cloneNode(
-                    true
-                );
-
-
-            const record =
-                selection.record;
-
-
-            fragment
-                .querySelectorAll(
-                    "[data-shop-cart-field]"
-                )
-                .forEach(element => {
-
-                    const field =
-                        element.dataset
-                            .shopCartField;
-
-
-                    let value =
-                        record?.[field] ?? "";
-
-
-                    if (
-                        field ===
-                        "cantidad"
-                    ) {
-                        value =
-                            selection.cantidad;
-                    }
-
-
-                    if (
-                        field ===
-                        "subtotal"
-                    ) {
-                        const price =
-                            Number(
-                                record?.precio
-                            );
-
-
-                        value =
-                            Number.isFinite(
-                                price
-                            )
-                                ? price *
-                                  selection.cantidad
-                                : "";
-                    }
-
-
-                    if (
-                        field ===
-                        "precio"
-                    ) {
-                        value =
-                            record?.precio ??
-                            "";
-                    }
-
-
-                    setCartField(
-                        element,
-                        field,
-                        value
-                    );
-                });
-
-
-            fragment
-                .querySelectorAll(
-                    "[data-shop-cart-action]"
-                )
-                .forEach(button => {
-                    button.dataset.shopCartItemId =
-                        selection.id;
-                });
-
-
-            return fragment;
-        };
-
-
-        const renderCart = () => {
-            if (!cartList) {
-                updateCartTotal();
-                updateCartVisibility();
-
+        const hideError = () => {
+            if (!errorElement) {
                 return;
             }
 
-
-            cartList.innerHTML =
-                "";
-
-
-            state.forEach(selection => {
-                const fragment =
-                    renderCartItem(
-                        selection
-                    );
-
-
-                if (fragment) {
-                    cartList.appendChild(
-                        fragment
-                    );
-                }
-            });
-
-
-            cartList
-                .querySelectorAll(
-                    "[data-shop-cart-action]"
-                )
-                .forEach(button => {
-
-                    button.addEventListener(
-                        "click",
-                        () => {
-                            handleCartAction(
-                                button
-                            );
-                        }
-                    );
-                });
-
-
-            updateCartTotal();
-            updateCartVisibility();
+            errorElement.textContent = "";
+            errorElement.hidden = true;
         };
 
-
-        const renderSelected = () => {
-            repeatList.innerHTML =
-                "";
-
-
-            const personajeId =
-                getPersonajeId();
-
-
-            state.forEach(
-                (
-                    selection,
-                    id
-                ) => {
-
-                    const entry =
-                        createEntry({
-                            personajeId,
-                            id,
-                            label:
-                                selection.label,
-                            cantidad:
-                                selection.cantidad
-                        });
-
-
-                    repeatList.appendChild(
-                        entry
-                    );
-                }
+        const getRecordById = (id) => {
+            return records.find(
+                record => String(record.id) === String(id)
             );
-
-
-            renderCart();
         };
 
+        const getPrice = (record) => {
+            const price = Number(record?.precio);
 
-        const updateButton = (
-            button,
-            selected
-        ) => {
-
-            const defaultLabel =
-                button.dataset
-                    .shopDefaultLabel ||
-                button.textContent;
-
-
-            const selectedLabel =
-                button.dataset
-                    .shopSelectedLabel ||
-                "Seleccionado";
-
-
-            button.dataset
-                .shopDefaultLabel =
-                defaultLabel;
-
-
-            button.classList.toggle(
-                "is-selected",
-                selected
-            );
-
-
-            button.setAttribute(
-                "aria-pressed",
-                String(selected)
-            );
-
-
-            button.textContent =
-                selected
-                    ? selectedLabel
-                    : defaultLabel;
+            return Number.isFinite(price)
+                ? price
+                : 0;
         };
 
+        const getSummary = (selection) => {
+            const record = selection.record;
+            const label = selection.label;
+            const cantidad = selection.cantidad;
 
-        const handleAction = button => {
+            if (mode === "quantity") {
+                const price = getPrice(record);
+                const subtotal = price * cantidad;
 
-            const id =
-                String(
-                    button.dataset
-                        .shopItemId
-                );
-
-
-            const record =
-                records.find(
-                    item =>
-                        String(item.id) ===
-                        id
-                );
-
-
-            if (!record) return;
-
-
-            const label =
-                record.titulo ??
-                record.nombre ??
-                record.id;
-
-
-            if (
-                mode === "toggle"
-            ) {
-
-                if (
-                    state.has(id)
-                ) {
-                    state.delete(id);
-
-                    updateButton(
-                        button,
-                        false
-                    );
-
-                } else {
-
-                    state.set(id, {
-                        record,
-                        id,
-                        label,
-                        cantidad: 1
-                    });
-
-                    updateButton(
-                        button,
-                        true
-                    );
+                if (Number.isFinite(Number(record?.precio))) {
+                    return `${label} x ${cantidad} — ${subtotal} €`;
                 }
 
-
-                renderSelected();
-
-
-                return;
+                return `${label} x ${cantidad}`;
             }
 
-
-            if (
-                mode === "quantity"
-            ) {
-
-                const current =
-                    state.get(id);
-
-
-                if (current) {
-                    current.cantidad += 1;
-
-                } else {
-
-                    state.set(id, {
-                        record,
-                        id,
-                        label,
-                        cantidad: 1
-                    });
-                }
-
-
-                renderSelected();
-            }
+            return label;
         };
-
-
-        const handleCartAction =
-            button => {
-
-                const id =
-                    String(
-                        button.dataset
-                            .shopCartItemId
-                    );
-
-
-                const selection =
-                    state.get(id);
-
-
-                if (!selection) return;
-
-
-                const action =
-                    button.dataset
-                        .shopCartAction;
-
-
-                if (
-                    action ===
-                    "increase"
-                ) {
-
-                    selection.cantidad += 1;
-
-                    renderSelected();
-
-                    return;
-                }
-
-
-                if (
-                    action ===
-                    "decrease"
-                ) {
-
-                    selection.cantidad -= 1;
-
-
-                    if (
-                        selection.cantidad <=
-                        0
-                    ) {
-                        state.delete(id);
-                    }
-
-
-                    renderSelected();
-
-                    return;
-                }
-
-
-                if (
-                    action ===
-                    "remove"
-                ) {
-
-                    state.delete(id);
-
-
-                    const productButton =
-                        recordsContainer
-                            .querySelector(
-                                `[data-shop-action][data-shop-item-id="${CSS.escape(
-                                    id
-                                )}"]`
-                            );
-
-
-                    if (
-                        productButton
-                    ) {
-                        updateButton(
-                            productButton,
-                            false
-                        );
-                    }
-
-
-                    renderSelected();
-                }
-            };
-
 
         const renderRecords = () => {
 
-            recordsContainer.innerHTML =
-                "";
+            recordsContainer.innerHTML = "";
 
+            records.forEach(record => {
 
-            records.forEach(
-                record => {
+                const fragment = template.content.cloneNode(true);
 
-                    const fragment =
-                        renderRecord(
-                            template,
-                            record
+                fragment
+                    .querySelectorAll("[data-shop-field]")
+                    .forEach(element => {
+
+                        const field = element.dataset.shopField;
+                        const value = record[field];
+
+                        if (value === undefined || value === null) {
+                            element.textContent = "";
+                            return;
+                        }
+
+                        const attribute = element.dataset.shopAttribute;
+
+                        if (attribute) {
+                            element.setAttribute(
+                                attribute,
+                                value
+                            );
+                        } else {
+                            element.textContent = value;
+                        }
+                    });
+
+                const action = fragment.querySelector(
+                    "[data-shop-action]"
+                );
+
+                if (action) {
+                    action.dataset.shopItemId = record.id;
+
+                    const currentSelection = selected.get(
+                        String(record.id)
+                    );
+
+                    if (currentSelection) {
+                        action.setAttribute(
+                            "aria-pressed",
+                            "true"
                         );
 
+                        action.classList.add("is-selected");
 
-                    recordsContainer.appendChild(
-                        fragment
-                    );
-                }
-            );
-
-
-            recordsContainer
-                .querySelectorAll(
-                    "[data-shop-action]"
-                )
-                .forEach(button => {
-
-                    button.addEventListener(
-                        "click",
-                        () => {
-                            handleAction(
-                                button
-                            );
+                        if (mode === "quantity") {
+                            action.textContent =
+                                `Añadido (${currentSelection.cantidad})`;
                         }
-                    );
-                });
+                    } else {
+                        action.setAttribute(
+                            "aria-pressed",
+                            "false"
+                        );
+                    }
+                }
+
+                recordsContainer.appendChild(fragment);
+            });
         };
 
+        const renderCart = () => {
 
-        const clearSelection = () => {
+            if (!cart || !cartList) {
+                return;
+            }
 
-            state.clear();
+            cartList.innerHTML = "";
 
+            let total = 0;
+            let hasItems = false;
 
-            recordsContainer
-                .querySelectorAll(
-                    "[data-shop-action]"
-                )
-                .forEach(button => {
+            selected.forEach(selection => {
 
-                    updateButton(
-                        button,
-                        false
-                    );
-                });
+                hasItems = true;
 
+                const record = selection.record;
+                const cantidad = selection.cantidad;
+                const subtotal =
+                    getPrice(record) * cantidad;
+
+                total += subtotal;
+
+                if (!cartTemplate) {
+                    return;
+                }
+
+                const fragment =
+                    cartTemplate.content.cloneNode(true);
+
+                fragment
+                    .querySelectorAll("[data-shop-cart-field]")
+                    .forEach(element => {
+
+                        const field =
+                            element.dataset.shopCartField;
+
+                        let value = "";
+
+                        if (field === "cantidad") {
+                            value = cantidad;
+                        } else if (field === "subtotal") {
+                            value = subtotal;
+                        } else {
+                            value = record[field] ?? "";
+                        }
+
+                        const attribute =
+                            element.dataset.shopCartAttribute;
+
+                        if (attribute) {
+                            element.setAttribute(
+                                attribute,
+                                value
+                            );
+                        } else {
+                            element.textContent = value;
+                        }
+                    });
+
+                fragment
+                    .querySelectorAll("[data-shop-cart-action]")
+                    .forEach(button => {
+
+                        button.dataset.shopItemId =
+                            record.id;
+                    });
+
+                cartList.appendChild(fragment);
+            });
+
+            if (cartEmpty) {
+                cartEmpty.hidden = hasItems;
+            }
+
+            if (cartTotal) {
+                cartTotal.textContent = total;
+            }
+        };
+
+        const renderSelected = () => {
+
+            if (repeatList) {
+                repeatList.innerHTML = "";
+            }
+
+            const personajeInput =
+                form.querySelector('[name="personaje_id"]');
+
+            const personajeId =
+                personajeInput?.value?.trim() || "";
+
+            selected.forEach(selection => {
+
+                if (repeatList) {
+
+                    const entry = createEntry({
+                        personajeId,
+                        id: selection.id,
+                        label: selection.label,
+                        cantidad: selection.cantidad,
+                        extra: getSummary(selection)
+                    });
+
+                    repeatList.appendChild(entry);
+                }
+            });
+
+            renderRecords();
+            renderCart();
+        };
+
+        const selectRecord = (record) => {
+
+            const key = String(record.id);
+            const existing = selected.get(key);
+
+            if (mode === "quantity") {
+
+                if (existing) {
+                    existing.cantidad += 1;
+                } else {
+                    selected.set(key, {
+                        id: record.id,
+                        label: getLabel(record, mode),
+                        cantidad: 1,
+                        record
+                    });
+                }
+
+            } else {
+
+                if (existing) {
+                    selected.delete(key);
+                } else {
+                    selected.set(key, {
+                        id: record.id,
+                        label: getLabel(record, mode),
+                        cantidad: 1,
+                        record
+                    });
+                }
+            }
 
             renderSelected();
         };
 
+        const changeQuantity = (id, amount) => {
+
+            const key = String(id);
+            const selection = selected.get(key);
+
+            if (!selection) {
+                return;
+            }
+
+            selection.cantidad += amount;
+
+            if (selection.cantidad <= 0) {
+                selected.delete(key);
+            }
+
+            renderSelected();
+        };
+
+        const removeRecord = (id) => {
+
+            selected.delete(String(id));
+
+            renderSelected();
+        };
+
+        recordsContainer.addEventListener("click", event => {
+
+            const action =
+                event.target.closest("[data-shop-action]");
+
+            if (!action) {
+                return;
+            }
+
+            const id = action.dataset.shopItemId;
+
+            if (!id) {
+                return;
+            }
+
+            const record = getRecordById(id);
+
+            if (!record) {
+                return;
+            }
+
+            selectRecord(record);
+        });
+
+        if (cartList) {
+
+            cartList.addEventListener("click", event => {
+
+                const action =
+                    event.target.closest(
+                        "[data-shop-cart-action]"
+                    );
+
+                if (!action) {
+                    return;
+                }
+
+                const id =
+                    action.dataset.shopItemId;
+
+                if (!id) {
+                    return;
+                }
+
+                const actionType =
+                    action.dataset.shopCartAction;
+
+                if (actionType === "increase") {
+                    changeQuantity(id, 1);
+                }
+
+                if (actionType === "decrease") {
+                    changeQuantity(id, -1);
+                }
+
+                if (actionType === "remove") {
+                    removeRecord(id);
+                }
+            });
+        }
 
         try {
 
-            const response =
-                await fetch(
-                    `${SUPABASE_URL}/rest/v1/${encodeURIComponent(
-                        source
-                    )}?select=*`,
-                    {
-                        method: "GET",
+            hideError();
 
-                        headers: {
-                            apikey:
-                                SUPABASE_KEY,
-
-                            Authorization:
-                                `Bearer ${SUPABASE_KEY}`
-                        }
-                    }
-                );
-
-
-            if (!response.ok) {
-                throw new Error(
-                    `Supabase respondió con ${response.status}`
-                );
-            }
-
-
-            records =
-                await response.json();
-
-
-            records =
-                records.filter(
-                    record =>
-                        record.visible !==
-                        false
-                );
-
+            records = await getRecords(source);
 
             renderRecords();
-            renderCart();
+            renderSelected();
 
-        } catch (err) {
+        } catch (error) {
 
             console.error(
-                "PixieShop:",
-                err
+                "[PixieShop]",
+                error
             );
-
 
             showError(
-                "No se han podido cargar los datos de la tienda."
+                "No se han podido cargar los registros."
             );
-
-
-            return;
         }
-
-
-        form.elements.personaje_id
-            ?.addEventListener(
-                "input",
-                () => {
-
-                    if (state.size) {
-                        renderSelected();
-                    }
-                }
-            );
-
-
-        form.addEventListener(
-            "reset",
-            () => {
-
-                setTimeout(
-                    clearSelection
-                );
-            }
-        );
     };
 
+    const init = (context = document) => {
 
-    forms.forEach(
-        initShop
-    );
-})();
+        context
+            .querySelectorAll(FORM_SELECTOR)
+            .forEach(initForm);
+    };
+
+    Pixie.ready(() => {
+        init();
+    });
+
+    return {
+        init,
+        initForm
+    };
+});
