@@ -1,6 +1,6 @@
 (() => {
     const SUPABASE_URL = "https://udnotovrosokbdahlqaf.supabase.co";
-    const SUPABASE_KEY = "TU_PUBLISHABLE_KEY";
+    const SUPABASE_KEY = "sb_publishable_OQcJe7XcKx0jGCzvUVbALw_isdQEDfo";
 
     const forms = document.querySelectorAll(".fa-generated-shop-form");
 
