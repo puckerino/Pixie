@@ -1,9 +1,12 @@
 /*!
  * PixieShop.js
- * Tienda basada en PixieFormCore.
+ * Motor genérico para formularios de tienda / solicitudes.
  *
  * Requiere:
  * - PixieFormCore.js
+ *
+ * No escribe en Supabase.
+ * Solo consulta datos y genera solicitudes para copiar.
  */
 
 (function (window, document) {
@@ -11,648 +14,669 @@
 
     if (window.PixieShop) return;
 
-    const Core = window.PixieFormCore;
-
-    if (!Core) {
-        console.error("[PixieShop] PixieFormCore no está disponible.");
-        return;
-    }
-
     const SUPABASE_URL = "https://udnotovrosokbdahlqaf.supabase.co";
     const SUPABASE_KEY = "TU_PUBLISHABLE_KEY";
 
-    const state = {
-        items: [],
-        rewards: [],
-        cart: [],
-        selectedRewards: []
+    const SELECTOR = ".fa-generated-shop-form";
+
+    const PixieShop = {
+        init,
+        fetchTable
     };
 
-    let shop;
-    let itemsController;
-    let rewardsController;
+    function init() {
+        const forms = document.querySelectorAll(SELECTOR);
 
-    function escapeHTML(value) {
-        return String(value ?? "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+        if (!forms.length) return;
+
+        forms.forEach(initForm);
     }
 
-    async function fetchSupabase(table) {
-        const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/${table}?select=*`,
-            {
-                headers: {
-                    apikey: SUPABASE_KEY,
-                    Authorization: `Bearer ${SUPABASE_KEY}`
-                }
+    async function initForm(form) {
+        if (!window.PixieFormCore) {
+            console.error("PixieShop: PixieFormCore no está disponible.");
+            return;
+        }
+
+        const source = form.dataset.shopSource;
+
+        if (!source) {
+            console.error("PixieShop: falta data-shop-source.", form);
+            return;
+        }
+
+        const repeat = form.dataset.shopRepeat || source;
+
+        const idField = form.dataset.shopIdField || "id";
+        const labelField = form.dataset.shopLabelField || "titulo";
+        const imageField = form.dataset.shopImageField || "imagen";
+
+        const actionLabel =
+            form.dataset.shopAction ||
+            "Seleccionar";
+
+        const mode =
+            form.dataset.shopMode ||
+            "quantity";
+
+        const controller = window.PixieFormCore.initGeneratedForm(form);
+
+        const state = {
+            source,
+            repeat,
+            idField,
+            labelField,
+            imageField,
+            actionLabel,
+            mode,
+            data: [],
+            selected: new Map()
+        };
+
+        form.__pixieShop = state;
+
+        try {
+            const data = await fetchTable(source);
+
+            state.data = data.filter(row => row.visible !== false);
+
+            renderSource(form, state);
+            renderSelection(form, state);
+
+            bindCharacterId(form, state);
+            bindGenerate(form, state);
+            bindCopy(form, state);
+
+        } catch (error) {
+            console.error("PixieShop:", error);
+
+            const errorBox = form.querySelector(".fa-shop-error");
+
+            if (errorBox) {
+                errorBox.textContent =
+                    "No se han podido cargar los datos.";
+                errorBox.hidden = false;
             }
-        );
+        }
+
+        form.__pixieShopController = controller;
+    }
+
+    async function fetchTable(table) {
+        const url =
+            `${SUPABASE_URL}/rest/v1/${encodeURIComponent(table)}` +
+            `?select=*`;
+
+        const response = await fetch(url, {
+            method: "GET",
+            headers: {
+                apikey: SUPABASE_KEY,
+                Authorization: `Bearer ${SUPABASE_KEY}`
+            }
+        });
 
         if (!response.ok) {
+            const text = await response.text();
+
             throw new Error(
-                `[PixieShop] Error cargando ${table}: ${response.status}`
+                `Supabase ${response.status}: ${text}`
             );
         }
 
         return response.json();
     }
 
-    function getItem(id) {
-        return state.items.find(
-            item => Number(item.id) === Number(id)
+    function renderSource(form, state) {
+        const container =
+            form.querySelector(".fa-shop-items");
+
+        if (!container) return;
+
+        container.replaceChildren();
+
+        state.data.forEach(item => {
+            const id = item[state.idField];
+            const label = item[state.labelField] ?? id;
+            const image = item[state.imageField];
+
+            const article =
+                document.createElement("article");
+
+            article.className = "fa-shop-item";
+            article.dataset.id = id;
+
+            if (image) {
+                const img =
+                    document.createElement("img");
+
+                img.className = "fa-shop-item-image";
+                img.src = image;
+                img.alt = label;
+
+                article.append(img);
+            }
+
+            const content =
+                document.createElement("div");
+
+            content.className = "fa-shop-item-content";
+
+            const title =
+                document.createElement("div");
+
+            title.className = "fa-shop-item-title";
+            title.textContent = label;
+
+            content.append(title);
+
+            if (item.descripcion) {
+                const description =
+                    document.createElement("div");
+
+                description.className =
+                    "fa-shop-item-description";
+
+                description.textContent =
+                    item.descripcion;
+
+                content.append(description);
+            }
+
+            if (item.precio !== undefined) {
+                const price =
+                    document.createElement("div");
+
+                price.className = "fa-shop-item-price";
+
+                price.textContent =
+                    `${item.precio} $`;
+
+                content.append(price);
+            }
+
+            const controls =
+                document.createElement("div");
+
+            controls.className = "fa-shop-item-controls";
+
+            if (state.mode === "toggle") {
+                renderToggleButton(
+                    controls,
+                    item,
+                    state,
+                    form
+                );
+            } else {
+                renderQuantityButton(
+                    controls,
+                    item,
+                    state,
+                    form
+                );
+            }
+
+            content.append(controls);
+            article.append(content);
+
+            container.append(article);
+        });
+    }
+
+    function renderQuantityButton(
+        container,
+        item,
+        state,
+        form
+    ) {
+        const id = item[state.idField];
+
+        const button =
+            document.createElement("button");
+
+        button.type = "button";
+        button.className = "fa-shop-add";
+        button.textContent = state.actionLabel;
+
+        button.addEventListener("click", () => {
+            const current =
+                state.selected.get(id) || 0;
+
+            state.selected.set(id, current + 1);
+
+            renderSelection(form, state);
+        });
+
+        container.append(button);
+    }
+
+    function renderToggleButton(
+        container,
+        item,
+        state,
+        form
+    ) {
+        const id = item[state.idField];
+
+        const button =
+            document.createElement("button");
+
+        button.type = "button";
+        button.className = "fa-shop-add";
+
+        updateToggleButton(
+            button,
+            state.selected.has(id),
+            state.actionLabel
+        );
+
+        button.addEventListener("click", () => {
+            if (state.selected.has(id)) {
+                state.selected.delete(id);
+            } else {
+                state.selected.set(id, 1);
+            }
+
+            updateToggleButton(
+                button,
+                state.selected.has(id),
+                state.actionLabel
+            );
+
+            renderSelection(form, state);
+        });
+
+        container.append(button);
+    }
+
+    function updateToggleButton(
+        button,
+        selected,
+        label
+    ) {
+        button.textContent =
+            selected
+                ? "Seleccionado"
+                : label;
+
+        button.classList.toggle(
+            "is-selected",
+            selected
         );
     }
 
-    function getReward(id) {
-        return state.rewards.find(
-            reward => Number(reward.id) === Number(id)
-        );
-    }
-
-    function addToCart(itemId) {
-        const existing = state.cart.find(
-            entry =>
-                entry.item_id === Number(itemId) &&
-                entry.movimiento === "suma"
-        );
-
-        if (existing) {
-            existing.cantidad++;
-        } else {
-            state.cart.push({
-                item_id: Number(itemId),
-                cantidad: 1,
-                movimiento: "suma"
-            });
-        }
-
-        renderCart();
-        syncItemsRepeater();
-    }
-
-    function removeFromCart(itemId) {
-        const existing = state.cart.find(
-            entry =>
-                entry.item_id === Number(itemId) &&
-                entry.movimiento === "resta"
-        );
-
-        if (existing) {
-            existing.cantidad++;
-        } else {
-            state.cart.push({
-                item_id: Number(itemId),
-                cantidad: 1,
-                movimiento: "resta"
-            });
-        }
-
-        renderCart();
-        syncItemsRepeater();
-    }
-
-    function changeQuantity(index, amount) {
-        const entry = state.cart[index];
-
-        if (!entry) return;
-
-        entry.cantidad += amount;
-
-        if (entry.cantidad <= 0) {
-            state.cart.splice(index, 1);
-        }
-
-        renderCart();
-        syncItemsRepeater();
-    }
-
-    function deleteCartEntry(index) {
-        state.cart.splice(index, 1);
-
-        renderCart();
-        syncItemsRepeater();
-    }
-
-    function toggleReward(rewardId) {
-        rewardId = Number(rewardId);
-
-        const index = state.selectedRewards.indexOf(rewardId);
-
-        if (index === -1) {
-            state.selectedRewards.push(rewardId);
-        } else {
-            state.selectedRewards.splice(index, 1);
-        }
-
-        renderRewards();
-        syncRewardsRepeater();
-    }
-
-    function renderItems() {
-        const container = shop.querySelector("[data-shop-items]");
-
-        container.innerHTML = state.items
-            .map(item => `
-                <article
-                    class="shop-item"
-                    data-item-id="${item.id}"
-                >
-
-                    ${item.imagen
-                        ? `<img
-                            src="${escapeHTML(item.imagen)}"
-                            alt=""
-                            class="shop-item-image"
-                        >`
-                        : ""
-                    }
-
-                    <div class="shop-item-content">
-
-                        <h3>
-                            ${escapeHTML(item.titulo || item.nombre)}
-                        </h3>
-
-                        ${item.descripcion
-                            ? `<p>${escapeHTML(item.descripcion)}</p>`
-                            : ""
-                        }
-
-                        ${item.efecto
-                            ? `<div class="shop-item-effect">
-                                ${escapeHTML(item.efecto)}
-                            </div>`
-                            : ""
-                        }
-
-                        <div class="shop-item-footer">
-
-                            <strong>
-                                ${escapeHTML(item.precio ?? 0)}
-                            </strong>
-
-                            <div class="shop-item-actions">
-
-                                <button
-                                    type="button"
-                                    data-shop-buy="${item.id}"
-                                >
-                                    Comprar
-                                </button>
-
-                                <button
-                                    type="button"
-                                    data-shop-remove="${item.id}"
-                                >
-                                    Retirar
-                                </button>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </article>
-            `)
-            .join("");
-    }
-
-    function renderCart() {
-        const container = shop.querySelector("[data-shop-cart]");
-
-        if (!state.cart.length) {
-            container.innerHTML = "<p>El carrito está vacío.</p>";
-            return;
-        }
-
-        container.innerHTML = state.cart
-            .map((entry, index) => {
-
-                const item = getItem(entry.item_id);
-
-                if (!item) return "";
-
-                const action =
-                    entry.movimiento === "suma"
-                        ? "Comprar"
-                        : "Retirar";
-
-                return `
-                    <div
-                        class="shop-cart-entry"
-                        data-cart-index="${index}"
-                    >
-
-                        <span class="shop-cart-name">
-                            ${escapeHTML(item.titulo || item.nombre)}
-                        </span>
-
-                        <span class="shop-cart-action">
-                            ${action}
-                        </span>
-
-                        <div class="shop-cart-quantity">
-
-                            <button
-                                type="button"
-                                data-cart-minus="${index}"
-                            >
-                                −
-                            </button>
-
-                            <span>
-                                ${entry.cantidad}
-                            </span>
-
-                            <button
-                                type="button"
-                                data-cart-plus="${index}"
-                            >
-                                +
-                            </button>
-
-                        </div>
-
-                        <button
-                            type="button"
-                            data-cart-delete="${index}"
-                        >
-                            ×
-                        </button>
-
-                    </div>
-                `;
-            })
-            .join("");
-    }
-
-    function renderRewards() {
-        const container = shop.querySelector("[data-shop-rewards]");
-
-        if (!state.rewards.length) {
-            container.innerHTML = "<p>No hay recompensas disponibles.</p>";
-            return;
-        }
-
-        container.innerHTML = state.rewards
-            .map(reward => {
-
-                const selected =
-                    state.selectedRewards.includes(Number(reward.id));
-
-                return `
-                    <label class="shop-reward">
-
-                        <input
-                            type="checkbox"
-                            data-shop-reward="${reward.id}"
-                            ${selected ? "checked" : ""}
-                        >
-
-                        <span>
-                            ${escapeHTML(reward.nombre)}
-                        </span>
-
-                    </label>
-                `;
-            })
-            .join("");
-    }
-
-    function createEntry({
-        label = "",
-        value = "",
-        cantidad = "",
-        text = "",
-        extra = ""
-    }) {
-        const entry = document.createElement("div");
-
-        entry.className = "fa-entry";
-
-        entry.innerHTML = `
-            <input
-                class="fa-label"
-                type="hidden"
-                value="${escapeHTML(label)}"
-            >
-
-            <input
-                class="fa-value"
-                type="hidden"
-                value="${escapeHTML(value)}"
-            >
-
-            <input
-                class="fa-cantidad"
-                type="hidden"
-                value="${escapeHTML(cantidad)}"
-            >
-
-            <input
-                class="fa-text"
-                type="hidden"
-                value="${escapeHTML(text)}"
-            >
-
-            <input
-                class="fa-extra"
-                type="hidden"
-                value="${escapeHTML(extra)}"
-            >
-        `;
-
-        return entry;
-    }
-
-    function syncItemsRepeater() {
-        const list = document.querySelector(
-            '[data-id="tienda-items"] [data-repeat="items"] .fa-repeat-list'
-        );
+    function renderSelection(form, state) {
+        const repeat =
+            form.querySelector(
+                `.fa-repeat[data-repeat="${CSS.escape(state.repeat)}"]`
+            );
+
+        if (!repeat) return;
+
+        const list =
+            repeat.querySelector(".fa-repeat-list");
 
         if (!list) return;
 
-        list.innerHTML = "";
+        list.replaceChildren();
 
-        const personajeId =
-            shop.querySelector("[data-shop-personaje]")?.value || "";
-
-        state.cart.forEach(entry => {
-
-            const item = getItem(entry.item_id);
+        state.selected.forEach((quantity, id) => {
+            const item =
+                state.data.find(
+                    row =>
+                        String(row[state.idField]) ===
+                        String(id)
+                );
 
             if (!item) return;
 
-            list.appendChild(
-                createEntry({
-                    label: item.titulo || item.nombre,
-                    value: entry.item_id,
-                    cantidad: entry.cantidad,
-                    text: personajeId,
-                    extra: entry.movimiento
-                })
-            );
-        });
-    }
+            const entry =
+                document.createElement("div");
 
-    function syncRewardsRepeater() {
-        const list = document.querySelector(
-            '[data-id="tienda-recompensas"] [data-repeat="recompensas"] .fa-repeat-list'
-        );
+            entry.className = "fa-entry";
 
-        if (!list) return;
+            entry.dataset.value = id;
 
-        list.innerHTML = "";
+            const label =
+                document.createElement("span");
 
-        const personajeId =
-            shop.querySelector("[data-shop-personaje]")?.value || "";
+            label.className = "fa-label";
+            label.textContent =
+                item[state.labelField] ?? id;
 
-        state.selectedRewards.forEach(rewardId => {
+            entry.append(label);
 
-            const reward = getReward(rewardId);
+            const value =
+                document.createElement("span");
 
-            if (!reward) return;
+            value.className = "fa-value";
+            value.textContent = id;
 
-            list.appendChild(
-                createEntry({
-                    label: reward.nombre,
-                    value: reward.id,
-                    text: personajeId
-                })
-            );
-        });
-    }
+            entry.append(value);
 
-    function syncRepeaters() {
-        syncItemsRepeater();
-        syncRewardsRepeater();
-    }
+            const amount =
+                document.createElement("span");
 
-    function generate() {
-        const personajeInput =
-            shop.querySelector("[data-shop-personaje]");
+            amount.className = "fa-cantidad";
+            amount.textContent = quantity;
 
-        const personajeId = Number(personajeInput.value);
+            entry.append(amount);
 
-        if (!personajeId) {
-            personajeInput.reportValidity();
-            personajeInput.focus();
-            return;
-        }
+            const character =
+                form.querySelector(
+                    "[name='personaje_id']"
+                );
 
-        syncRepeaters();
+            const text =
+                document.createElement("span");
 
-        const itemsOutput =
-            itemsController.renderTemplate().trim();
+            text.className = "fa-text";
+            text.hidden = true;
+            text.textContent =
+                character?.value.trim() || "";
 
-        const rewardsOutput =
-            rewardsController.renderTemplate().trim();
+            entry.append(text);
 
-        shop.querySelector(
-            "[data-shop-items-output]"
-        ).value = itemsOutput;
+            const controls =
+                document.createElement("div");
 
-        shop.querySelector(
-            "[data-shop-rewards-output]"
-        ).value = rewardsOutput;
+            controls.className =
+                "fa-shop-entry-controls";
 
-        shop.querySelector(
-            "[data-shop-output]"
-        ).hidden = false;
+            if (state.mode === "quantity") {
+                const minus =
+                    document.createElement("button");
 
-        window.dispatchEvent(
-            new CustomEvent("pixie:shop-form-generated", {
-                detail: {
-                    personajeId,
-                    items: itemsOutput,
-                    recompensas: rewardsOutput
+                minus.type = "button";
+                minus.textContent = "−";
+
+                minus.addEventListener(
+                    "click",
+                    () => {
+                        const current =
+                            state.selected.get(id) || 0;
+
+                        if (current <= 1) {
+                            state.selected.delete(id);
+                        } else {
+                            state.selected.set(
+                                id,
+                                current - 1
+                            );
+                        }
+
+                        renderSelection(
+                            form,
+                            state
+                        );
+                    }
+                );
+
+                controls.append(minus);
+
+                const plus =
+                    document.createElement("button");
+
+                plus.type = "button";
+                plus.textContent = "+";
+
+                plus.addEventListener(
+                    "click",
+                    () => {
+                        const current =
+                            state.selected.get(id) || 0;
+
+                        state.selected.set(
+                            id,
+                            current + 1
+                        );
+
+                        renderSelection(
+                            form,
+                            state
+                        );
+                    }
+                );
+
+                controls.append(plus);
+            }
+
+            const remove =
+                document.createElement("button");
+
+            remove.type = "button";
+            remove.textContent = "×";
+
+            remove.addEventListener(
+                "click",
+                () => {
+                    state.selected.delete(id);
+
+                    renderSelection(
+                        form,
+                        state
+                    );
                 }
-            })
-        );
-    }
-
-    async function copyOutput(selector) {
-        const textarea = shop.querySelector(selector);
-
-        if (!textarea?.value) return;
-
-        await navigator.clipboard.writeText(textarea.value);
-    }
-
-    function bindEvents() {
-
-        shop.addEventListener("click", event => {
-
-            const buy = event.target.closest("[data-shop-buy]");
-
-            if (buy) {
-                addToCart(buy.dataset.shopBuy);
-                return;
-            }
-
-            const remove = event.target.closest("[data-shop-remove]");
-
-            if (remove) {
-                removeFromCart(remove.dataset.shopRemove);
-                return;
-            }
-
-            const plus = event.target.closest("[data-cart-plus]");
-
-            if (plus) {
-                changeQuantity(
-                    Number(plus.dataset.cartPlus),
-                    1
-                );
-                return;
-            }
-
-            const minus = event.target.closest("[data-cart-minus]");
-
-            if (minus) {
-                changeQuantity(
-                    Number(minus.dataset.cartMinus),
-                    -1
-                );
-                return;
-            }
-
-            const del = event.target.closest("[data-cart-delete]");
-
-            if (del) {
-                deleteCartEntry(
-                    Number(del.dataset.cartDelete)
-                );
-                return;
-            }
-
-            const generateButton =
-                event.target.closest("[data-shop-generate]");
-
-            if (generateButton) {
-                generate();
-                return;
-            }
-
-            const copyItems =
-                event.target.closest("[data-shop-copy-items]");
-
-            if (copyItems) {
-                copyOutput("[data-shop-items-output]");
-                return;
-            }
-
-            const copyRewards =
-                event.target.closest("[data-shop-copy-rewards]");
-
-            if (copyRewards) {
-                copyOutput("[data-shop-rewards-output]");
-            }
-        });
-
-        shop.addEventListener("change", event => {
-
-            const reward =
-                event.target.closest("[data-shop-reward]");
-
-            if (reward) {
-                toggleReward(reward.dataset.shopReward);
-                return;
-            }
-
-            if (
-                event.target.matches(
-                    "[data-shop-personaje]"
-                )
-            ) {
-                syncRepeaters();
-            }
-        });
-
-        shop.addEventListener("input", event => {
-
-            if (
-                event.target.matches(
-                    "[data-shop-personaje]"
-                )
-            ) {
-                syncRepeaters();
-            }
-        });
-    }
-
-    async function init() {
-
-        shop = document.querySelector("[data-shop]");
-
-        if (!shop) return;
-
-        if (!document.querySelector(".fa-generated-shop-form")) {
-            console.error(
-                "[PixieShop] No se encontraron los formularios internos."
             );
-            return;
+
+            controls.append(remove);
+
+            entry.append(controls);
+            list.append(entry);
+        });
+
+        updateCharacterIdInEntries(
+            form,
+            state
+        );
+
+        const controller =
+            form.__pixieShopController;
+
+        if (controller) {
+            controller.renderTemplate();
         }
+    }
 
-        itemsController = Core.initGeneratedForm(
-            document.querySelector(
-                '[data-id="tienda-items"]'
-            )
-        );
+    function bindCharacterId(form, state) {
+        const input =
+            form.querySelector(
+                "[name='personaje_id']"
+            );
 
-        rewardsController = Core.initGeneratedForm(
-            document.querySelector(
-                '[data-id="tienda-recompensas"]'
-            )
-        );
+        if (!input) return;
 
-        const [items, rewards] = await Promise.all([
-            fetchSupabase("items"),
-            fetchSupabase("recompensas")
-        ]);
+        input.addEventListener(
+            "input",
+            () => {
+                updateCharacterIdInEntries(
+                    form,
+                    state
+                );
 
-        state.items = items.filter(
-            item => item.visible !== false
-        );
+                const controller =
+                    form.__pixieShopController;
 
-        state.rewards = rewards.filter(
-            reward => reward.visible !== false
-        );
-
-        renderItems();
-        renderCart();
-        renderRewards();
-        syncRepeaters();
-        bindEvents();
-
-        window.dispatchEvent(
-            new CustomEvent("pixie:shop-form-ready", {
-                detail: {
-                    items: state.items,
-                    recompensas: state.rewards
+                if (controller) {
+                    controller.renderTemplate();
                 }
-            })
+            }
         );
     }
 
-    window.PixieShop = {
-        init,
+    function updateCharacterIdInEntries(
+        form,
         state
-    };
+    ) {
+        const input =
+            form.querySelector(
+                "[name='personaje_id']"
+            );
 
-    if (document.readyState === "loading") {
-        document.addEventListener(
-            "DOMContentLoaded",
-            init,
-            { once: true }
-        );
-    } else {
-        init();
+        const characterId =
+            input?.value.trim() || "";
+
+        const repeat =
+            form.querySelector(
+                `.fa-repeat[data-repeat="${CSS.escape(state.repeat)}"]`
+            );
+
+        if (!repeat) return;
+
+        repeat
+            .querySelectorAll(".fa-entry .fa-text")
+            .forEach(element => {
+                element.textContent =
+                    characterId;
+            });
     }
+
+    function bindGenerate(form, state) {
+        const button =
+            form.querySelector(
+                ".fa-shop-generate"
+            );
+
+        if (!button) return;
+
+        button.addEventListener(
+            "click",
+            event => {
+                event.preventDefault();
+
+                const characterId =
+                    getCharacterId(form);
+
+                if (!characterId) {
+                    showError(
+                        form,
+                        "Introduce el ID del personaje."
+                    );
+
+                    return;
+                }
+
+                if (!state.selected.size) {
+                    showError(
+                        form,
+                        "Selecciona al menos un elemento."
+                    );
+
+                    return;
+                }
+
+                clearError(form);
+
+                const controller =
+                    form.__pixieShopController;
+
+                if (!controller) return;
+
+                updateCharacterIdInEntries(
+                    form,
+                    state
+                );
+
+                controller.renderTemplate();
+
+                const output =
+                    form.querySelector(
+                        ".fa-shop-output"
+                    );
+
+                if (output) {
+                    output.hidden = false;
+                }
+            }
+        );
+    }
+
+    function bindCopy(form) {
+        const button =
+            form.querySelector(
+                ".fa-shop-copy"
+            );
+
+        if (!button) return;
+
+        button.addEventListener(
+            "click",
+            async event => {
+                event.preventDefault();
+
+                const output =
+                    form.querySelector(
+                        ".fa-shop-output"
+                    );
+
+                if (!output) return;
+
+                const text =
+                    output.value ??
+                    output.textContent ??
+                    "";
+
+                if (!text.trim()) return;
+
+                try {
+                    await navigator.clipboard.writeText(
+                        text
+                    );
+
+                    const original =
+                        button.textContent;
+
+                    button.textContent =
+                        "Copiado";
+
+                    setTimeout(() => {
+                        button.textContent =
+                            original;
+                    }, 1500);
+
+                } catch (error) {
+                    console.error(
+                        "PixieShop: no se pudo copiar.",
+                        error
+                    );
+                }
+            }
+        );
+    }
+
+    function getCharacterId(form) {
+        const input =
+            form.querySelector(
+                "[name='personaje_id']"
+            );
+
+        return input?.value.trim() || "";
+    }
+
+    function showError(form, message) {
+        const errorBox =
+            form.querySelector(".fa-shop-error");
+
+        if (!errorBox) return;
+
+        errorBox.textContent = message;
+        errorBox.hidden = false;
+    }
+
+    function clearError(form) {
+        const errorBox =
+            form.querySelector(".fa-shop-error");
+
+        if (!errorBox) return;
+
+        errorBox.hidden = true;
+        errorBox.textContent = "";
+    }
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        init
+    );
+
+    window.PixieShop = PixieShop;
 
 })(window, document);
