@@ -38,8 +38,7 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
         personajeId,
         id,
         label,
-        cantidad = 1,
-        extra = ""
+        cantidad = 1
     }) => {
         const entry = document.createElement("div");
         entry.className = "fa-entry";
@@ -64,17 +63,11 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
         cantidadElement.className = "fa-cantidad";
         cantidadElement.value = cantidad;
 
-        const extraElement = document.createElement("input");
-        extraElement.type = "hidden";
-        extraElement.className = "fa-extra";
-        extraElement.value = extra;
-
         entry.append(
             text,
             value,
             labelElement,
-            cantidadElement,
-            extraElement
+            cantidadElement
         );
 
         return entry;
@@ -98,21 +91,27 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
         const repeatId = form.dataset.shopRepeat;
 
         const recordsContainer = form.querySelector(".fa-shop-records");
+
         const repeat = repeatId
-            ? form.querySelector(`.fa-repeat[data-repeat="${repeatId}"]`)
+            ? form.querySelector(
+                `.fa-repeat[data-repeat="${repeatId}"]`
+            )
             : null;
 
         const repeatList = repeat
             ? repeat.querySelector(".fa-repeat-list")
             : null;
 
-        const errorElement = form.querySelector(".fa-shop-error");
+        const errorElement =
+            form.querySelector(".fa-shop-error");
 
         const template = document.querySelector(
             `#fa-shop-template-${CSS.escape(formId)}`
         );
 
-        const cart = form.querySelector("[data-shop-cart]");
+        const cart =
+            form.querySelector("[data-shop-cart]");
+
         const cartList = cart
             ? cart.querySelector("[data-shop-cart-list]")
             : null;
@@ -134,9 +133,10 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
         }
 
         let records = [];
-        let selected = new Map();
+        const selected = new Map();
 
         const showError = (message) => {
+
             if (!errorElement) {
                 return;
             }
@@ -146,6 +146,7 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
         };
 
         const hideError = () => {
+
             if (!errorElement) {
                 return;
             }
@@ -161,6 +162,7 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
         };
 
         const getPrice = (record) => {
+
             const price = Number(record?.precio);
 
             return Number.isFinite(price)
@@ -169,15 +171,19 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
         };
 
         const getSummary = (selection) => {
+
             const record = selection.record;
             const label = selection.label;
             const cantidad = selection.cantidad;
 
             if (mode === "quantity") {
-                const price = getPrice(record);
-                const subtotal = price * cantidad;
 
-                if (Number.isFinite(Number(record?.precio))) {
+                const price = Number(record?.precio);
+
+                if (Number.isFinite(price)) {
+
+                    const subtotal = price * cantidad;
+
                     return `${label} x ${cantidad} — ${subtotal} €`;
                 }
 
@@ -193,56 +199,76 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
 
             records.forEach(record => {
 
-                const fragment = template.content.cloneNode(true);
+                const fragment =
+                    template.content.cloneNode(true);
 
                 fragment
                     .querySelectorAll("[data-shop-field]")
                     .forEach(element => {
 
-                        const field = element.dataset.shopField;
+                        const field =
+                            element.dataset.shopField;
+
                         const value = record[field];
 
-                        if (value === undefined || value === null) {
+                        if (
+                            value === undefined ||
+                            value === null
+                        ) {
                             element.textContent = "";
                             return;
                         }
 
-                        const attribute = element.dataset.shopAttribute;
+                        const attribute =
+                            element.dataset.shopAttribute;
 
                         if (attribute) {
+
                             element.setAttribute(
                                 attribute,
                                 value
                             );
+
                         } else {
+
                             element.textContent = value;
                         }
                     });
 
-                const action = fragment.querySelector(
-                    "[data-shop-action]"
-                );
-
-                if (action) {
-                    action.dataset.shopItemId = record.id;
-
-                    const currentSelection = selected.get(
-                        String(record.id)
+                const action =
+                    fragment.querySelector(
+                        "[data-shop-action]"
                     );
 
+                if (action) {
+
+                    action.dataset.shopItemId =
+                        record.id;
+
+                    const currentSelection =
+                        selected.get(
+                            String(record.id)
+                        );
+
                     if (currentSelection) {
+
                         action.setAttribute(
                             "aria-pressed",
                             "true"
                         );
 
-                        action.classList.add("is-selected");
+                        action.classList.add(
+                            "is-selected"
+                        );
 
                         if (mode === "quantity") {
+
                             action.textContent =
                                 `Añadido (${currentSelection.cantidad})`;
                         }
+
                     } else {
+
                         action.setAttribute(
                             "aria-pressed",
                             "false"
@@ -271,6 +297,7 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
 
                 const record = selection.record;
                 const cantidad = selection.cantidad;
+
                 const subtotal =
                     getPrice(record) * cantidad;
 
@@ -284,7 +311,9 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
                     cartTemplate.content.cloneNode(true);
 
                 fragment
-                    .querySelectorAll("[data-shop-cart-field]")
+                    .querySelectorAll(
+                        "[data-shop-cart-field]"
+                    )
                     .forEach(element => {
 
                         const field =
@@ -293,28 +322,39 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
                         let value = "";
 
                         if (field === "cantidad") {
+
                             value = cantidad;
+
                         } else if (field === "subtotal") {
+
                             value = subtotal;
+
                         } else {
-                            value = record[field] ?? "";
+
+                            value =
+                                record[field] ?? "";
                         }
 
                         const attribute =
                             element.dataset.shopCartAttribute;
 
                         if (attribute) {
+
                             element.setAttribute(
                                 attribute,
                                 value
                             );
+
                         } else {
+
                             element.textContent = value;
                         }
                     });
 
                 fragment
-                    .querySelectorAll("[data-shop-cart-action]")
+                    .querySelectorAll(
+                        "[data-shop-cart-action]"
+                    )
                     .forEach(button => {
 
                         button.dataset.shopItemId =
@@ -340,25 +380,38 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
             }
 
             const personajeInput =
-                form.querySelector('[name="personaje_id"]');
+                form.querySelector(
+                    '[name="personaje_id"]'
+                );
 
             const personajeId =
                 personajeInput?.value?.trim() || "";
 
-selected.forEach(selection => {
+            selected.forEach(selection => {
 
-    if (repeatList) {
+                if (!repeatList) {
+                    return;
+                }
 
-        const entry = createEntry({
-            personajeId,
-            id: selection.id,
-            label: getSummary(selection),
-            cantidad: selection.cantidad
-        });
+                /*
+                 * El label que recibe PixieFormCore
+                 * contiene el resumen legible.
+                 *
+                 * Ejemplo:
+                 * Poción de curación x 2 — 200 €
+                 *
+                 * fa-value sigue siendo el ID del item.
+                 */
 
-        repeatList.appendChild(entry);
-    }
-});
+                const entry = createEntry({
+                    personajeId,
+                    id: selection.id,
+                    label: getSummary(selection),
+                    cantidad: selection.cantidad
+                });
+
+                repeatList.appendChild(entry);
+            });
 
             renderRecords();
             renderCart();
@@ -372,8 +425,11 @@ selected.forEach(selection => {
             if (mode === "quantity") {
 
                 if (existing) {
+
                     existing.cantidad += 1;
+
                 } else {
+
                     selected.set(key, {
                         id: record.id,
                         label: getLabel(record, mode),
@@ -385,8 +441,11 @@ selected.forEach(selection => {
             } else {
 
                 if (existing) {
+
                     selected.delete(key);
+
                 } else {
+
                     selected.set(key, {
                         id: record.id,
                         label: getLabel(record, mode),
@@ -424,37 +483,13 @@ selected.forEach(selection => {
             renderSelected();
         };
 
-        recordsContainer.addEventListener("click", event => {
-
-            const action =
-                event.target.closest("[data-shop-action]");
-
-            if (!action) {
-                return;
-            }
-
-            const id = action.dataset.shopItemId;
-
-            if (!id) {
-                return;
-            }
-
-            const record = getRecordById(id);
-
-            if (!record) {
-                return;
-            }
-
-            selectRecord(record);
-        });
-
-        if (cartList) {
-
-            cartList.addEventListener("click", event => {
+        recordsContainer.addEventListener(
+            "click",
+            event => {
 
                 const action =
                     event.target.closest(
-                        "[data-shop-cart-action]"
+                        "[data-shop-action]"
                     );
 
                 if (!action) {
@@ -468,28 +503,66 @@ selected.forEach(selection => {
                     return;
                 }
 
-                const actionType =
-                    action.dataset.shopCartAction;
+                const record =
+                    getRecordById(id);
 
-                if (actionType === "increase") {
-                    changeQuantity(id, 1);
+                if (!record) {
+                    return;
                 }
 
-                if (actionType === "decrease") {
-                    changeQuantity(id, -1);
-                }
+                selectRecord(record);
+            }
+        );
 
-                if (actionType === "remove") {
-                    removeRecord(id);
+        if (cartList) {
+
+            cartList.addEventListener(
+                "click",
+                event => {
+
+                    const action =
+                        event.target.closest(
+                            "[data-shop-cart-action]"
+                        );
+
+                    if (!action) {
+                        return;
+                    }
+
+                    const id =
+                        action.dataset.shopItemId;
+
+                    if (!id) {
+                        return;
+                    }
+
+                    const actionType =
+                        action.dataset.shopCartAction;
+
+                    if (actionType === "increase") {
+
+                        changeQuantity(id, 1);
+                    }
+
+                    if (actionType === "decrease") {
+
+                        changeQuantity(id, -1);
+                    }
+
+                    if (actionType === "remove") {
+
+                        removeRecord(id);
+                    }
                 }
-            });
+            );
         }
 
         try {
 
             hideError();
 
-            records = await getRecords(source);
+            records =
+                await getRecords(source);
 
             renderRecords();
             renderSelected();
