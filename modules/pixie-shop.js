@@ -1,37 +1,57 @@
-window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
+(function (window, document) {
+    "use strict";
 
-    const SUPABASE_URL = "https://udnotovrosokbdahlqaf.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_OQcJe7XcKx0jGCzvUVbALw_isdQEDfo";
+    if (window.PixieShop) return;
 
-    const FORM_SELECTOR = ".fa-generated-shop-form";
-    const INITIALIZED_ATTRIBUTE = "data-pixie-shop-initialized";
+    const SUPABASE_URL =
+        "https://udnotovrosokbdahlqaf.supabase.co";
 
-    const getRecords = async (source) => {
-        const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/${encodeURIComponent(source)}?select=*`,
-            {
-                headers: {
-                    apikey: SUPABASE_KEY,
-                    Authorization: `Bearer ${SUPABASE_KEY}`
-                }
-            }
-        );
+    const SUPABASE_KEY =
+        "sb_publishable_OQcJe7XcKx0jGCzvUVbALw_isdQEDfo";
 
-        if (!response.ok) {
-            throw new Error(`Supabase respondió con ${response.status}.`);
-        }
+    const FORM_SELECTOR =
+        ".fa-generated-shop-form";
 
-        const records = await response.json();
+    const INITIALIZED_ATTRIBUTE =
+        "data-pixie-shop-initialized";
 
-        return records.filter(record => record.visible !== false);
+    const escapeHTML = value => {
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     };
 
-    const getLabel = (record, mode) => {
-        if (mode === "toggle" && record.nombre) {
-            return record.nombre;
+    const getValue = (record, element) => {
+        const field =
+            element.dataset.shopField;
+
+        if (!field) {
+            return "";
         }
 
-        return record.titulo || record.nombre || `Registro ${record.id}`;
+        return record?.[field] ?? "";
+    };
+
+    const setElementValue = (
+        element,
+        value
+    ) => {
+        const attribute =
+            element.dataset.shopAttribute;
+
+        if (attribute) {
+            element.setAttribute(
+                attribute,
+                value
+            );
+
+            return;
+        }
+
+        element.textContent = value;
     };
 
     const createEntry = ({
@@ -40,30 +60,45 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
         label,
         cantidad = 1
     }) => {
-        const entry = document.createElement("div");
+        const entry =
+            document.createElement("div");
+
         entry.className = "fa-entry";
 
-        const text = document.createElement("input");
+        const text =
+            document.createElement("input");
+
         text.type = "hidden";
         text.className = "fa-text";
         text.value = personajeId;
 
-        const value = document.createElement("input");
+        const value =
+            document.createElement("input");
+
         value.type = "hidden";
         value.className = "fa-value";
         value.value = id;
 
-        const labelElement = document.createElement("input");
+        const labelElement =
+            document.createElement("input");
+
         labelElement.type = "hidden";
         labelElement.className = "fa-label";
         labelElement.value = label;
 
-        const cantidadElement = document.createElement("input");
-        cantidadElement.type = "hidden";
-        cantidadElement.className = "fa-cantidad";
-        cantidadElement.value = cantidad;
+        const cantidadElement =
+            document.createElement("input");
 
-        const extra = document.createElement("input");
+        cantidadElement.type = "hidden";
+        cantidadElement.className =
+            "fa-cantidad";
+
+        cantidadElement.value =
+            cantidad;
+
+        const extra =
+            document.createElement("input");
+
         extra.type = "hidden";
         extra.className = "fa-extra";
         extra.value = label;
@@ -79,110 +114,169 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
         return entry;
     };
 
-    const initForm = async (form) => {
-        if (!(form instanceof HTMLFormElement)) {
+    const initForm = async form => {
+        if (
+            form.getAttribute(
+                INITIALIZED_ATTRIBUTE
+            ) === "true"
+        ) {
             return;
         }
 
-        if (form.hasAttribute(INITIALIZED_ATTRIBUTE)) {
+        form.setAttribute(
+            INITIALIZED_ATTRIBUTE,
+            "true"
+        );
+
+        const formId =
+            form.dataset.id;
+
+        const source =
+            form.dataset.shopSource;
+
+        const mode =
+            form.dataset.shopMode ||
+            "toggle";
+
+        const repeatId =
+            form.dataset.shopRepeat ||
+            "shop";
+
+        if (!formId || !source) {
             return;
         }
-
-        form.setAttribute(INITIALIZED_ATTRIBUTE, "true");
-
-        const formId = form.dataset.id;
-        const source = form.dataset.shopSource;
-        const mode = form.dataset.shopMode || "toggle";
-        const repeatId = form.dataset.shopRepeat;
 
         const recordsContainer =
-            form.querySelector(".fa-shop-records");
+            form.querySelector(
+                ".fa-shop-records"
+            );
 
-        const repeat = repeatId
-            ? form.querySelector(
-                `.fa-repeat[data-repeat="${repeatId}"]`
-            )
-            : null;
+        const repeat =
+            form.querySelector(
+                `.fa-repeat[data-repeat="${CSS.escape(repeatId)}"]`
+            );
 
-        const repeatList = repeat
-            ? repeat.querySelector(".fa-repeat-list")
-            : null;
+        const repeatList =
+            repeat?.querySelector(
+                ".fa-repeat-list"
+            );
 
-        const errorElement =
-            form.querySelector(".fa-shop-error");
+        const template =
+            document.querySelector(
+                `#fa-shop-template-${CSS.escape(formId)}`
+            );
 
-        const template = document.querySelector(
-            `#fa-shop-template-${CSS.escape(formId)}`
-        );
+        const cartTemplate =
+            document.querySelector(
+                `#fa-shop-cart-template-${CSS.escape(formId)}`
+            );
 
         const cart =
-            form.querySelector("[data-shop-cart]");
+            form.querySelector(
+                "[data-shop-cart]"
+            );
 
-        const cartList = cart
-            ? cart.querySelector("[data-shop-cart-list]")
-            : null;
+        const cartList =
+            cart?.querySelector(
+                "[data-shop-cart-list]"
+            );
 
-        const cartTotal = cart
-            ? cart.querySelector("[data-shop-cart-total]")
-            : null;
+        const cartTotal =
+            cart?.querySelector(
+                "[data-shop-cart-total]"
+            );
 
-        const cartEmpty = cart
-            ? cart.querySelector("[data-shop-cart-empty]")
-            : null;
+        const cartEmpty =
+            cart?.querySelector(
+                "[data-shop-cart-empty]"
+            );
 
-        const cartTemplate = document.querySelector(
-            `#fa-shop-cart-template-${CSS.escape(formId)}`
-        );
+        const errorElement =
+            form.querySelector(
+                ".fa-shop-error"
+            );
 
-        if (!source || !recordsContainer || !template) {
+        if (
+            !recordsContainer ||
+            !template
+        ) {
             return;
         }
 
         let records = [];
-        const selected = new Map();
+        let selected = [];
 
-        const showError = (message) => {
-            if (!errorElement) {
-                return;
-            }
+        /*
+         * Campo normal que utilizará PixieFormCore
+         * para mostrar el resumen.
+         */
 
-            errorElement.textContent = message;
-            errorElement.hidden = false;
-        };
+        const summaryName =
+            `${formId}-summary`;
 
-        const hideError = () => {
-            if (!errorElement) {
-                return;
-            }
+        let summaryInput =
+            form.querySelector(
+                `[name="${CSS.escape(summaryName)}"]`
+            );
 
-            errorElement.textContent = "";
-            errorElement.hidden = true;
-        };
+        if (!summaryInput) {
+            summaryInput =
+                document.createElement("input");
 
-        const getRecordById = (id) => {
-            return records.find(
-                record => String(record.id) === String(id)
+            summaryInput.type = "hidden";
+            summaryInput.name =
+                summaryName;
+
+            form.appendChild(
+                summaryInput
+            );
+        }
+
+        const getPersonajeId = () => {
+            const input =
+                form.querySelector(
+                    '[name="personaje_id"]'
+                );
+
+            return (
+                input?.value?.trim() || ""
             );
         };
 
-        const getPrice = (record) => {
-            const price = Number(record?.precio);
-
-            return Number.isFinite(price)
-                ? price
-                : 0;
+        const getRecordId = record => {
+            return String(
+                record?.id ?? ""
+            );
         };
 
-        const getSummary = (selection) => {
-            const record = selection.record;
-            const label = selection.label;
-            const cantidad = selection.cantidad;
+        const getRecordLabel = record => {
+            return String(
+                record?.titulo ??
+                record?.nombre ??
+                record?.id ??
+                ""
+            );
+        };
+
+        const getSummary = selection => {
+            const record =
+                selection.record;
+
+            const label =
+                selection.label;
+
+            const cantidad =
+                selection.cantidad;
 
             if (mode === "quantity") {
-                const price = Number(record?.precio);
+                const price =
+                    Number(record?.precio);
 
-                if (Number.isFinite(price)) {
-                    const subtotal = price * cantidad;
+                if (
+                    Number.isFinite(price)
+                ) {
+                    const subtotal =
+                        price * cantidad;
 
                     return `${label} x ${cantidad} — ${subtotal} €`;
                 }
@@ -193,203 +287,284 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
             return label;
         };
 
+        const getCartSubtotal = selection => {
+            const price =
+                Number(
+                    selection.record?.precio
+                );
+
+            if (
+                !Number.isFinite(price)
+            ) {
+                return 0;
+            }
+
+            return (
+                price *
+                selection.cantidad
+            );
+        };
+
+        const updateSummary = () => {
+            const summaries =
+                selected.map(
+                    selection =>
+                        getSummary(selection)
+                );
+
+            summaryInput.value =
+                summaries.join("\n");
+        };
+
         const renderRecords = () => {
-            recordsContainer.innerHTML = "";
+            recordsContainer.innerHTML =
+                "";
 
             records.forEach(record => {
                 const fragment =
-                    template.content.cloneNode(true);
+                    template.content.cloneNode(
+                        true
+                    );
 
                 fragment
-                    .querySelectorAll("[data-shop-field]")
+                    .querySelectorAll(
+                        "[data-shop-field]"
+                    )
                     .forEach(element => {
-                        const field =
-                            element.dataset.shopField;
-
-                        const value = record[field];
-
-                        if (
-                            value === undefined ||
-                            value === null
-                        ) {
-                            element.textContent = "";
-                            return;
-                        }
-
-                        const attribute =
-                            element.dataset.shopAttribute;
-
-                        if (attribute) {
-                            element.setAttribute(
-                                attribute,
-                                value
+                        const value =
+                            getValue(
+                                record,
+                                element
                             );
-                        } else {
-                            element.textContent = value;
-                        }
+
+                        setElementValue(
+                            element,
+                            value
+                        );
                     });
 
                 const action =
-                    fragment.querySelector("[data-shop-action]");
+                    fragment.querySelector(
+                        "[data-shop-action]"
+                    );
 
                 if (action) {
-                    action.dataset.shopItemId = record.id;
-
-                    const currentSelection =
-                        selected.get(String(record.id));
-
-                    if (currentSelection) {
-                        action.setAttribute(
-                            "aria-pressed",
-                            "true"
+                    const id =
+                        getRecordId(
+                            record
                         );
 
-                        action.classList.add("is-selected");
+                    action.dataset.shopItemId =
+                        id;
 
-                        if (mode === "quantity") {
+                    const current =
+                        selected.find(
+                            selection =>
+                                selection.id === id
+                        );
+
+                    if (current) {
+                        action.classList.add(
+                            "is-selected"
+                        );
+
+                        action.dataset.shopSelected =
+                            "true";
+
+                        if (
+                            mode ===
+                            "quantity"
+                        ) {
                             action.textContent =
-                                `Añadido (${currentSelection.cantidad})`;
+                                `Añadir (${current.cantidad})`;
                         }
-                    } else {
-                        action.setAttribute(
-                            "aria-pressed",
-                            "false"
-                        );
                     }
                 }
 
-                recordsContainer.appendChild(fragment);
+                recordsContainer.appendChild(
+                    fragment
+                );
             });
         };
 
         const renderCart = () => {
-            if (!cart || !cartList) {
+            if (!cart) {
                 return;
             }
 
-            cartList.innerHTML = "";
+            if (cartList) {
+                cartList.innerHTML =
+                    "";
+            }
 
             let total = 0;
-            let hasItems = false;
 
-            selected.forEach(selection => {
-                hasItems = true;
+            selected.forEach(
+                selection => {
+                    total +=
+                        getCartSubtotal(
+                            selection
+                        );
 
-                const record = selection.record;
-                const cantidad = selection.cantidad;
+                    if (
+                        !cartList ||
+                        !cartTemplate
+                    ) {
+                        return;
+                    }
 
-                const subtotal =
-                    getPrice(record) * cantidad;
+                    const fragment =
+                        cartTemplate.content.cloneNode(
+                            true
+                        );
 
-                total += subtotal;
+                    fragment
+                        .querySelectorAll(
+                            "[data-shop-cart-field]"
+                        )
+                        .forEach(element => {
+                            const field =
+                                element.dataset
+                                    .shopCartField;
 
-                if (!cartTemplate) {
-                    return;
-                }
+                            let value = "";
 
-                const fragment =
-                    cartTemplate.content.cloneNode(true);
+                            if (
+                                field ===
+                                "cantidad"
+                            ) {
+                                value =
+                                    selection.cantidad;
+                            } else if (
+                                field ===
+                                "subtotal"
+                            ) {
+                                value =
+                                    getCartSubtotal(
+                                        selection
+                                    );
+                            } else {
+                                value =
+                                    selection
+                                        .record?.[
+                                        field
+                                    ] ?? "";
+                            }
 
-                fragment
-                    .querySelectorAll("[data-shop-cart-field]")
-                    .forEach(element => {
-                        const field =
-                            element.dataset.shopCartField;
-
-                        let value = "";
-
-                        if (field === "cantidad") {
-                            value = cantidad;
-                        } else if (field === "subtotal") {
-                            value = subtotal;
-                        } else {
-                            value = record[field] ?? "";
-                        }
-
-                        const attribute =
-                            element.dataset.shopCartAttribute;
-
-                        if (attribute) {
-                            element.setAttribute(
-                                attribute,
+                            setElementValue(
+                                element,
                                 value
                             );
-                        } else {
-                            element.textContent = value;
-                        }
-                    });
+                        });
 
-                fragment
-                    .querySelectorAll("[data-shop-cart-action]")
-                    .forEach(button => {
-                        button.dataset.shopItemId =
-                            record.id;
-                    });
+                    fragment
+                        .querySelectorAll(
+                            "[data-shop-cart-action]"
+                        )
+                        .forEach(button => {
+                            button.dataset.shopItemId =
+                                selection.id;
+                        });
 
-                cartList.appendChild(fragment);
-            });
-
-            if (cartEmpty) {
-                cartEmpty.hidden = hasItems;
-            }
+                    cartList.appendChild(
+                        fragment
+                    );
+                }
+            );
 
             if (cartTotal) {
-                cartTotal.textContent = total;
+                cartTotal.textContent =
+                    `${total} €`;
             }
+
+            if (cartEmpty) {
+                cartEmpty.hidden =
+                    selected.length > 0;
+            }
+
+            updateSummary();
         };
 
         const renderSelected = () => {
             if (repeatList) {
-                repeatList.innerHTML = "";
+                repeatList.innerHTML =
+                    "";
             }
 
-            const personajeInput =
-                form.querySelector('[name="personaje_id"]');
-
             const personajeId =
-                personajeInput?.value?.trim() || "";
+                getPersonajeId();
 
-            selected.forEach(selection => {
-                if (!repeatList) {
-                    return;
+            selected.forEach(
+                selection => {
+                    if (!repeatList) {
+                        return;
+                    }
+
+                    const entry =
+                        createEntry({
+                            personajeId,
+                            id: selection.id,
+                            label:
+                                getSummary(
+                                    selection
+                                ),
+                            cantidad:
+                                selection.cantidad
+                        });
+
+                    repeatList.appendChild(
+                        entry
+                    );
                 }
-
-                const entry = createEntry({
-                    personajeId,
-                    id: selection.id,
-                    label: getSummary(selection),
-                    cantidad: selection.cantidad
-                });
-
-                repeatList.appendChild(entry);
-            });
+            );
 
             renderRecords();
             renderCart();
         };
 
-        const selectRecord = (record) => {
-            const key = String(record.id);
-            const existing = selected.get(key);
+        const selectRecord = record => {
+            const id =
+                getRecordId(record);
+
+            if (!id) {
+                return;
+            }
+
+            const existing =
+                selected.find(
+                    selection =>
+                        selection.id === id
+                );
 
             if (mode === "quantity") {
                 if (existing) {
                     existing.cantidad += 1;
                 } else {
-                    selected.set(key, {
-                        id: record.id,
-                        label: getLabel(record, mode),
+                    selected.push({
+                        id,
+                        label:
+                            getRecordLabel(
+                                record
+                            ),
                         cantidad: 1,
                         record
                     });
                 }
             } else {
                 if (existing) {
-                    selected.delete(key);
+                    selected =
+                        selected.filter(
+                            selection =>
+                                selection.id !==
+                                id
+                        );
                 } else {
-                    selected.set(key, {
-                        id: record.id,
-                        label: getLabel(record, mode),
+                    selected.push({
+                        id,
+                        label:
+                            getRecordLabel(
+                                record
+                            ),
                         cantidad: 1,
                         record
                     });
@@ -399,58 +574,69 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
             renderSelected();
         };
 
-        const changeQuantity = (id, amount) => {
-            const key = String(id);
-            const selection = selected.get(key);
+        const findSelection = id => {
+            return selected.find(
+                selection =>
+                    selection.id ===
+                    String(id)
+            );
+        };
+
+        const increaseSelection = id => {
+            const selection =
+                findSelection(id);
 
             if (!selection) {
                 return;
             }
 
-            selection.cantidad += amount;
+            selection.cantidad += 1;
 
-            if (selection.cantidad <= 0) {
-                selected.delete(key);
+            renderSelected();
+        };
+
+        const decreaseSelection = id => {
+            const selection =
+                findSelection(id);
+
+            if (!selection) {
+                return;
+            }
+
+            selection.cantidad -= 1;
+
+            if (
+                selection.cantidad <=
+                0
+            ) {
+                selected =
+                    selected.filter(
+                        item =>
+                            item.id !==
+                            String(id)
+                    );
             }
 
             renderSelected();
         };
 
-        const removeRecord = (id) => {
-            selected.delete(String(id));
+        const removeSelection = id => {
+            selected =
+                selected.filter(
+                    selection =>
+                        selection.id !==
+                        String(id)
+                );
+
             renderSelected();
         };
 
-        recordsContainer.addEventListener("click", event => {
-            const action =
-                event.target.closest("[data-shop-action]");
-
-            if (!action) {
-                return;
-            }
-
-            const id =
-                action.dataset.shopItemId;
-
-            if (!id) {
-                return;
-            }
-
-            const record =
-                getRecordById(id);
-
-            if (!record) {
-                return;
-            }
-
-            selectRecord(record);
-        });
-
-        if (cartList) {
-            cartList.addEventListener("click", event => {
+        recordsContainer.addEventListener(
+            "click",
+            event => {
                 const action =
                     event.target.closest(
-                        "[data-shop-cart-action]"
+                        "[data-shop-action]"
                     );
 
                 if (!action) {
@@ -464,56 +650,167 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
                     return;
                 }
 
-                const actionType =
-                    action.dataset.shopCartAction;
+                const record =
+                    records.find(
+                        item =>
+                            getRecordId(
+                                item
+                            ) === id
+                    );
 
-                if (actionType === "increase") {
-                    changeQuantity(id, 1);
+                if (!record) {
+                    return;
                 }
 
-                if (actionType === "decrease") {
-                    changeQuantity(id, -1);
-                }
+                selectRecord(record);
+            }
+        );
 
-                if (actionType === "remove") {
-                    removeRecord(id);
+        if (cartList) {
+            cartList.addEventListener(
+                "click",
+                event => {
+                    const action =
+                        event.target.closest(
+                            "[data-shop-cart-action]"
+                        );
+
+                    if (!action) {
+                        return;
+                    }
+
+                    const id =
+                        action.dataset
+                            .shopItemId;
+
+                    if (!id) {
+                        return;
+                    }
+
+                    const type =
+                        action.dataset
+                            .shopCartAction;
+
+                    if (
+                        type ===
+                        "increase"
+                    ) {
+                        increaseSelection(
+                            id
+                        );
+                    }
+
+                    if (
+                        type ===
+                        "decrease"
+                    ) {
+                        decreaseSelection(
+                            id
+                        );
+                    }
+
+                    if (
+                        type ===
+                        "remove"
+                    ) {
+                        removeSelection(
+                            id
+                        );
+                    }
                 }
-            });
+            );
         }
 
+        const personajeInput =
+            form.querySelector(
+                '[name="personaje_id"]'
+            );
+
+        personajeInput?.addEventListener(
+            "input",
+            () => {
+                renderSelected();
+            }
+        );
+
         try {
-            hideError();
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/rest/v1/${encodeURIComponent(
+                        source
+                    )}?select=*`,
+                    {
+                        headers: {
+                            apikey:
+                                SUPABASE_KEY,
+
+                            Authorization:
+                                `Bearer ${SUPABASE_KEY}`
+                        }
+                    }
+                );
+
+            if (!response.ok) {
+                throw new Error(
+                    `Supabase ${response.status}`
+                );
+            }
 
             records =
-                await getRecords(source);
+                await response.json();
+
+            records =
+                records.filter(
+                    record =>
+                        record.visible !==
+                        false
+                );
 
             renderRecords();
-            renderSelected();
-
+            renderCart();
         } catch (error) {
             console.error(
-                "[PixieShop]",
+                "PixieShop:",
                 error
             );
 
-            showError(
-                "No se han podido cargar los registros."
-            );
+            if (errorElement) {
+                errorElement.hidden =
+                    false;
+
+                errorElement.textContent =
+                    "No se han podido cargar los objetos de la tienda.";
+            }
         }
     };
 
-    const init = (context = document) => {
+    const init = (
+        context = document
+    ) => {
         context
-            .querySelectorAll(FORM_SELECTOR)
-            .forEach(initForm);
+            .querySelectorAll(
+                FORM_SELECTOR
+            )
+            .forEach(form => {
+                initForm(form);
+            });
     };
 
-    Pixie.ready(() => {
-        init();
-    });
-
-    return {
+    window.PixieShop = {
         init,
         initForm
     };
-});
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+        document.addEventListener(
+            "DOMContentLoaded",
+            () => init()
+        );
+    } else {
+        init();
+    }
+})(window, document);
+
