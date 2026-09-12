@@ -345,21 +345,20 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
             const personajeId =
                 personajeInput?.value?.trim() || "";
 
-            selected.forEach(selection => {
+selected.forEach(selection => {
 
-                if (repeatList) {
+    if (repeatList) {
 
-                    const entry = createEntry({
-                        personajeId,
-                        id: selection.id,
-                        label: selection.label,
-                        cantidad: selection.cantidad,
-                        extra: getSummary(selection)
-                    });
+        const entry = createEntry({
+            personajeId,
+            id: selection.id,
+            label: getSummary(selection),
+            cantidad: selection.cantidad
+        });
 
-                    repeatList.appendChild(entry);
-                }
-            });
+        repeatList.appendChild(entry);
+    }
+});
 
             renderRecords();
             renderCart();
