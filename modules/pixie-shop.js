@@ -517,4 +517,3 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
         initForm
     };
 });
-
