@@ -1,749 +1,345 @@
-/*!
- * PixieShop.js
- * Motor genérico para formularios de tienda.
- *
- * Requiere:
- * - PixieFormCore.js
- *
- * Solo consulta Supabase.
- * No modifica ningún dato en Supabase.
- */
+(() => {
+    const SUPABASE_URL = "https://udnotovrosokbdahlqaf.supabase.co";
+    const SUPABASE_KEY = "TU_PUBLISHABLE_KEY";
 
-(function (window, document) {
-    "use strict";
+    const forms = document.querySelectorAll(".fa-generated-shop-form");
 
-    if (window.PixieShop) return;
+    if (!forms.length) return;
 
-    const SUPABASE_URL =
-        "https://udnotovrosokbdahlqaf.supabase.co";
-
-    const SUPABASE_KEY =
-        "TU_PUBLISHABLE_KEY";
-
-    const FORM_SELECTOR =
-        ".fa-generated-shop-form";
-
-    const PixieShop = {
-        init,
-        fetchTable
+    const escapeHTML = value => {
+        const div = document.createElement("div");
+        div.textContent = value ?? "";
+        return div.innerHTML;
     };
 
-    function init() {
-        document
-            .querySelectorAll(FORM_SELECTOR)
-            .forEach(initForm);
-    }
+    const getFieldValue = (row, field) => {
+        return row?.[field] ?? "";
+    };
 
-    async function initForm(form) {
-        if (!window.PixieFormCore) {
-            console.error(
-                "PixieShop: PixieFormCore no está disponible."
-            );
-            return;
+    const setTemplateField = (element, value) => {
+        const attribute = element.dataset.shopAttribute;
+
+        if (attribute) {
+            element.setAttribute(attribute, value ?? "");
+        } else {
+            element.textContent = value ?? "";
         }
+    };
 
-        const source =
-            form.dataset.shopSource;
+    const renderRecord = (template, record) => {
+        const fragment = template.content.cloneNode(true);
 
-        if (!source) {
-            console.error(
-                "PixieShop: falta data-shop-source.",
-                form
-            );
-            return;
-        }
+        fragment.querySelectorAll("[data-shop-field]").forEach(element => {
+            const field = element.dataset.shopField;
+            const value = getFieldValue(record, field);
 
-        const repeat =
-            form.dataset.shopRepeat || source;
-
-        const mode =
-            form.dataset.shopMode || "quantity";
-
-        const idField =
-            form.dataset.shopIdField || "id";
-
-        const labelField =
-            form.dataset.shopLabelField || "titulo";
-
-        const template =
-            document.querySelector(
-                `#fa-shop-template-${CSS.escape(
-                    form.dataset.id
-                )}`
-            );
-
-        if (!template) {
-            console.error(
-                `PixieShop: no existe la plantilla para ${form.dataset.id}.`
-            );
-            return;
-        }
-
-        const controller =
-            PixieFormCore.initGeneratedForm(form);
-
-        const state = {
-            source,
-            repeat,
-            mode,
-            idField,
-            labelField,
-            data: [],
-            selected: new Map()
-        };
-
-        form.__pixieShop = state;
-        form.__pixieShopController = controller;
-
-        try {
-            state.data =
-                (await fetchTable(source))
-                    .filter(
-                        row => row.visible !== false
-                    );
-
-            renderRecords(form, state, template);
-            bindForm(form, state);
-
-        } catch (error) {
-            console.error(
-                "PixieShop:",
-                error
-            );
-
-            showError(
-                form,
-                "No se han podido cargar los datos."
-            );
-        }
-    }
-
-    async function fetchTable(table) {
-        const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/${encodeURIComponent(
-                table
-            )}?select=*`,
-            {
-                method: "GET",
-                headers: {
-                    apikey: SUPABASE_KEY,
-                    Authorization:
-                        `Bearer ${SUPABASE_KEY}`
-                }
-            }
-        );
-
-        if (!response.ok) {
-            const message =
-                await response.text();
-
-            throw new Error(
-                `Supabase ${response.status}: ${message}`
-            );
-        }
-
-        return response.json();
-    }
-
-    function renderRecords(
-        form,
-        state,
-        template
-    ) {
-        const container =
-            form.querySelector(
-                ".fa-shop-records"
-            );
-
-        if (!container) return;
-
-        container.replaceChildren();
-
-        state.data.forEach(item => {
-            const element =
-                renderRecord(
-                    form,
-                    state,
-                    template,
-                    item
-                );
-
-            if (element) {
-                container.append(element);
-            }
-        });
-    }
-
-    function renderRecord(
-        form,
-        state,
-        template,
-        item
-    ) {
-        const wrapper =
-            document.createElement(
-                "div"
-            );
-
-        wrapper.innerHTML =
-            renderTemplate(
-                template.innerHTML,
-                item
-            );
-
-        const element =
-            wrapper.firstElementChild;
-
-        if (!element) return null;
-
-        const id =
-            item[state.idField];
-
-        element.dataset.shopId = id;
-
-        const buttons =
-            element.querySelectorAll(
-                "[data-shop-action]"
-            );
-
-        buttons.forEach(button => {
-            button.addEventListener(
-                "click",
-                event => {
-                    event.preventDefault();
-
-                    handleAction(
-                        form,
-                        state,
-                        id
-                    );
-                }
-            );
+            setTemplateField(element, value);
         });
 
-        return element;
-    }
+        fragment.querySelectorAll("[data-shop-action]").forEach(button => {
+            button.dataset.shopItemId = record.id;
+        });
 
-    function renderTemplate(
-        source,
-        data
-    ) {
-        return source.replace(
-            /\{([a-zA-Z0-9_]+)\}/g,
-            (_, field) => {
-                const value =
-                    data[field];
+        return fragment;
+    };
 
-                return value == null
-                    ? ""
-                    : escapeHTML(
-                        String(value)
-                    );
-            }
+    const createEntry = ({
+        personajeId,
+        id,
+        label,
+        cantidad = 1
+    }) => {
+        const entry = document.createElement("div");
+
+        entry.className = "fa-entry";
+        entry.dataset.shopEntryId = id;
+
+        const text = document.createElement("span");
+        text.className = "fa-text";
+        text.textContent = personajeId;
+
+        const value = document.createElement("span");
+        value.className = "fa-value";
+        value.textContent = id;
+
+        const labelElement = document.createElement("span");
+        labelElement.className = "fa-label";
+        labelElement.textContent = label;
+
+        const quantity = document.createElement("span");
+        quantity.className = "fa-cantidad";
+        quantity.textContent = cantidad;
+
+        entry.append(
+            text,
+            value,
+            labelElement,
+            quantity
         );
-    }
-
-    function handleAction(
-        form,
-        state,
-        id
-    ) {
-        if (state.mode === "toggle") {
-            toggleItem(
-                form,
-                state,
-                id
-            );
-        } else {
-            addItem(
-                form,
-                state,
-                id
-            );
-        }
-
-        renderSelection(
-            form,
-            state
-        );
-    }
-
-    function addItem(
-        form,
-        state,
-        id
-    ) {
-        const current =
-            state.selected.get(id) || 0;
-
-        state.selected.set(
-            id,
-            current + 1
-        );
-    }
-
-    function toggleItem(
-        form,
-        state,
-        id
-    ) {
-        if (state.selected.has(id)) {
-            state.selected.delete(id);
-        } else {
-            state.selected.set(id, 1);
-        }
-    }
-
-    function renderSelection(
-        form,
-        state
-    ) {
-        const repeat =
-            form.querySelector(
-                `.fa-repeat[data-repeat="${CSS.escape(
-                    state.repeat
-                )}"]`
-            );
-
-        if (!repeat) return;
-
-        const list =
-            repeat.querySelector(
-                ".fa-repeat-list"
-            );
-
-        if (!list) return;
-
-        list.replaceChildren();
-
-        state.selected.forEach(
-            (quantity, id) => {
-                const item =
-                    state.data.find(
-                        row =>
-                            String(
-                                row[state.idField]
-                            ) === String(id)
-                    );
-
-                if (!item) return;
-
-                const entry =
-                    createEntry(
-                        form,
-                        state,
-                        item,
-                        quantity
-                    );
-
-                list.append(entry);
-            }
-        );
-
-        updateCharacterIds(
-            form,
-            state
-        );
-
-        renderOutput(
-            form
-        );
-    }
-
-    function createEntry(
-        form,
-        state,
-        item,
-        quantity
-    ) {
-        const entry =
-            document.createElement(
-                "div"
-            );
-
-        entry.className =
-            "fa-entry";
-
-        entry.dataset.value =
-            item[state.idField];
-
-        const label =
-            document.createElement(
-                "span"
-            );
-
-        label.className =
-            "fa-label";
-
-        label.textContent =
-            item[state.labelField] ??
-            item[state.idField];
-
-        entry.append(label);
-
-        const value =
-            document.createElement(
-                "span"
-            );
-
-        value.className =
-            "fa-value";
-
-        value.textContent =
-            item[state.idField];
-
-        entry.append(value);
-
-        const amount =
-            document.createElement(
-                "span"
-            );
-
-        amount.className =
-            "fa-cantidad";
-
-        amount.textContent =
-            quantity;
-
-        entry.append(amount);
-
-        const character =
-            document.createElement(
-                "span"
-            );
-
-        character.className =
-            "fa-text";
-
-        character.hidden = true;
-
-        character.textContent =
-            getCharacterId(form);
-
-        entry.append(character);
-
-        if (state.mode === "quantity") {
-            const controls =
-                document.createElement(
-                    "span"
-                );
-
-            controls.className =
-                "fa-shop-entry-controls";
-
-            const minus =
-                createButton(
-                    "−",
-                    () => {
-                        const current =
-                            state.selected.get(
-                                item[state.idField]
-                            ) || 0;
-
-                        if (current <= 1) {
-                            state.selected.delete(
-                                item[state.idField]
-                            );
-                        } else {
-                            state.selected.set(
-                                item[state.idField],
-                                current - 1
-                            );
-                        }
-
-                        renderSelection(
-                            form,
-                            state
-                        );
-                    }
-                );
-
-            const plus =
-                createButton(
-                    "+",
-                    () => {
-                        const current =
-                            state.selected.get(
-                                item[state.idField]
-                            ) || 0;
-
-                        state.selected.set(
-                            item[state.idField],
-                            current + 1
-                        );
-
-                        renderSelection(
-                            form,
-                            state
-                        );
-                    }
-                );
-
-            controls.append(
-                minus,
-                plus
-            );
-
-            entry.append(controls);
-        }
-
-        const remove =
-            createButton(
-                "×",
-                () => {
-                    state.selected.delete(
-                        item[state.idField]
-                    );
-
-                    renderSelection(
-                        form,
-                        state
-                    );
-                }
-            );
-
-        entry.append(remove);
 
         return entry;
-    }
+    };
 
-    function createButton(
-        text,
-        callback
-    ) {
-        const button =
-            document.createElement(
-                "button"
-            );
+    const initShop = async form => {
+        const source = form.dataset.shopSource;
+        const mode = form.dataset.shopMode;
+        const repeatId = form.dataset.shopRepeat;
+        const formId = form.dataset.id;
 
-        button.type = "button";
-        button.textContent = text;
+        const recordsContainer = form.querySelector(".fa-shop-records");
+        const repeat = form.querySelector(`.fa-repeat[data-repeat="${repeatId}"]`);
+        const repeatList = repeat?.querySelector(".fa-repeat-list");
+        const error = form.querySelector(".fa-shop-error");
+        const output = form.querySelector("[data-shop-output]");
+        const generateButton = form.querySelector("[data-shop-generate]");
+        const copyButton = form.querySelector("[data-shop-copy]");
 
-        button.addEventListener(
-            "click",
-            callback
+        const template = document.querySelector(
+            `#fa-shop-template-${formId}`
         );
 
-        return button;
-    }
-
-    function bindForm(
-        form,
-        state
-    ) {
-        const character =
-            form.querySelector(
-                "[name='personaje_id']"
-            );
-
-        if (character) {
-            character.addEventListener(
-                "input",
-                () => {
-                    updateCharacterIds(
-                        form,
-                        state
-                    );
-
-                    renderOutput(
-                        form
-                    );
-                }
-            );
+        if (!recordsContainer || !repeat || !repeatList || !template) {
+            console.warn(`PixieShop: configuración incompleta en ${formId}`);
+            return;
         }
 
-        const generate =
-            form.querySelector(
-                "[data-shop-generate]"
-            );
+        let controller;
 
-        if (generate) {
-            generate.addEventListener(
-                "click",
-                event => {
-                    event.preventDefault();
-
-                    if (!getCharacterId(form)) {
-                        showError(
-                            form,
-                            "Introduce el ID del personaje."
-                        );
-                        return;
-                    }
-
-                    if (!state.selected.size) {
-                        showError(
-                            form,
-                            "Selecciona al menos un elemento."
-                        );
-                        return;
-                    }
-
-                    clearError(form);
-                    renderOutput(form);
-                }
-            );
+        if (window.PixieFormCore) {
+            controller = window.PixieFormCore.initGeneratedForm(form);
+        } else {
+            console.error("PixieShop necesita PixieFormCore.");
+            return;
         }
 
-        const copy =
-            form.querySelector(
-                "[data-shop-copy]"
-            );
+        const state = new Map();
 
-        if (copy) {
-            copy.addEventListener(
-                "click",
-                async event => {
-                    event.preventDefault();
+        const showError = message => {
+            if (!error) return;
 
-                    const output =
-                        form.querySelector(
-                            "[data-shop-output]"
-                        );
+            error.textContent = message;
+            error.hidden = !message;
+        };
 
-                    if (!output) return;
+        const getPersonajeId = () => {
+            const input = form.elements.personaje_id;
 
-                    try {
-                        await navigator.clipboard.writeText(
-                            output.value
-                        );
+            if (!input) return "";
 
-                        const original =
-                            copy.textContent;
+            return input.value.trim();
+        };
 
-                        copy.textContent =
-                            "Copiado";
+        const renderSelected = () => {
+            repeatList.innerHTML = "";
 
-                        setTimeout(() => {
-                            copy.textContent =
-                                original;
-                        }, 1500);
+            const personajeId = getPersonajeId();
 
-                    } catch (error) {
-                        console.error(
-                            "PixieShop: error al copiar.",
-                            error
-                        );
-                    }
-                }
-            );
-        }
-    }
+            state.forEach((selection, id) => {
+                const entry = createEntry({
+                    personajeId,
+                    id,
+                    label: selection.label,
+                    cantidad: selection.cantidad
+                });
 
-    function renderOutput(form) {
-        const controller =
-            form.__pixieShopController;
-
-        if (!controller) return;
-
-        controller.renderTemplate();
-
-        const output =
-            form.querySelector(
-                "[data-shop-output]"
-            );
-
-        if (!output) return;
-
-        output.hidden = false;
-    }
-
-    function updateCharacterIds(
-        form,
-        state
-    ) {
-        const characterId =
-            getCharacterId(form);
-
-        const repeat =
-            form.querySelector(
-                `.fa-repeat[data-repeat="${CSS.escape(
-                    state.repeat
-                )}"]`
-            );
-
-        if (!repeat) return;
-
-        repeat
-            .querySelectorAll(
-                ".fa-entry .fa-text"
-            )
-            .forEach(element => {
-                element.textContent =
-                    characterId;
+                repeatList.appendChild(entry);
             });
-    }
+        };
 
-    function getCharacterId(form) {
-        const input =
-            form.querySelector(
-                "[name='personaje_id']"
+        const updateButton = (button, selected) => {
+            const defaultLabel = button.dataset.shopDefaultLabel ||
+                button.textContent;
+
+            const selectedLabel = button.dataset.shopSelectedLabel ||
+                "Seleccionado";
+
+            button.dataset.shopDefaultLabel = defaultLabel;
+
+            button.classList.toggle("is-selected", selected);
+            button.setAttribute("aria-pressed", selected);
+
+            button.textContent = selected
+                ? selectedLabel
+                : defaultLabel;
+        };
+
+        const handleAction = button => {
+            const id = String(button.dataset.shopItemId);
+            const record = records.find(item => String(item.id) === id);
+
+            if (!record) return;
+
+            const label =
+                record.titulo ??
+                record.nombre ??
+                record.id;
+
+            if (mode === "toggle") {
+                if (state.has(id)) {
+                    state.delete(id);
+                    updateButton(button, false);
+                } else {
+                    state.set(id, {
+                        record,
+                        label,
+                        cantidad: 1
+                    });
+
+                    updateButton(button, true);
+                }
+
+                renderSelected();
+                return;
+            }
+
+            if (mode === "quantity") {
+                const current = state.get(id);
+
+                if (current) {
+                    current.cantidad += 1;
+                } else {
+                    state.set(id, {
+                        record,
+                        label,
+                        cantidad: 1
+                    });
+                }
+
+                renderSelected();
+            }
+        };
+
+        const renderRecords = () => {
+            recordsContainer.innerHTML = "";
+
+            records.forEach(record => {
+                const fragment = renderRecord(template, record);
+
+                recordsContainer.appendChild(fragment);
+            });
+
+            recordsContainer
+                .querySelectorAll("[data-shop-action]")
+                .forEach(button => {
+                    button.addEventListener("click", () => {
+                        handleAction(button);
+                    });
+                });
+        };
+
+        let records = [];
+
+        try {
+            const response = await fetch(
+                `${SUPABASE_URL}/rest/v1/${encodeURIComponent(source)}?select=*`,
+                {
+                    method: "GET",
+                    headers: {
+                        apikey: SUPABASE_KEY,
+                        Authorization: `Bearer ${SUPABASE_KEY}`
+                    }
+                }
             );
 
-        return input
-            ? input.value.trim()
-            : "";
-    }
+            if (!response.ok) {
+                throw new Error(
+                    `Supabase respondió con ${response.status}`
+                );
+            }
 
-    function showError(
-        form,
-        message
-    ) {
-        const error =
-            form.querySelector(
-                ".fa-shop-error"
+            records = await response.json();
+
+            records = records.filter(record => record.visible !== false);
+
+            renderRecords();
+        } catch (err) {
+            console.error("PixieShop:", err);
+
+            showError(
+                "No se han podido cargar los datos de la tienda."
             );
 
-        if (!error) return;
+            return;
+        }
 
-        error.textContent =
-            message;
+        const clearSelection = () => {
+            state.clear();
 
-        error.hidden = false;
-    }
+            recordsContainer
+                .querySelectorAll("[data-shop-action]")
+                .forEach(button => {
+                    updateButton(button, false);
+                });
 
-    function clearError(form) {
-        const error =
-            form.querySelector(
-                ".fa-shop-error"
-            );
+            renderSelected();
+        };
 
-        if (!error) return;
+        const generate = () => {
+            showError("");
 
-        error.textContent = "";
-        error.hidden = true;
-    }
+            const personajeId = getPersonajeId();
 
-    function escapeHTML(value) {
-        return value
-            .replace(
-                /&/g,
-                "&amp;"
-            )
-            .replace(
-                /</g,
-                "&lt;"
-            )
-            .replace(
-                />/g,
-                "&gt;"
-            )
-            .replace(
-                /"/g,
-                "&quot;"
-            )
-            .replace(
-                /'/g,
-                "&#039;"
-            );
-    }
+            if (!personajeId) {
+                showError("Introduce el ID del personaje.");
+                return;
+            }
 
-    document.addEventListener(
-        "DOMContentLoaded",
-        init
-    );
+            if (!state.size) {
+                showError("Selecciona al menos un elemento.");
+                return;
+            }
 
-    window.PixieShop =
-        PixieShop;
+            renderSelected();
 
-})(window, document);
+            const result = controller.renderTemplate();
+
+            if (output) {
+                output.value = typeof result === "string"
+                    ? result
+                    : "";
+                output.hidden = false;
+            }
+        };
+
+        generateButton?.addEventListener("click", generate);
+
+        copyButton?.addEventListener("click", async () => {
+            if (!output) return;
+
+            if (!output.value.trim()) {
+                generate();
+            }
+
+            if (!output.value.trim()) return;
+
+            try {
+                await navigator.clipboard.writeText(output.value);
+
+                copyButton.classList.add("is-copied");
+
+                const originalText = copyButton.textContent;
+                copyButton.textContent = "Copiado";
+
+                setTimeout(() => {
+                    copyButton.textContent = originalText;
+                    copyButton.classList.remove("is-copied");
+                }, 1500);
+            } catch {
+                output.select();
+                document.execCommand("copy");
+            }
+        });
+
+        form.elements.personaje_id?.addEventListener("input", () => {
+            if (state.size) {
+                renderSelected();
+            }
+        });
+
+        form.addEventListener("reset", () => {
+            setTimeout(clearSelection);
+        });
+    };
+
+    forms.forEach(initShop);
+})();
