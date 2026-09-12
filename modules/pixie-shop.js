@@ -34,47 +34,52 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
         return record.titulo || record.nombre || `Registro ${record.id}`;
     };
 
-const createEntry = ({
-    personajeId,
-    id,
-    label,
-    cantidad = 1
-}) => {
-    const entry = document.createElement("div");
-    entry.className = "fa-entry";
+    const createEntry = ({
+        personajeId,
+        id,
+        label,
+        cantidad = 1
+    }) => {
+        const entry = document.createElement("div");
+        entry.className = "fa-entry";
 
-    const text = document.createElement("input");
-    text.type = "hidden";
-    text.className = "fa-text";
-    text.value = label;
+        const text = document.createElement("input");
+        text.type = "hidden";
+        text.className = "fa-text";
+        text.value = personajeId;
 
-    const value = document.createElement("input");
-    value.type = "hidden";
-    value.className = "fa-value";
-    value.value = id;
+        const value = document.createElement("input");
+        value.type = "hidden";
+        value.className = "fa-value";
+        value.value = id;
 
-    const labelElement = document.createElement("input");
-    labelElement.type = "hidden";
-    labelElement.className = "fa-label";
-    labelElement.value = label;
+        const labelElement = document.createElement("input");
+        labelElement.type = "hidden";
+        labelElement.className = "fa-label";
+        labelElement.value = label;
 
-    const cantidadElement = document.createElement("input");
-    cantidadElement.type = "hidden";
-    cantidadElement.className = "fa-cantidad";
-    cantidadElement.value = cantidad;
+        const cantidadElement = document.createElement("input");
+        cantidadElement.type = "hidden";
+        cantidadElement.className = "fa-cantidad";
+        cantidadElement.value = cantidad;
 
-    entry.append(
-        text,
-        value,
-        labelElement,
-        cantidadElement
-    );
+        const extra = document.createElement("input");
+        extra.type = "hidden";
+        extra.className = "fa-extra";
+        extra.value = label;
 
-    return entry;
-};
+        entry.append(
+            text,
+            value,
+            labelElement,
+            cantidadElement,
+            extra
+        );
+
+        return entry;
+    };
 
     const initForm = async (form) => {
-
         if (!(form instanceof HTMLFormElement)) {
             return;
         }
@@ -90,7 +95,8 @@ const createEntry = ({
         const mode = form.dataset.shopMode || "toggle";
         const repeatId = form.dataset.shopRepeat;
 
-        const recordsContainer = form.querySelector(".fa-shop-records");
+        const recordsContainer =
+            form.querySelector(".fa-shop-records");
 
         const repeat = repeatId
             ? form.querySelector(
@@ -136,7 +142,6 @@ const createEntry = ({
         const selected = new Map();
 
         const showError = (message) => {
-
             if (!errorElement) {
                 return;
             }
@@ -146,7 +151,6 @@ const createEntry = ({
         };
 
         const hideError = () => {
-
             if (!errorElement) {
                 return;
             }
@@ -162,7 +166,6 @@ const createEntry = ({
         };
 
         const getPrice = (record) => {
-
             const price = Number(record?.precio);
 
             return Number.isFinite(price)
@@ -171,17 +174,14 @@ const createEntry = ({
         };
 
         const getSummary = (selection) => {
-
             const record = selection.record;
             const label = selection.label;
             const cantidad = selection.cantidad;
 
             if (mode === "quantity") {
-
                 const price = Number(record?.precio);
 
                 if (Number.isFinite(price)) {
-
                     const subtotal = price * cantidad;
 
                     return `${label} x ${cantidad} — ${subtotal} €`;
@@ -194,18 +194,15 @@ const createEntry = ({
         };
 
         const renderRecords = () => {
-
             recordsContainer.innerHTML = "";
 
             records.forEach(record => {
-
                 const fragment =
                     template.content.cloneNode(true);
 
                 fragment
                     .querySelectorAll("[data-shop-field]")
                     .forEach(element => {
-
                         const field =
                             element.dataset.shopField;
 
@@ -223,52 +220,37 @@ const createEntry = ({
                             element.dataset.shopAttribute;
 
                         if (attribute) {
-
                             element.setAttribute(
                                 attribute,
                                 value
                             );
-
                         } else {
-
                             element.textContent = value;
                         }
                     });
 
                 const action =
-                    fragment.querySelector(
-                        "[data-shop-action]"
-                    );
+                    fragment.querySelector("[data-shop-action]");
 
                 if (action) {
-
-                    action.dataset.shopItemId =
-                        record.id;
+                    action.dataset.shopItemId = record.id;
 
                     const currentSelection =
-                        selected.get(
-                            String(record.id)
-                        );
+                        selected.get(String(record.id));
 
                     if (currentSelection) {
-
                         action.setAttribute(
                             "aria-pressed",
                             "true"
                         );
 
-                        action.classList.add(
-                            "is-selected"
-                        );
+                        action.classList.add("is-selected");
 
                         if (mode === "quantity") {
-
                             action.textContent =
                                 `Añadido (${currentSelection.cantidad})`;
                         }
-
                     } else {
-
                         action.setAttribute(
                             "aria-pressed",
                             "false"
@@ -281,7 +263,6 @@ const createEntry = ({
         };
 
         const renderCart = () => {
-
             if (!cart || !cartList) {
                 return;
             }
@@ -292,7 +273,6 @@ const createEntry = ({
             let hasItems = false;
 
             selected.forEach(selection => {
-
                 hasItems = true;
 
                 const record = selection.record;
@@ -311,52 +291,37 @@ const createEntry = ({
                     cartTemplate.content.cloneNode(true);
 
                 fragment
-                    .querySelectorAll(
-                        "[data-shop-cart-field]"
-                    )
+                    .querySelectorAll("[data-shop-cart-field]")
                     .forEach(element => {
-
                         const field =
                             element.dataset.shopCartField;
 
                         let value = "";
 
                         if (field === "cantidad") {
-
                             value = cantidad;
-
                         } else if (field === "subtotal") {
-
                             value = subtotal;
-
                         } else {
-
-                            value =
-                                record[field] ?? "";
+                            value = record[field] ?? "";
                         }
 
                         const attribute =
                             element.dataset.shopCartAttribute;
 
                         if (attribute) {
-
                             element.setAttribute(
                                 attribute,
                                 value
                             );
-
                         } else {
-
                             element.textContent = value;
                         }
                     });
 
                 fragment
-                    .querySelectorAll(
-                        "[data-shop-cart-action]"
-                    )
+                    .querySelectorAll("[data-shop-cart-action]")
                     .forEach(button => {
-
                         button.dataset.shopItemId =
                             record.id;
                     });
@@ -374,34 +339,20 @@ const createEntry = ({
         };
 
         const renderSelected = () => {
-
             if (repeatList) {
                 repeatList.innerHTML = "";
             }
 
             const personajeInput =
-                form.querySelector(
-                    '[name="personaje_id"]'
-                );
+                form.querySelector('[name="personaje_id"]');
 
             const personajeId =
                 personajeInput?.value?.trim() || "";
 
             selected.forEach(selection => {
-
                 if (!repeatList) {
                     return;
                 }
-
-                /*
-                 * El label que recibe PixieFormCore
-                 * contiene el resumen legible.
-                 *
-                 * Ejemplo:
-                 * Poción de curación x 2 — 200 €
-                 *
-                 * fa-value sigue siendo el ID del item.
-                 */
 
                 const entry = createEntry({
                     personajeId,
@@ -418,18 +369,13 @@ const createEntry = ({
         };
 
         const selectRecord = (record) => {
-
             const key = String(record.id);
             const existing = selected.get(key);
 
             if (mode === "quantity") {
-
                 if (existing) {
-
                     existing.cantidad += 1;
-
                 } else {
-
                     selected.set(key, {
                         id: record.id,
                         label: getLabel(record, mode),
@@ -437,15 +383,10 @@ const createEntry = ({
                         record
                     });
                 }
-
             } else {
-
                 if (existing) {
-
                     selected.delete(key);
-
                 } else {
-
                     selected.set(key, {
                         id: record.id,
                         label: getLabel(record, mode),
@@ -459,7 +400,6 @@ const createEntry = ({
         };
 
         const changeQuantity = (id, amount) => {
-
             const key = String(id);
             const selection = selected.get(key);
 
@@ -477,19 +417,40 @@ const createEntry = ({
         };
 
         const removeRecord = (id) => {
-
             selected.delete(String(id));
-
             renderSelected();
         };
 
-        recordsContainer.addEventListener(
-            "click",
-            event => {
+        recordsContainer.addEventListener("click", event => {
+            const action =
+                event.target.closest("[data-shop-action]");
 
+            if (!action) {
+                return;
+            }
+
+            const id =
+                action.dataset.shopItemId;
+
+            if (!id) {
+                return;
+            }
+
+            const record =
+                getRecordById(id);
+
+            if (!record) {
+                return;
+            }
+
+            selectRecord(record);
+        });
+
+        if (cartList) {
+            cartList.addEventListener("click", event => {
                 const action =
                     event.target.closest(
-                        "[data-shop-action]"
+                        "[data-shop-cart-action]"
                     );
 
                 if (!action) {
@@ -503,62 +464,24 @@ const createEntry = ({
                     return;
                 }
 
-                const record =
-                    getRecordById(id);
+                const actionType =
+                    action.dataset.shopCartAction;
 
-                if (!record) {
-                    return;
+                if (actionType === "increase") {
+                    changeQuantity(id, 1);
                 }
 
-                selectRecord(record);
-            }
-        );
-
-        if (cartList) {
-
-            cartList.addEventListener(
-                "click",
-                event => {
-
-                    const action =
-                        event.target.closest(
-                            "[data-shop-cart-action]"
-                        );
-
-                    if (!action) {
-                        return;
-                    }
-
-                    const id =
-                        action.dataset.shopItemId;
-
-                    if (!id) {
-                        return;
-                    }
-
-                    const actionType =
-                        action.dataset.shopCartAction;
-
-                    if (actionType === "increase") {
-
-                        changeQuantity(id, 1);
-                    }
-
-                    if (actionType === "decrease") {
-
-                        changeQuantity(id, -1);
-                    }
-
-                    if (actionType === "remove") {
-
-                        removeRecord(id);
-                    }
+                if (actionType === "decrease") {
+                    changeQuantity(id, -1);
                 }
-            );
+
+                if (actionType === "remove") {
+                    removeRecord(id);
+                }
+            });
         }
 
         try {
-
             hideError();
 
             records =
@@ -568,7 +491,6 @@ const createEntry = ({
             renderSelected();
 
         } catch (error) {
-
             console.error(
                 "[PixieShop]",
                 error
@@ -581,7 +503,6 @@ const createEntry = ({
     };
 
     const init = (context = document) => {
-
         context
             .querySelectorAll(FORM_SELECTOR)
             .forEach(initForm);
@@ -596,3 +517,4 @@ const createEntry = ({
         initForm
     };
 });
+
