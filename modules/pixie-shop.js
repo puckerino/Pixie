@@ -34,44 +34,44 @@ window.PixieShop = window.PixieKit("PixieShop", function(Pixie) {
         return record.titulo || record.nombre || `Registro ${record.id}`;
     };
 
-    const createEntry = ({
-        personajeId,
-        id,
-        label,
-        cantidad = 1
-    }) => {
-        const entry = document.createElement("div");
-        entry.className = "fa-entry";
+const createEntry = ({
+    personajeId,
+    id,
+    label,
+    cantidad = 1
+}) => {
+    const entry = document.createElement("div");
+    entry.className = "fa-entry";
 
-        const text = document.createElement("input");
-        text.type = "hidden";
-        text.className = "fa-text";
-        text.value = personajeId;
+    const text = document.createElement("input");
+    text.type = "hidden";
+    text.className = "fa-text";
+    text.value = label;
 
-        const value = document.createElement("input");
-        value.type = "hidden";
-        value.className = "fa-value";
-        value.value = id;
+    const value = document.createElement("input");
+    value.type = "hidden";
+    value.className = "fa-value";
+    value.value = id;
 
-        const labelElement = document.createElement("input");
-        labelElement.type = "hidden";
-        labelElement.className = "fa-label";
-        labelElement.value = label;
+    const labelElement = document.createElement("input");
+    labelElement.type = "hidden";
+    labelElement.className = "fa-label";
+    labelElement.value = label;
 
-        const cantidadElement = document.createElement("input");
-        cantidadElement.type = "hidden";
-        cantidadElement.className = "fa-cantidad";
-        cantidadElement.value = cantidad;
+    const cantidadElement = document.createElement("input");
+    cantidadElement.type = "hidden";
+    cantidadElement.className = "fa-cantidad";
+    cantidadElement.value = cantidad;
 
-        entry.append(
-            text,
-            value,
-            labelElement,
-            cantidadElement
-        );
+    entry.append(
+        text,
+        value,
+        labelElement,
+        cantidadElement
+    );
 
-        return entry;
-    };
+    return entry;
+};
 
     const initForm = async (form) => {
 
