@@ -7,25 +7,6 @@
 
 const PixieReplace = PixieKit("Replace", function (_) {
   const rules = [
-    {
-      selector: "img#i_icon_delete",
-      target: "a",
-      icon: "x",
-      text: "CERRAR ESTE SONDEO",
-      classes: ["button"]
-    },
-
-    {
-      selector: "img.sprite-icon_topic_latest",
-      target: "a",
-      remove: true
-    },
-
-    {
-      selector: "img[src='https://2img.net/i/fa/awesomebb/icon_topic_latest.png']",
-      target: "a",
-      remove: true
-    },
 
     {
       selector: "img.i_msg_newpost",
@@ -38,42 +19,6 @@ const PixieReplace = PixieKit("Replace", function (_) {
       target: "a",
       text: "Contestar",
       classes: ["button"]
-    },
-    
-    {
-      selector: "img.i_icon_quote, img#i_icon_quote",
-      target: "a",
-      icon: "quote",
-      text: "CITAR",
-      tooltip: "Citar mensaje",
-      classes: ["button", "button-action-post"]
-    },
-
-    {
-      selector: "img.i_icon_edit",
-      target: "a",
-      icon: "square-pen",
-      text: "EDITAR",
-      tooltip: "Editar mensaje",
-      classes: ["button", "button-action-post"]
-    },
-
-    {
-      selector: "img.i_icon_delete",
-      target: "a",
-      icon: "x",
-      text: "BORRAR",
-      tooltip: "Borrar mensaje",
-      classes: ["button", "button-action-post"]
-    },
-
-    {
-      selector: "img.i_icon_ip",
-      target: "a",
-      icon: "info",
-      text: "IP",
-      tooltip: "Ver IP",
-      classes: ["button", "button-action-post"]
     },
 
     {
