@@ -239,6 +239,13 @@ const PixieReplace = PixieKit("Replace", function (_) {
       tooltip: "Borrar",
       icon: "delete"
     },
+    
+    {
+      selector: ".sprite-icon_topic_latest",
+      target: "a",
+      tooltip: "Última Respuesta",
+      icon: "chevron_forward"
+    },
 
     {
       custom() {
