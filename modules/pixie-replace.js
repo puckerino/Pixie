@@ -220,6 +220,27 @@ const PixieReplace = PixieKit("Replace", function (_) {
     },
 
     {
+      selector: ".i_icon_quote",
+      target: "a",
+      tooltip: "Citar",
+      icon: "format_quote"
+    },
+
+    {
+      selector: ".i_icon_edit",
+      target: "a",
+      tooltip: "Editar",
+      icon: "drive_file_rename"
+    },
+
+    {
+      selector: ".i_icon_delete",
+      target: "a",
+      tooltip: "Borrar",
+      icon: "delete"
+    },
+
+    {
       custom() {
         const tabs = document.querySelector("#tabs");
         const cpMain = document.querySelector("#cp-main");
