@@ -1,7 +1,7 @@
 /*!
  * PixieReplace.js
  * Sustituye elementos de ForoActivo por texto, iconos, clases, atributos o estructura HTML
- * Requiere: pixiekit.js + lucide
+ * Requiere: pixiekit.js
  * Versión: 0.6.0
  */
 
@@ -32,7 +32,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
     {
       selector: "img.i_icon_profile, img#i_icon_profile",
       target: "a",
-      icon: "user",
+      icon: "account_box",
       tooltip: "Ver Perfil",
       classes: ["button", "button-icon", "button-contact"]
     },
@@ -64,7 +64,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
     {
       selector: "img[src='https://puckerino.github.io/Pixie/assets/images/contact/busquedapj.png']",
       target: "a",
-      icon: "user-search",
+      icon: "person_search",
       tooltip: "Búsqueda de Personaje",
       classes: ["button", "button-icon", "button-contact"]
     },
@@ -72,7 +72,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
     {
       selector: "img[src='https://puckerino.github.io/Pixie/assets/images/contact/busquedatrama.png']",
       target: "a",
-      icon: "book-search",
+      icon: "mystery",
       tooltip: "Búsqueda de Trama",
       classes: ["button", "button-icon", "button-contact"]
     },
@@ -454,14 +454,14 @@ const PixieReplace = PixieKit("Replace", function (_) {
     {
       selector: "img.sprite-arrow_prosilver_left",
       target: "a",
-      icon: "chevron-left",
+      icon: "chevron_backward",
       tooltip: "Página anterior"
     },
 
     {
       selector: "img.sprite-arrow_prosilver_right",
       target: "a",
-      icon: "chevron-right",
+      icon: "chevron_forward",
       tooltip: "Página siguiente"
     },
     
@@ -545,7 +545,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
   const processed = new WeakMap();
 
   function icon(name) {
-    return `<i data-lucide="${name}"></i>`;
+    return `<span class='material-symbols-outlined'>${name}</span>`;
   }
 
   function getTarget(element, targetSelector) {
