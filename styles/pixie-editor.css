@@ -26,6 +26,7 @@
   width: 100% !important;
   height: 100% !important;
   outline: 0 !important;
+  background: var(--surface-elevated) !important;
   corner-shape: square square var(--shape-elements) var(--shape-elements);
 }
 
@@ -45,14 +46,14 @@
 .sceditor-dropdown {
   margin-top: var(--spacing-xs) !important;
   border-radius: var(--br);
-  background: var(--card);
+  background: var(--surface-elevated);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
   padding: var(--spacing-s);
   border-radius: .5rem;
   corner-shape: squircle;
-  border: 1px solid var(--card-border);
+  border: 1px solid var(--border);
 
   & > div {
     display: flex;
