@@ -1,7 +1,7 @@
 /*!
  * PixieEditor.js
  * Personaliza el editor SCEditor de ForoActivo
- * Requiere: pixiekit.js + lucide
+ * Requiere: pixiekit.js
  * Versión: 0.3.1
  */
 
@@ -16,34 +16,34 @@ const PixieEditor = PixieKit("Editor", function (_) {
     defaultTheme: 'link[href*="fa.default.min.css"]',
 
     icons: {
-      bold: "bold",
-      italic: "italic",
-      underline: "underline",
-      strike: "strikethrough",
+      bold: "format_bold",
+      italic: "format_italic",
+      underline: "format_underlined",
+      strike: "strikethrough_s",
 
-      left: "align-left",
-      center: "align-center",
-      right: "align-right",
-      justify: "align-justify",
+      left: "format_align_left",
+      center: "format_align_center",
+      right: "format_align_right",
+      justify: "format_align_justify",
 
-      bulletlist: "list",
-      orderedlist: "list-ordered",
-      horizontalrule: "minus",
+      bulletlist: "format_list_bulleted",
+      orderedlist: "format_list_numbered",
+      horizontalrule: "horizontal_rule",
 
-      quote: "quote",
+      quote: "format_quote",
       code: "code",
-      faspoiler: "eye-off",
-      fahide: "eye-closed",
+      faspoiler: "visibility_off",
+      fahide: "preview_off",
 
       image: "image",
       link: "link",
 
-      size: "type",
+      size: "format_size",
       color: "palette",
-      font: "case-sensitive",
+      font: "font_download",
 
-      mention: "at-sign",
-      source: "file-code"
+      mention: "alternate_email",
+      source: "folder_code"
     },
 
     remove: [
@@ -68,7 +68,7 @@ const PixieEditor = PixieKit("Editor", function (_) {
   };
 
   function icon(name) {
-    return `<i data-lucide="${name}"></i>`;
+    return `<span class="material-symbols-outlined">${name}</span>`;
   }
 
   function removeDefaultTheme() {
