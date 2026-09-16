@@ -216,7 +216,7 @@ const PixieReplace = PixieKit("Replace", function (_) {
       selector: ".i_icon_ip",
       target: "a",
       tooltip: "Ver IP",
-      beforeHTML: "<span class='material-symbols-outlined'>info</span>"
+      icon: "info"
     },
 
     {
