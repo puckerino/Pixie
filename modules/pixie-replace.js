@@ -209,7 +209,14 @@ const PixieReplace = PixieKit("Replace", function (_) {
     {
       selector: ".breadcrumbs .nav",
       target: "self",
-      beforeHTML: "<i data-lucide='chevron-right'></i>"
+      beforeHTML: "<span class='material-symbols-outlined'>chevron_forward</span>"
+    },
+
+    {
+      selector: ".i_icon_ip",
+      target: "a",
+      tooltip: "Ver IP",
+      beforeHTML: "<span class='material-symbols-outlined'>info</span>"
     },
 
     {
