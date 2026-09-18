@@ -12,7 +12,7 @@ const PixieCopy = PixieKit("Copy", function (_) {
     target: ".cont_code, code",
 
     buttonText: "Copiar",
-    buttonIcon: "copy",
+    buttonIcon: "content_copy",
     copiedText: "Copiado",
     copiedIcon: "check",
 
@@ -28,7 +28,7 @@ const PixieCopy = PixieKit("Copy", function (_) {
 
   function buttonHTML(icon, text) {
     return `
-      <i data-lucide="${icon}"></i>
+     <span class="material-symbols-outlined">${icon}</span>
       <span>${text}</span>
     `;
   }
