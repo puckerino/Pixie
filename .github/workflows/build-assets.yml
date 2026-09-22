@@ -1,0 +1,20 @@
+- name: Build Head CSS
+  run: |
+    esbuild main-head.css \
+      --bundle \
+      --minify \
+      --outfile=dist/pixie-head.min.css
+
+- name: Build Body CSS
+  run: |
+    esbuild main-body.css \
+      --bundle \
+      --minify \
+      --outfile=dist/pixie-body.min.css
+
+- name: Build JS
+  run: |
+    esbuild main.js \
+      --bundle \
+      --minify \
+      --outfile=dist/pixie.min.js
