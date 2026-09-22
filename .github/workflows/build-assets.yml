@@ -1,20 +1,66 @@
-- name: Build Head CSS
-  run: |
-    esbuild main-head.css \
-      --bundle \
-      --minify \
-      --outfile=dist/pixie-head.min.css
+name: Build Assets
 
-- name: Build Body CSS
-  run: |
-    esbuild main-body.css \
-      --bundle \
-      --minify \
-      --outfile=dist/pixie-body.min.css
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
-- name: Build JS
-  run: |
-    esbuild main.js \
-      --bundle \
-      --minify \
-      --outfile=dist/pixie.min.js
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install esbuild
+        run: npm install -g esbuild
+
+      - name: Create dist folder
+        run: mkdir -p dist
+
+      - name: Build Head CSS
+        run: |
+          esbuild main-head.css \
+            --bundle \
+            --minify \
+            --outfile=dist/pixie-head.min.css
+
+      - name: Build Body CSS
+        run: |
+          esbuild main-body.css \
+            --bundle \
+            --minify \
+            --outfile=dist/pixie-body.min.css
+
+      - name: Build JS
+        run: |
+          esbuild main.js \
+            --bundle \
+            --minify \
+            --outfile=dist/pixie.min.js
+
+      - name: Commit and Push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add dist/
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "build: update compiled assets"
+            git push
+          fi
