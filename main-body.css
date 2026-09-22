@@ -1,8 +1,8 @@
-@import "./styles/pixie-topic.css";
-@import "./styles/pixie-forums.css";
+@import "./styles/pixie-elements.css";
+@import "./styles/pixie-tooltips.css";
+@import "./styles/pixie-popover.css";
+@import "./styles/pixie-nav.css";
 @import "./styles/pixie-editor.css";
 @import "./styles/pixie-postingbox.css";
 @import "./styles/pixie-chatbox.css";
-@import "./styles/pixie-popover.css";
-@import "./styles/pixie-tooltips.css";
 @import "./styles/pixie-ucp.css";
