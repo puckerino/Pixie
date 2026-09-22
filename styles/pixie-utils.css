@@ -24,6 +24,16 @@
   --spacing-button: var(--spacing-s) var(--spacing);
 }
 
+body {
+    @media (max-width: 700px) {
+        --screen: mobile;
+    }
+
+    @media (min-width: 1600px) {
+        --screen: wide;
+    }
+}
+
 /* ====== UTILS ====== */
 
 .stack {
