@@ -44,6 +44,13 @@ jobs:
             --minify \
             --outfile=dist/pixie-body.min.css
 
+      - name: Build End CSS
+        run: |
+          esbuild main-end.css \
+            --bundle \
+            --minify \
+            --outfile=dist/pixie-end.min.css
+
       - name: Build JS
         run: |
           esbuild main.js \
