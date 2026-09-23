@@ -72,9 +72,9 @@ const PixieNavbar = PixieKit("Navbar", function (_) {
     if (adminNav.dataset.pixieReady === "true") return;
 
     adminNav.innerHTML = `
-      <a href="/admin" tooltip="Panel de administración">
-        <i data-lucide="shield"></i>
-        ACP
+      <a class="admin-button" href="/admin" tooltip="Panel de administración">
+        <span class="material-symbols-outlined">admin_panel_settings</span>
+        ADMIN
       </a>
     `;
 
