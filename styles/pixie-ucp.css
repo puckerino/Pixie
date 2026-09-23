@@ -35,7 +35,7 @@ SETTING BASE + MENU LATERAL, TABS
                 width: 100%;
                 padding: var(--spacing-s);
                 border-radius: .5rem;
-                corner-shape: squircle;
+                corner-shape: var(--shape-elements);
             }
                     
             a {
@@ -46,10 +46,10 @@ SETTING BASE + MENU LATERAL, TABS
                 width: 100%;
                 padding: var(--spacing-s);
                 border-radius: .5rem;
-                corner-shape: squircle;
+                corner-shape: var(--shape-elements);
 
                 &:hover {
-                    background: var(--mono2);
+                    background: var(--mono-2);
                 }
 
                 .activetab & {
@@ -114,7 +114,7 @@ TEMAS SUPERVISADOS
     gap: 0 var(--spacing-s);
     padding: var(--spacing-s);
     border-radius: .5rem;
-    corner-shape: squircle;
+    corner-shape: var(--shape-elements);
 
     span {
         &:first-of-type {
@@ -206,7 +206,7 @@ BORRADORES - TEMAS
         text-transform: uppercase;
         padding: var(--spacing-s) var(--spacing);
         border-radius: .5rem;
-        corner-shape: squircle;
+        corner-shape: var(--shape-elements);
         text-align: center;
     }
 }
@@ -233,7 +233,7 @@ BORRADORES - MENSAJES
         text-transform: uppercase;
         padding: var(--spacing-s) var(--spacing);
         border-radius: .5rem;
-        corner-shape: squircle;
+        corner-shape: var(--shape-elements);
         text-align: center;
     }
         
