@@ -43,21 +43,6 @@
         justify-content: center;
         align-items: center;
         aspect-ratio: 1;
-
-        img {
-            display: none;
-        }
-
-        &:before {
-            content: "";
-            position: absolute;
-            width: 1rem;
-            height: 1rem;
-            -webkit-mask-position-x: center;
-            -webkit-mask-position-y: center;
-            mask-size: contain;
-            mask-repeat: no-repeat;
-        }
     }
 
     .topic-type {
