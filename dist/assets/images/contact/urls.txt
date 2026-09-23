@@ -1,0 +1,5 @@
+https://puckerino.github.io/Pixie/assets/images/contact/baul.png
+https://puckerino.github.io/Pixie/assets/images/contact/busqueda.png
+https://puckerino.github.io/Pixie/assets/images/contact/busquedapj.png
+https://puckerino.github.io/Pixie/assets/images/contact/busquedatrama.png
+https://puckerino.github.io/Pixie/assets/images/contact/ficha.png
