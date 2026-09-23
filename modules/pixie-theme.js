@@ -13,13 +13,13 @@ const PixieTheme = PixieKit("Theme", function (_) {
 
     light: {
       name: "light",
-      icon: "sun",
+      icon: "light_mode",
       label: "Cambiar a modo oscuro"
     },
 
     dark: {
       name: "dark",
-      icon: "moon",
+      icon: "dark_mode",
       label: "Cambiar a modo claro"
     }
   };
@@ -64,7 +64,7 @@ const PixieTheme = PixieKit("Theme", function (_) {
       ? config.dark
       : config.light;
 
-    btn.innerHTML = `<i data-lucide="${nextData.icon}"></i>`;
+    btn.innerHTML = `<span class="material-symbols-outlined">${nextData.icon}</span>`;
     btn.setAttribute("aria-label", nextData.label);
     btn.setAttribute("tooltip", nextData.label);
 
