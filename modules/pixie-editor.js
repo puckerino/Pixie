@@ -40,7 +40,7 @@ const PixieEditor = PixieKit("Editor", function (_) {
 
       size: "format_size",
       color: "palette",
-      font: "font_download",
+      font: "brand_family",
 
       mention: "alternate_email",
       source: "folder_code"
