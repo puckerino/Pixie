@@ -101,7 +101,7 @@ body {
         width: stretch;
     }
 
-    @media (max-width: 700px) {
+    @container style(--screen: mobile) {
         grid-template-columns: 1fr;
         gap: var(--spacing-xs);
     }
@@ -110,7 +110,7 @@ body {
 .has-spacing {
     padding: var(--spacing);
 
-    @media (max-width: 700px) {
+    @container style(--screen: mobile){
         padding: var(--spacing-xs);
     }
 }
@@ -120,7 +120,7 @@ body {
     gap: var(--spacing-s);
     align-items: center;
 
-    @media (max-width: 700px) {
+    @container style(--screen: mobile) {
         gap: var(--spacing-xs);
     }
 }
@@ -148,7 +148,7 @@ body {
         align-items: center;
         gap: var(--spacing);
 
-        @media (max-width: 700px) {
+        @container style(--screen: mobile) {
             gap: var(--spacing-xs);
         }
 
