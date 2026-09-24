@@ -1,0 +1,69 @@
+img {
+    min-height: 0;
+    min-width: 0;
+
+    .avatar-post & {
+        width: var(--avatar-post-width);
+        height: var(--avatar-post-height);
+        object-fit: cover;
+        object-position: center;
+    }
+
+    .avatar-post-mobile & {
+        width: var(--avatar-post-mobile-width);
+        height: var(--avatar-post-mobile-height);
+        object-fit: cover;
+        object-position: center;
+    }
+
+    div[data-profile-render-value="imagen-post"] &,
+    .rankimg & {
+        width: var(--avatar-post-mini-width);
+        height: var(--avatar-post-mini-height);
+        object-fit: cover;
+        object-position: center;
+    }
+
+    .avatar-nav & {
+        width: var(--avatar-nav-width);
+        height: var(--avatar-nav-height);
+        object-fit: cover;
+        object-position: center;
+    }
+
+    .avatar-lastpost-forum & {
+        width: var(--avatar-lastpost-forum-width);
+        height: var(--avatar-lastpost-forum-height);
+        object-fit: cover;
+    }
+
+    .avatar-lastpost-topic & {
+        width: var(--avatar-lastpost-topic-width);
+        height: var(--avatar-lastpost-topic-height);
+        object-fit: cover;
+    }
+
+    .avatar-memberlist & {
+        width: var(--avatar-memberlist-width);
+        height: var(--avatar-memberlist-height);
+        object-fit: cover;
+    }
+
+    .avatar-privmsg & {
+        width: var(--avatar-privmsg-width);
+        height: var(--avatar-privmsg-height);
+        object-fit: cover;
+    }
+
+    .avatar-discover & {
+        width: var(--avatar-discover-width);
+        height: var(--avatar-discover-height);
+        object-fit: cover;
+    }
+
+    .rpg-img & {
+        width: var(--rpg-img-width);
+        height: var(--rpg-img-height);
+        object-fit: cover;
+    }
+}
