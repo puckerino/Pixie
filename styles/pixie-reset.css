@@ -2,20 +2,35 @@
   box-sizing: border-box;
 }
 
-#fa_toolbar, div[style="overflow:visible"], div[style="height:3px"], .group-icon:empty, a[href="#top"], li:has(a[href="/search?search_id=favouritesearch"]) {
+#fa_toolbar, 
+div[style="overflow:visible"], 
+div[style="height:3px"], 
+.group-icon:empty, 
+a[href="#top"], 
+li:has(a[href="/search?search_id=favouritesearch"]) {
   display: none!important;
 }
 
 html {
 	padding: 0;
 	margin: 0;
+
+	@media (prefers-reduced-motion: no-preference) {
+		interpolate-size: allow-keywords;
+		scroll-behavior: smooth;
+	}
 }
 
 body {
 	width: 100%;
-  min-height: 100vh;
-  margin: 0;
-  margin-top: 0!important;
+	min-height: 100vh;
+	margin: 0;
+	margin-top: 0!important;
+	-webkit-font-smoothing: antialiased;
+}
+
+:target {
+  scroll-margin: 20vb;
 }
 
 section, article, blockquote, figure, ul, ol, li, menu, fieldset, hgroup {
@@ -45,49 +60,33 @@ table {
 	border-spacing: 0;
 }
 
-
 a, a:visited {
   text-decoration: none;
   color: inherit;
   cursor: pointer;
 }
 
-/* 3. Enable keyword animations */
-@media (prefers-reduced-motion: no-preference) {
-  html {
-    interpolate-size: allow-keywords;
-	scroll-behavior: smooth;
-  }
-}
-
-body {
-  /* 5. Improve text rendering */
-  -webkit-font-smoothing: antialiased;
-}
-
-/* 6. Improve media defaults */
 img, picture, video, canvas {
   display: block;
   max-width: 100%;
 }
 
-/* 7. Inherit fonts for form controls */
 input, button, textarea, select {
   font: inherit;
 }
 
-/* 8. Avoid text overflows */
-p, h1, h2, h3, h4, h5, h6 {
-  overflow-wrap: break-word;
+p {
+	text-wrap: pretty;
+	margin: 0;
+	padding: 0;
+	overflow-wrap: break-word;
 }
 
-/* 9. Improve line wrapping */
-p {
-  text-wrap: pretty;
-}
 h1, h2, h3, h4, h5, h6 {
-  text-wrap: balance;
-  margin: 0;
-  padding: 0;
+	text-wrap: balance;
+	margin: 0;
+	padding: 0;
+	overflow-wrap: break-word;
+	text-box: trim-both cap alphabetic;
 }
 
