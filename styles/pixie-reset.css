@@ -27,6 +27,14 @@ body {
 	margin: 0;
 	margin-top: 0!important;
 	-webkit-font-smoothing: antialiased;
+
+	@media (max-width: 700px) {
+		--screen: mobile;
+	}
+
+	@media (min-width: 1800px) {
+		--screen: wide;
+	}
 }
 
 :target {
