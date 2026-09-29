@@ -40,7 +40,7 @@ const PixieSwitcher = PixieKit("Switcher", function (_) {
   accountTemplate.innerHTML = `
     <article class="pixie-switcher-account">
 
-      <div class="pixie-switcher-avatar"></div>
+      <figure class="pixie-switcher-avatar"></figure>
 
       <div class="pixie-switcher-info">
 
