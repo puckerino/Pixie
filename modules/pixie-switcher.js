@@ -1,13 +1,17 @@
 /*!
- * Pixie Switcher
- * Autor: Puck
+ * PixieSwitcher.js
+ * Gestor de cuentas para ForoActivo
+ * Requiere: pixiekit.js
  * Versión: 2.0.0
  */
 
-PixieKit("Switcher", (_) => {
-  "use strict";
+const PixieSwitcher = PixieKit("Switcher", function (_) {
 
-  const STORAGE = {
+  const config = {
+    target: "[data-pixie-switcher]"
+  };
+
+  const storage = {
     accounts: _.storage("pixie:switcher:accounts"),
     pending: _.storage("pixie:switcher:pending")
   };
@@ -18,116 +22,22 @@ PixieKit("Switcher", (_) => {
     addCurrent: "Añadir cuenta actual",
     addSwitch: "Añadir y cambiar",
     search: "Buscar cuenta",
-    noAccounts: "No hay cuentas guardadas",
     username: "Usuario",
     password: "Contraseña",
     submit: "Continuar",
-    switch: "Cambiar cuenta",
+    noAccounts: "No hay cuentas guardadas",
     refresh: "Actualizar información",
-    remove: "Eliminar cuenta"
+    remove: "Eliminar cuenta",
+    switch: "Cambiar cuenta"
   };
 
-  /* -------------------------
+  /* ==================================================
      Templates
-  ------------------------- */
+  ================================================== */
 
-  const templates = {
-    layout: document.createElement("template"),
-    account: document.createElement("template")
-  };
+  const accountTemplate = document.createElement("template");
 
-  templates.layout.innerHTML = `
-    <div class="pixie-switcher">
-
-      <div class="pixie-switcher-toolbar">
-
-        <button
-          type="button"
-          class="pixie-btn"
-          data-action="add-current">
-
-          <span class="material-symbols-outlined">
-            person_add
-          </span>
-
-          ${labels.addCurrent}
-
-        </button>
-
-        <button
-          type="button"
-          class="pixie-btn"
-          data-action="add-switch">
-
-          <span class="material-symbols-outlined">
-            manage_accounts
-          </span>
-
-          ${labels.addSwitch}
-
-        </button>
-
-      </div>
-
-      <div class="pixie-switcher-search">
-
-        <span class="material-symbols-outlined">
-          search
-        </span>
-
-        <input
-          type="search"
-          class="pixie-switcher-filter"
-          placeholder="${labels.search}">
-
-      </div>
-
-      <div class="pixie-switcher-list"></div>
-
-      <dialog class="pixie-switcher-dialog">
-
-        <form class="pixie-switcher-form">
-
-          <div class="pixie-switcher-dialog-header">
-
-            <button
-              type="button"
-              class="pixie-switcher-close">
-
-              <span class="material-symbols-outlined">
-                close
-              </span>
-
-            </button>
-
-          </div>
-
-          <input
-            type="text"
-            class="pixie-switcher-username"
-            placeholder="${labels.username}">
-
-          <input
-            type="password"
-            class="pixie-switcher-password"
-            placeholder="${labels.password}">
-
-          <button
-            type="submit"
-            class="pixie-switcher-submit">
-
-            ${labels.submit}
-
-          </button>
-
-        </form>
-
-      </dialog>
-
-    </div>
-  `;
-
-  templates.account.innerHTML = `
+  accountTemplate.innerHTML = `
     <article class="pixie-switcher-account">
 
       <div class="pixie-switcher-avatar"></div>
@@ -145,61 +55,103 @@ PixieKit("Switcher", (_) => {
     </article>
   `;
 
-  /* -------------------------
+  /* ==================================================
      Helpers
-  ------------------------- */
+  ================================================== */
 
   function user() {
+
     return {
-      user_id: Number(_userdata?.user_id || 0),
-      username: _userdata?.username || "",
+      id: Number(window._userdata?.user_id || 0),
+      username: window._userdata?.username || "",
       avatar:
-        _userdata?.avatar_link ||
-        _userdata?.avatar ||
+        window._userdata?.avatar_link ||
         "",
-      groupcolor:
-        _userdata?.groupcolor || "",
+      color:
+        normalizeColor(
+          window._userdata?.groupcolor || ""
+        ),
       rank:
         window._lang?.rank_title || ""
     };
+
+  }
+
+  function normalizeColor(color) {
+
+    if (!color) return "";
+
+    return color.startsWith("#")
+      ? color
+      : `#${color}`;
+
+  }
+
+  function isLogged() {
+    return _.isLogged();
   }
 
   function getAccounts() {
-    return STORAGE.accounts.get([]);
+    return storage.accounts.get([]);
   }
 
   function saveAccounts(accounts) {
-    STORAGE.accounts.set(accounts);
+    storage.accounts.set(accounts);
+  }
+
+  function getPendingAccount() {
+    return storage.pending.get(null);
+  }
+
+  function setPendingAccount(username) {
+    storage.pending.set(username);
+  }
+
+  function clearPendingAccount() {
+    storage.pending.remove();
   }
 
   function accountExists(userId) {
-    return getAccounts().some(
-      account => Number(account.user_id) === Number(userId)
+
+    return getAccounts().some(account =>
+      Number(account.user_id) === Number(userId)
     );
+
   }
 
   function saveCurrentUser() {
-    if (!_.isLogged()) return;
+
+    if (!isLogged()) return;
 
     const current = user();
 
-    if (accountExists(current.user_id)) return;
+    if (accountExists(current.id)) {
+      return;
+    }
 
     const accounts = getAccounts();
 
     accounts.push({
-      ...current,
+      user_id: current.id,
+      username: current.username,
+      avatar: current.avatar,
+      groupcolor: current.color,
+      rank: current.rank,
       addedAt: Date.now(),
       lastUsed: Date.now()
     });
 
     saveAccounts(accounts);
+
   }
 
   function updateLastUsed(userId) {
+
     const updated = getAccounts().map(account => {
 
-      if (Number(account.user_id) !== Number(userId)) {
+      if (
+        Number(account.user_id) !== Number(userId)
+      ) {
         return account;
       }
 
@@ -211,24 +163,30 @@ PixieKit("Switcher", (_) => {
     });
 
     saveAccounts(updated);
+
   }
 
   function removeAccount(userId) {
-    const filtered = getAccounts().filter(
-      account => Number(account.user_id) !== Number(userId)
+
+    const filtered = getAccounts().filter(account =>
+      Number(account.user_id) !== Number(userId)
     );
 
     saveAccounts(filtered);
 
-    render();
+    renderAccounts();
+
   }
 
   function refreshAccount(userId) {
+
     const current = user();
 
     const updated = getAccounts().map(account => {
 
-      if (Number(account.user_id) !== Number(userId)) {
+      if (
+        Number(account.user_id) !== Number(userId)
+      ) {
         return account;
       }
 
@@ -236,7 +194,7 @@ PixieKit("Switcher", (_) => {
         ...account,
         username: current.username,
         avatar: current.avatar,
-        groupcolor: current.groupcolor,
+        groupcolor: current.color,
         rank: current.rank
       };
 
@@ -244,62 +202,20 @@ PixieKit("Switcher", (_) => {
 
     saveAccounts(updated);
 
-    render();
-  }
+    renderAccounts();
 
-  async function logoutThenLogin(username, password) {
-
-    const logout = document.querySelector("#logout");
-
-    if (!logout) {
-      _.log("No encuentro el enlace de logout");
-      return;
-    }
-
-    try {
-
-      await fetch(logout.href, {
-        credentials: "same-origin"
-      });
-
-      const body = new URLSearchParams();
-
-      body.append("login", "1");
-      body.append("username", username);
-      body.append("password", password);
-      body.append("autologin", "1");
-
-      await fetch("/login", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "Content-Type":
-            "application/x-www-form-urlencoded"
-        },
-        body
-      });
-
-      location.reload();
-
-    } catch (error) {
-
-      _.log(
-        "Error durante el cambio de cuenta",
-        error
-      );
-
-    }
   }
 
   function finalizePendingAccount() {
 
-    if (!_.isLogged()) {
-      STORAGE.pending.remove();
+    if (!isLogged()) {
+
+      clearPendingAccount();
+
       return;
     }
 
-    const pending =
-      STORAGE.pending.get();
+    const pending = getPendingAccount();
 
     if (!pending) return;
 
@@ -309,26 +225,172 @@ PixieKit("Switcher", (_) => {
 
     saveCurrentUser();
 
-    STORAGE.pending.remove();
+    clearPendingAccount();
 
   }
 
-  /* -------------------------
-     UI
-  ------------------------- */
+  function getLogoutLink() {
 
-  function build() {
-
-    const root = _.get(
-      "#pixie-switcher",
-      { required: false }
+    return (
+      document.querySelector(
+        'a[href*="logout"]'
+      ) ||
+      document.querySelector("#logout")
     );
 
-    if (!root) return;
+  }
 
-    root.replaceChildren(
-      templates.layout.content.cloneNode(true)
-    );
+  async function logoutThenLogin(
+    username,
+    password
+  ) {
+
+    const logout =
+      getLogoutLink();
+
+    if (!logout) {
+
+      _.log(
+        "No encuentro el enlace de logout"
+      );
+
+      return;
+    }
+
+    try {
+
+      await fetch(logout.href, {
+        credentials: "same-origin"
+      });
+
+      const body =
+        new URLSearchParams();
+
+      body.append("login", "1");
+      body.append("username", username);
+      body.append("password", password);
+      body.append("autologin", "1");
+
+      await fetch("/login", {
+
+        method: "POST",
+
+        credentials: "same-origin",
+
+        headers: {
+          "Content-Type":
+            "application/x-www-form-urlencoded"
+        },
+
+        body
+
+      });
+
+      location.reload();
+
+    } catch (error) {
+
+      _.log(
+        "Error cambiando de cuenta",
+        error
+      );
+
+    }
+
+  }
+
+  /* ==================================================
+     Render
+  ================================================== */
+
+  function renderLayout() {
+
+    return `
+      <div class="pixie-switcher">
+
+        <div class="pixie-switcher-toolbar">
+
+          <button
+            type="button"
+            class="pixie-btn"
+            data-action="add-current">
+
+            <span class="material-symbols-outlined">
+              person_add
+            </span>
+
+            ${labels.addCurrent}
+
+          </button>
+
+          <button
+            type="button"
+            class="pixie-btn"
+            data-action="add-switch">
+
+            <span class="material-symbols-outlined">
+              manage_accounts
+            </span>
+
+            ${labels.addSwitch}
+
+          </button>
+
+        </div>
+
+        <div class="pixie-switcher-search">
+
+          <span class="material-symbols-outlined">
+            search
+          </span>
+
+          <input
+            type="search"
+            class="pixie-switcher-filter"
+            placeholder="${labels.search}">
+
+        </div>
+
+        <div class="pixie-switcher-list"></div>
+
+        <dialog class="pixie-switcher-dialog">
+
+          <form class="pixie-switcher-form">
+
+            <button
+              type="button"
+              class="pixie-switcher-close">
+
+              <span class="material-symbols-outlined">
+                close
+              </span>
+
+            </button>
+
+            <input
+              type="text"
+              class="pixie-switcher-username"
+              placeholder="${labels.username}">
+
+            <input
+              type="password"
+              class="pixie-switcher-password"
+              placeholder="${labels.password}">
+
+            <button
+              type="submit"
+              class="pixie-switcher-submit">
+
+              ${labels.submit}
+
+            </button>
+
+          </form>
+
+        </dialog>
+
+      </div>
+    `;
 
   }
 
@@ -359,12 +421,14 @@ PixieKit("Switcher", (_) => {
     `;
 
     return button;
+
   }
 
-  function render() {
+  function renderAccounts() {
 
-    const list =
-      _.get(".pixie-switcher-list");
+    const list = _.get(
+      ".pixie-switcher-list"
+    );
 
     if (!list) return;
 
@@ -372,9 +436,8 @@ PixieKit("Switcher", (_) => {
 
     const accounts =
       getAccounts()
-        .sort(
-          (a, b) =>
-            b.lastUsed - a.lastUsed
+        .sort((a, b) =>
+          b.lastUsed - a.lastUsed
         );
 
     if (!accounts.length) {
@@ -391,7 +454,7 @@ PixieKit("Switcher", (_) => {
     accounts.forEach(account => {
 
       const node =
-        templates.account.content.cloneNode(true);
+        accountTemplate.content.cloneNode(true);
 
       const card =
         node.querySelector(
@@ -404,29 +467,41 @@ PixieKit("Switcher", (_) => {
       card.dataset.username =
         account.username;
 
-      card.style.setProperty(
-        "--pixie-user-color",
-        `#${account.groupcolor}`
-      );
-
       const avatar =
         node.querySelector(
           ".pixie-switcher-avatar"
         );
 
-      avatar.innerHTML =
-        account.avatar || "";
+      if (account.avatar) {
+
+        const img =
+          document.createElement("img");
+
+        img.src =
+          account.avatar;
+
+        img.alt =
+          account.username;
+
+        avatar.append(img);
+
+      }
 
       const profile =
         node.querySelector(
           ".pixie-switcher-profile"
         );
 
+      profile.href =
+        `/u${account.user_id}`;
+
       profile.textContent =
         account.username;
 
-      profile.href =
-        `/u${account.user_id}`;
+      if (account.groupcolor) {
+        profile.style.color =
+          account.groupcolor;
+      }
 
       node.querySelector(
         ".pixie-switcher-rank"
@@ -440,7 +515,7 @@ PixieKit("Switcher", (_) => {
 
       const active =
         Number(account.user_id) ===
-        Number(user().user_id);
+        user().id;
 
       if (active) {
 
@@ -478,18 +553,19 @@ PixieKit("Switcher", (_) => {
 
   }
 
-  /* -------------------------
+  /* ==================================================
      Dialog
-  ------------------------- */
+  ================================================== */
 
   function openDialog(
     username,
     full = false
   ) {
 
-    mode = full
-      ? "full"
-      : "confirm";
+    mode =
+      full
+        ? "full"
+        : "confirm";
 
     const dialog =
       _.get(".pixie-switcher-dialog");
@@ -512,12 +588,10 @@ PixieKit("Switcher", (_) => {
     dialog.showModal();
 
     passwordInput.focus();
+
   }
 
   function closeDialog() {
-
-    const dialog =
-      _.get(".pixie-switcher-dialog");
 
     _.get(
       ".pixie-switcher-username"
@@ -527,22 +601,25 @@ PixieKit("Switcher", (_) => {
       ".pixie-switcher-password"
     ).value = "";
 
-    dialog.close();
+    _.get(
+      ".pixie-switcher-dialog"
+    ).close();
 
   }
 
-  /* -------------------------
+  /* ==================================================
      Events
-  ------------------------- */
+  ================================================== */
 
   function bindEvents() {
 
-    const root =
-      _.get("#pixie-switcher");
+    const root = _.get(
+      config.target
+    );
 
     root.addEventListener(
       "click",
-      event => {
+      function (event) {
 
         const button =
           event.target.closest(
@@ -588,17 +665,24 @@ PixieKit("Switcher", (_) => {
 
         switch (action) {
 
-          case "remove":
-            removeAccount(userId);
+          case "switch":
+
+            updateLastUsed(userId);
+
+            openDialog(username);
+
             break;
 
           case "refresh":
+
             refreshAccount(userId);
+
             break;
 
-          case "switch":
-            updateLastUsed(userId);
-            openDialog(username);
+          case "remove":
+
+            removeAccount(userId);
+
             break;
 
         }
@@ -606,113 +690,116 @@ PixieKit("Switcher", (_) => {
       }
     );
 
-    _.get(".pixie-switcher-close")
-      .addEventListener(
-        "click",
-        closeDialog
-      );
+    _.get(
+      ".pixie-switcher-close"
+    ).addEventListener(
+      "click",
+      closeDialog
+    );
 
-    _.get(".pixie-switcher-filter")
-      .addEventListener(
-        "input",
-        event => {
+    _.get(
+      ".pixie-switcher-filter"
+    ).addEventListener(
+      "input",
+      function (event) {
 
-          const value =
-            event.target.value
+        const value =
+          event.target.value
+            .toLowerCase()
+            .trim();
+
+        _.getAll(
+          ".pixie-switcher-account"
+        ).forEach(function (card) {
+
+          card.hidden =
+            !card.dataset.username
               .toLowerCase()
-              .trim();
+              .includes(value);
 
-          _.getAll(
-            ".pixie-switcher-account"
-          ).forEach(card => {
+        });
 
-            const username =
-              card.dataset.username
-                .toLowerCase();
+      }
+    );
 
-            card.hidden =
-              !username.includes(
-                value
-              );
+    _.get(
+      ".pixie-switcher-form"
+    ).addEventListener(
+      "submit",
+      async function (event) {
 
-          });
+        event.preventDefault();
+
+        const username =
+          _.get(
+            ".pixie-switcher-username"
+          ).value;
+
+        const password =
+          _.get(
+            ".pixie-switcher-password"
+          ).value;
+
+        if (!password) return;
+
+        if (mode === "confirm") {
+
+          saveCurrentUser();
 
         }
-      );
 
-    _.get(".pixie-switcher-form")
-      .addEventListener(
-        "submit",
-        async event => {
+        if (mode === "full") {
 
-          event.preventDefault();
-
-          const username =
-            _.get(
-              ".pixie-switcher-username"
-            ).value;
-
-          const password =
-            _.get(
-              ".pixie-switcher-password"
-            ).value;
-
-          if (!password) return;
-
-          if (mode === "confirm") {
-            saveCurrentUser();
-          }
-
-          if (mode === "full") {
-
-            STORAGE.pending.set(
-              username
-            );
-
-          }
-
-          await logoutThenLogin(
-            username,
-            password
+          setPendingAccount(
+            username
           );
 
         }
-      );
+
+        await logoutThenLogin(
+          username,
+          password
+        );
+
+      }
+    );
 
   }
 
-  /* -------------------------
-     Plugin
-  ------------------------- */
+  /* ==================================================
+     Init
+  ================================================== */
 
-  const plugin = {
+  async function init() {
 
-    init() {
+    const target =
+      _.get(
+        config.target,
+        { required: false }
+      );
 
-      const root =
-        _.get(
-          "#pixie-switcher",
-          { required: false }
-        );
+    if (!target) return;
 
-      if (!root) return;
+    target.innerHTML =
+      renderLayout();
 
-      build();
+    finalizePendingAccount();
 
-      finalizePendingAccount();
+    bindEvents();
 
-      bindEvents();
+    renderAccounts();
 
-      render();
+    _.log(
+      "Pixie Switcher inicializado"
+    );
 
-      _.log("Inicializado");
+  }
 
-    }
+  _.ready(init);
 
+  return {
+    init,
+    renderAccounts
   };
-
-  _.ready(() => plugin.init());
-
-  return plugin;
 
 });
