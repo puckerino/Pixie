@@ -15,3 +15,4 @@ import "./modules/pixie-reply-form.js";
 import "./modules/pixie-shop.js";
 import "./modules/pixie-theme.js";
 import "./modules/pixie-replace.js";
+import "./modules/pixie-switcher.js";
