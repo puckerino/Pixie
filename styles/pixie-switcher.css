@@ -28,10 +28,41 @@
       display: flex;
       align-items: center;
       gap: var(--spacing-s);
+      border: 1px solid var(--border);
+      padding: var(--spacing-s);
 
       .pixie-switcher-avatar {
         height: 50px;
         width: 50px;
+
+        img {
+          min-height: 0;
+          min-width: 0;
+          object-fit: cover;
+          height: 100%;
+          width: 100%;
+        }
+      }
+
+      .pixie-switcher-info {
+        display: flex;
+        flex-direction: column;
+
+        .pixie-switcher-rank {
+          font: var(--f-s) var(--f-metadata);
+          text-transform: uppercase;
+        }
+      }
+
+      .pixie-switcher-actions {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-s);
+
+        .pixie-switcher-action {
+          aspect-ratio: 1 / 1;
+          font-size: var(--f-s);
+        }
       }
     }
   }
