@@ -38,7 +38,7 @@
         img {
           min-height: 0;
           min-width: 0;
-          object-fit: cover;
+          object-fit: cover !important;
           height: 100%;
           width: 100%;
         }
