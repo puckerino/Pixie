@@ -143,6 +143,19 @@
 .sceditor-mention-user {
   background: var(--surface)!important;
   border: 1px solid var(--border)!important;
+  display: flex!important;
+  align-items: center!important;
+  gap: var(--spacing-xs)!important;
+  padding: var(--spacing-xs)!important;
+
+  img {
+    height: 25px!important;
+    width: 25px!important;
+    margin: 0!important;
+    border: 1px solid var(--border)!important;
+    border-radius: var(--spacing-xs)!important;
+    corner-shape: squircle!important;
+  }
 
   &:hover {
     background: var(--surface-elevated)!important;
